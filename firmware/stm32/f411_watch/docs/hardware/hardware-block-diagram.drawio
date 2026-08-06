@@ -1,0 +1,307 @@
+<mxfile host="Electron" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/29.6.6 Chrome/144.0.7559.236 Electron/40.8.4 Safari/537.36" version="29.6.6" pages="2">
+  <diagram id="system-overview" name="系统结构图">
+    <mxGraphModel dx="1668" dy="1324" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="1050" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=26;fontStyle=1;fontColor=#1f2937;" value="OV-Watch F411 硬件结构图" vertex="1">
+          <mxGeometry height="40" width="520" x="40" y="25" as="geometry" />
+        </mxCell>
+        <mxCell id="subtitle" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=14;fontColor=#6b7280;" value="系统视图 · 器件、总线与关键控制信号" vertex="1">
+          <mxGeometry height="28" width="520" x="40" y="65" as="geometry" />
+        </mxCell>
+        <mxCell id="mcu" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#dbeafe;strokeColor=#2563eb;strokeWidth=2;fontSize=18;fontColor=#1e3a8a;align=center;verticalAlign=middle;" value="&lt;b&gt;STM32F411CEU6&lt;/b&gt;&lt;br&gt;Cortex-M4 · 96 MHz&lt;br&gt;512 KB Flash · 128 KB RAM" vertex="1">
+          <mxGeometry height="250" width="300" x="650" y="310" as="geometry" />
+        </mxCell>
+        <mxCell id="clocks" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#f3f4f6;strokeColor=#6b7280;strokeWidth=1.5;fontSize=15;fontColor=#111827;" value="&lt;b&gt;时钟&lt;/b&gt;&lt;br&gt;HSE 24 MHz&lt;br&gt;LSE 32.768 kHz" vertex="1">
+          <mxGeometry height="105" width="220" x="690" y="120" as="geometry" />
+        </mxCell>
+        <mxCell id="lcd" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#dcfce7;strokeColor=#16a34a;strokeWidth=1.5;fontSize=14;fontColor=#14532d;" value="&lt;b&gt;ST7789 LCD&lt;/b&gt;&lt;br&gt;SPI1: PA5 SCK / PA7 MOSI&lt;br&gt;PB0 CS · PB1 DC · PA6 RST&lt;br&gt;PB13 背光 PWM" vertex="1">
+          <mxGeometry height="125" width="300" x="60" y="160" as="geometry" />
+        </mxCell>
+        <mxCell id="touch" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#dcfce7;strokeColor=#16a34a;strokeWidth=1.5;fontSize=14;fontColor=#14532d;" value="&lt;b&gt;CST816 触摸&lt;/b&gt;&lt;br&gt;软件 I2C: PA4 SCL / PA3 SDA&lt;br&gt;PA2 RST · 经屏幕 FPC" vertex="1">
+          <mxGeometry height="110" width="300" x="60" y="315" as="geometry" />
+        </mxCell>
+        <mxCell id="controls" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#fef3c7;strokeColor=#d97706;strokeWidth=1.5;fontSize=14;fontColor=#78350f;" value="&lt;b&gt;人机输入&lt;/b&gt;&lt;br&gt;旋转编码器: PB6 / PB7 · PB2 按压&lt;br&gt;WAKE: PB12 · BACK: PB10" vertex="1">
+          <mxGeometry height="105" width="300" x="60" y="465" as="geometry" />
+        </mxCell>
+        <mxCell id="swd" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#f3f4f6;strokeColor=#6b7280;strokeWidth=1.5;fontSize=14;fontColor=#111827;" value="&lt;b&gt;SWD 调试接口&lt;/b&gt;&lt;br&gt;PA13 SWDIO · PA14 SWCLK&lt;br&gt;3.3 V · GND" vertex="1">
+          <mxGeometry height="85" width="300" x="60" y="590" as="geometry" />
+        </mxCell>
+        <mxCell id="flash" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#ffedd5;strokeColor=#ea580c;strokeWidth=1.5;fontSize=14;fontColor=#7c2d12;" value="&lt;b&gt;W25Q128 NOR Flash&lt;/b&gt;&lt;br&gt;SPI3: PB3 SCK / PB4 MISO / PB5 MOSI&lt;br&gt;PA15 CS" vertex="1">
+          <mxGeometry height="110" width="300" x="1240" y="150" as="geometry" />
+        </mxCell>
+        <mxCell id="ble" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#ede9fe;strokeColor=#7c3aed;strokeWidth=1.5;fontSize=14;fontColor=#4c1d95;" value="&lt;b&gt;KT6368 蓝牙&lt;/b&gt;&lt;br&gt;USART1: PA9 TX / PA10 RX&lt;br&gt;PB14 BLE_EN" vertex="1">
+          <mxGeometry height="100" width="300" x="1240" y="300" as="geometry" />
+        </mxCell>
+        <mxCell id="usb" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#e0f2fe;strokeColor=#0284c7;strokeWidth=1.5;fontSize=14;fontColor=#0c4a6e;" value="&lt;b&gt;USB Type-C&lt;/b&gt;&lt;br&gt;USB Device FS&lt;br&gt;PA11 DM · PA12 DP&lt;br&gt;VBUS 同时进入充电电路" vertex="1">
+          <mxGeometry height="115" width="300" x="1240" y="440" as="geometry" />
+        </mxCell>
+        <mxCell id="watchdog" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#fee2e2;strokeColor=#dc2626;strokeWidth=1.5;fontSize=14;fontColor=#7f1d1d;" value="&lt;b&gt;外置看门狗&lt;/b&gt;&lt;br&gt;TPS3823-33 + BL1551B&lt;br&gt;PA0 WDI · PA1 WDOG_EN · NRST" vertex="1">
+          <mxGeometry height="105" width="300" x="1240" y="595" as="geometry" />
+        </mxCell>
+        <mxCell id="i2c-bus" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=6;fillColor=#ccfbf1;strokeColor=#0f766e;strokeWidth=2;fontSize=14;fontStyle=1;fontColor=#134e4a;" value="I2C1 传感器总线 · PB8 SCL / PB9 SDA · 3.3 V" vertex="1">
+          <mxGeometry height="48" width="1135" x="60" y="700" as="geometry" />
+        </mxCell>
+        <mxCell id="eeprom" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#fff7ed;strokeColor=#f59e0b;strokeWidth=2;dashed=1;fontSize=13;fontColor=#78350f;" value="&lt;b&gt;BL24C02 EEPROM&lt;/b&gt;&lt;br&gt;原理图标注&lt;br&gt;实物型号待确认" vertex="1">
+          <mxGeometry height="105" width="210" x="60" y="790" as="geometry" />
+        </mxCell>
+        <mxCell id="fuel" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#ccfbf1;strokeColor=#0f766e;strokeWidth=1.5;fontSize=13;fontColor=#134e4a;" value="&lt;b&gt;CW2015&lt;/b&gt;&lt;br&gt;电量计&lt;br&gt;ALRT# 未接 MCU" vertex="1">
+          <mxGeometry height="105" width="200" x="300" y="790" as="geometry" />
+        </mxCell>
+        <mxCell id="aht" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#ccfbf1;strokeColor=#0f766e;strokeWidth=1.5;fontSize=13;fontColor=#134e4a;" value="&lt;b&gt;AHT20&lt;/b&gt;&lt;br&gt;温湿度传感器" vertex="1">
+          <mxGeometry height="105" width="190" x="530" y="790" as="geometry" />
+        </mxCell>
+        <mxCell id="imu" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#ccfbf1;strokeColor=#0f766e;strokeWidth=1.5;fontSize=13;fontColor=#134e4a;" value="&lt;b&gt;LSM6DS3TR-C&lt;/b&gt;&lt;br&gt;六轴 IMU&lt;br&gt;INT1 PA8 · INT2 PB15" vertex="1">
+          <mxGeometry height="105" width="215" x="995" y="790" as="geometry" />
+        </mxCell>
+        <mxCell id="max" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#ccfbf1;strokeColor=#0f766e;strokeWidth=1.5;fontSize=13;fontColor=#134e4a;" value="&lt;b&gt;MAX30102&lt;/b&gt;&lt;br&gt;心率 / 血氧&lt;br&gt;INT# 未接 MCU" vertex="1">
+          <mxGeometry height="105" width="200" x="750" y="790" as="geometry" />
+        </mxCell>
+        <mxCell id="mag" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#cffafe;strokeColor=#0891b2;strokeWidth=1.5;fontSize=13;fontColor=#164e63;" value="&lt;b&gt;LIS2MDL&lt;/b&gt;&lt;br&gt;磁力计&lt;br&gt;接 LSM6DS3 Sensor Hub" vertex="1">
+          <mxGeometry height="105" width="250" x="1340" y="790" as="geometry" />
+        </mxCell>
+        <mxCell id="note" parent="1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=6;fillColor=#fffbeb;strokeColor=#f59e0b;strokeWidth=1;fontSize=12;fontColor=#78350f;align=left;spacingLeft=12;" value="事实来源：my_watch 原理图 PDF + CubeMX .ioc；ST7789/CST816 型号由旧驱动补充。EEPROM 旧驱动为 24LC32，与原理图冲突，移植前必须核对。" vertex="1">
+          <mxGeometry height="55" width="1430" x="60" y="940" as="geometry" />
+        </mxCell>
+        <mxCell id="e-clock" edge="1" parent="1" source="clocks" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#6b7280;" target="mcu">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-lcd" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#16a34a;fontSize=17;exitX=0;exitY=0.2;entryX=1;entryY=0.5;" value="SPI1 + GPIO">
+          <mxGeometry relative="1" x="0.0177" y="-10" as="geometry">
+            <mxPoint as="offset" />
+            <Array as="points">
+              <mxPoint x="580" y="378" />
+              <mxPoint x="580" y="260" />
+              <mxPoint x="360" y="260" />
+            </Array>
+            <mxPoint x="650" y="377.5" as="sourcePoint" />
+            <mxPoint x="359.9999999999998" y="240" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e-touch" edge="1" parent="1" source="mcu" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#16a34a;fontSize=12;exitX=0;exitY=0.4;entryX=1;entryY=0.5;" target="touch" value="软件 I2C">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-controls" edge="1" parent="1" source="controls" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#d97706;fontSize=12;exitX=1;exitY=0.5;entryX=0;entryY=0.62;" target="mcu" value="GPIO / TIM4 / EXTI">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-swd" edge="1" parent="1" source="swd" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#6b7280;fontSize=12;exitX=1;exitY=0.5;entryX=0;entryY=0.85;" target="mcu" value="SWD">
+          <mxGeometry relative="1" x="-0.0997" y="12" as="geometry">
+            <mxPoint as="offset" />
+            <Array as="points">
+              <mxPoint x="570" y="632" />
+              <mxPoint x="570" y="523" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e-flash" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#ea580c;fontSize=20;exitX=1;exitY=0.18;entryX=0;entryY=0.5;" value="SPI3">
+          <mxGeometry relative="1" x="-0.0906" y="18" as="geometry">
+            <mxPoint as="offset" />
+            <Array as="points">
+              <mxPoint x="1047.5" y="360" />
+              <mxPoint x="1047.5" y="210" />
+            </Array>
+            <mxPoint x="957.5" y="360" as="sourcePoint" />
+            <mxPoint x="1247.5" y="210" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e-ble" edge="1" parent="1" source="mcu" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#7c3aed;fontSize=12;exitX=1;exitY=0.38;entryX=0;entryY=0.5;" target="ble" value="USART1 + EN">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-usb" edge="1" parent="1" source="mcu" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#0284c7;fontSize=12;exitX=1;exitY=0.58;entryX=0;entryY=0.5;" target="usb" value="USB FS">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-watchdog" edge="1" parent="1" source="mcu" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#dc2626;fontSize=12;exitX=1;exitY=0.8;entryX=0;entryY=0.5;" target="watchdog" value="WDI / EN / NRST">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1050" y="510" />
+              <mxPoint x="1050" y="647" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e-i2c" edge="1" parent="1" source="mcu" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#0f766e;fontSize=19;exitX=0.5;exitY=1;entryX=0.7;entryY=0;" target="i2c-bus" value="I2C1">
+          <mxGeometry relative="1" x="-0.2802" y="30" as="geometry">
+            <mxPoint as="offset" />
+            <Array as="points">
+              <mxPoint x="800" y="700" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e-eeprom" edge="1" parent="1" source="i2c-bus" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;strokeWidth=1.5;strokeColor=#0f766e;" target="eeprom">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-fuel" edge="1" parent="1" source="i2c-bus" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;strokeWidth=1.5;strokeColor=#0f766e;" target="fuel">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-aht" edge="1" parent="1" source="i2c-bus" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;strokeWidth=1.5;strokeColor=#0f766e;" target="aht">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-imu" edge="1" parent="1" source="i2c-bus" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;strokeWidth=1.5;strokeColor=#0f766e;" target="imu">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-max" edge="1" parent="1" source="i2c-bus" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;strokeWidth=1.5;strokeColor=#0f766e;" target="max">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-mag" edge="1" parent="1" source="imu" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#0891b2;fontSize=12;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" target="mag" value="辅助 I2C">
+          <mxGeometry relative="1" x="0.0769" y="13" as="geometry">
+            <mxPoint y="1" as="offset" />
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram id="power-tree" name="电源树">
+    <mxGraphModel dx="1668" dy="1324" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="1000" math="0" shadow="0">
+      <root>
+        <mxCell id="p0" />
+        <mxCell id="p1" parent="p0" />
+        <mxCell id="p-title" parent="p1" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=26;fontStyle=1;fontColor=#1f2937;" value="OV-Watch F411 电源树" vertex="1">
+          <mxGeometry height="40" width="480" x="40" y="25" as="geometry" />
+        </mxCell>
+        <mxCell id="p-subtitle" parent="p1" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=14;fontColor=#6b7280;" value="充电、主电源保持、备用域与受控负载" vertex="1">
+          <mxGeometry height="28" width="520" x="40" y="65" as="geometry" />
+        </mxCell>
+        <mxCell id="p-usb" parent="p1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#e0f2fe;strokeColor=#0284c7;strokeWidth=1.5;fontSize=15;fontColor=#0c4a6e;" value="&lt;b&gt;USB Type-C&lt;/b&gt;&lt;br&gt;VBUS 5 V" vertex="1">
+          <mxGeometry height="85" width="210" x="50" y="580" as="geometry" />
+        </mxCell>
+        <mxCell id="p-charger" parent="p1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#ffedd5;strokeColor=#ea580c;strokeWidth=1.5;fontSize=15;fontColor=#7c2d12;" value="&lt;b&gt;IP2332&lt;/b&gt;&lt;br&gt;锂电池充电" vertex="1">
+          <mxGeometry height="85" width="220" x="350" y="580" as="geometry" />
+        </mxCell>
+        <mxCell id="p-cell" parent="p1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#fef3c7;strokeColor=#d97706;strokeWidth=1.5;fontSize=15;fontColor=#78350f;" value="&lt;b&gt;锂电池&lt;/b&gt;&lt;br&gt;BAT-IN" vertex="1">
+          <mxGeometry height="85" width="210" x="50" y="745" as="geometry" />
+        </mxCell>
+        <mxCell id="p-pmos" parent="p1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#fef3c7;strokeColor=#d97706;strokeWidth=1.5;fontSize=15;fontColor=#78350f;" value="&lt;b&gt;Q1 PMOS&lt;/b&gt;&lt;br&gt;防反接" vertex="1">
+          <mxGeometry height="85" width="220" x="350" y="745" as="geometry" />
+        </mxCell>
+        <mxCell id="p-bat" parent="p1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#fee2e2;strokeColor=#dc2626;strokeWidth=2;fontSize=16;fontColor=#7f1d1d;" value="&lt;b&gt;BAT 电源域&lt;/b&gt;&lt;br&gt;电池与充电公共节点" vertex="1">
+          <mxGeometry height="105" width="250" x="670" y="655" as="geometry" />
+        </mxCell>
+        <mxCell id="h-2gWiHQ00n7IMRoIRf1-14" edge="1" parent="p1" source="p-buck" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=light-dark(#f50000, #ededed);" target="p-bat" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="h-2gWiHQ00n7IMRoIRf1-15" connectable="0" parent="h-2gWiHQ00n7IMRoIRf1-14" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" value="BAT" vertex="1">
+          <mxGeometry relative="1" x="-0.3129" y="-1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="p-buck" parent="p1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#dcfce7;strokeColor=#16a34a;strokeWidth=2;fontSize=15;fontColor=#14532d;" value="&lt;b&gt;TPS63021&lt;/b&gt;&lt;br&gt;3.3 V 升降压&lt;br&gt;EN = POWER_EN" vertex="1">
+          <mxGeometry height="110" width="250" x="670" y="495" as="geometry" />
+        </mxCell>
+        <mxCell id="h-2gWiHQ00n7IMRoIRf1-16" edge="1" parent="p1" source="p-3v3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="p-18-reg" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1290" y="207" />
+              <mxPoint x="1290" y="207" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="h-2gWiHQ00n7IMRoIRf1-17" edge="1" parent="p1" source="p-3v3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="p-max">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1155" y="290" />
+              <mxPoint x="1315" y="290" />
+              <mxPoint x="1315" y="380" />
+            </Array>
+            <mxPoint x="1260" y="300" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="p-3v3" parent="p1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#dbeafe;strokeColor=#2563eb;strokeWidth=2;fontSize=15;fontColor=#1e3a8a;" value="&lt;b&gt;3.3 V 主电源域&lt;/b&gt;&lt;br&gt;MCU · LCD · I2C 传感器&lt;br&gt;Flash · 看门狗" vertex="1">
+          <mxGeometry height="125" width="210" x="1050" y="165" as="geometry" />
+        </mxCell>
+        <mxCell id="p-rtc-reg" parent="p1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#ede9fe;strokeColor=#7c3aed;strokeWidth=1.5;fontSize=15;fontColor=#4c1d95;" value="&lt;b&gt;RT9013-33&lt;/b&gt;&lt;br&gt;常开 3.3 V LDO" vertex="1">
+          <mxGeometry height="90" width="250" x="1000" y="690" as="geometry" />
+        </mxCell>
+        <mxCell id="p-vrtc" parent="p1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#ede9fe;strokeColor=#7c3aed;strokeWidth=1.5;fontSize=15;fontColor=#4c1d95;" value="&lt;b&gt;V-RTC&lt;/b&gt;&lt;br&gt;STM32 VBAT&lt;br&gt;RTC 备用域" vertex="1">
+          <mxGeometry height="105" width="210" x="1340" y="682.5" as="geometry" />
+        </mxCell>
+        <mxCell id="p-18-reg" parent="p1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#cffafe;strokeColor=#0891b2;strokeWidth=1.5;fontSize=15;fontColor=#164e63;" value="&lt;b&gt;RT9013-18&lt;/b&gt;&lt;br&gt;1.8 V LDO" vertex="1">
+          <mxGeometry height="85" width="250" x="1320" y="165" as="geometry" />
+        </mxCell>
+        <mxCell id="p-max" parent="p1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#cffafe;strokeColor=#0891b2;strokeWidth=1.5;fontSize=15;fontColor=#164e63;" value="&lt;b&gt;MAX30102&lt;/b&gt;&lt;br&gt;VDD 3.3 V&lt;br&gt;VLED+ 1.8 V" vertex="1">
+          <mxGeometry height="115" width="210" x="1340" y="322.5" as="geometry" />
+        </mxCell>
+        <mxCell id="p-ble-switch" parent="p1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#ede9fe;strokeColor=#7c3aed;strokeWidth=1.5;fontSize=15;fontColor=#4c1d95;" value="&lt;b&gt;Q3 负载开关&lt;/b&gt;&lt;br&gt;PB14 BLE_EN" vertex="1">
+          <mxGeometry height="85" width="250" x="1070" y="500" as="geometry" />
+        </mxCell>
+        <mxCell id="p-ble" parent="p1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#ede9fe;strokeColor=#7c3aed;strokeWidth=1.5;fontSize=15;fontColor=#4c1d95;" value="&lt;b&gt;KT6368 蓝牙&lt;/b&gt;&lt;br&gt;受控 3.3 V" vertex="1">
+          <mxGeometry height="85" width="210" x="1380" y="507.5" as="geometry" />
+        </mxCell>
+        <mxCell id="p-wake" parent="p1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#fef3c7;strokeColor=#d97706;strokeWidth=1.5;fontSize=14;fontColor=#78350f;" value="&lt;b&gt;WAKE 按键&lt;/b&gt;&lt;br&gt;BAT 经 R35 拉起 WAKE" vertex="1">
+          <mxGeometry height="90" width="240" x="40" y="330" as="geometry" />
+        </mxCell>
+        <mxCell id="p-diode" parent="p1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#fef3c7;strokeColor=#d97706;strokeWidth=1.5;fontSize=14;fontColor=#78350f;" value="&lt;b&gt;U30 单向隔离&lt;/b&gt;&lt;br&gt;WAKE → POWER_EN" vertex="1">
+          <mxGeometry height="90" width="230" x="360" y="335" as="geometry" />
+        </mxCell>
+        <mxCell id="p-mcu" parent="p1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#dbeafe;strokeColor=#2563eb;strokeWidth=2;fontSize=14;fontColor=#1e3a8a;" value="&lt;b&gt;STM32F411 PC13&lt;/b&gt;&lt;br&gt;启动后输出 POWER_EN&lt;br&gt;维持主电源" vertex="1">
+          <mxGeometry height="110" width="260" x="660" y="140" as="geometry" />
+        </mxCell>
+        <mxCell id="h-2gWiHQ00n7IMRoIRf1-11" edge="1" parent="p1" source="p-en" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#08FF29;" target="p-buck" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="h-2gWiHQ00n7IMRoIRf1-12" connectable="0" parent="h-2gWiHQ00n7IMRoIRf1-11" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" value="使能" vertex="1">
+          <mxGeometry relative="1" x="0.0225" y="2" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="p-en" parent="p1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#dcfce7;strokeColor=#16a34a;strokeWidth=2;fontSize=14;fontColor=#14532d;" value="&lt;b&gt;POWER_EN / EN-3.3&lt;/b&gt;&lt;br&gt;R76 1 MΩ 下拉" vertex="1">
+          <mxGeometry height="90" width="260" x="660" y="335" as="geometry" />
+        </mxCell>
+        <mxCell id="p-note" parent="p1" style="rounded=1;whiteSpace=wrap;html=1;arcSize=6;fillColor=#fffbeb;strokeColor=light-dark(#f50000, #ededed);strokeWidth=1;fontSize=13;fontColor=#78350f;align=left;spacingLeft=12;" value="上电路径：按下 WAKE 临时拉高 POWER_EN，使 3.3 V 建立；MCU 启动后由 PC13 继续保持。需要关机时，软件释放 POWER_EN。" vertex="1">
+          <mxGeometry height="55" width="1500" x="60" y="900" as="geometry" />
+        </mxCell>
+        <mxCell id="pe-usb-charge" edge="1" parent="p1" source="p-usb" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#0284c7;fontSize=12;" target="p-charger" value="5 V">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="pe-charge-bat" edge="1" parent="p1" source="p-charger" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#ea580c;fontSize=12;" target="p-bat" value="充电">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="pe-cell-pmos" edge="1" parent="p1" source="p-cell" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#d97706;fontSize=12;" target="p-pmos" value="电池">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="pe-pmos-bat" edge="1" parent="p1" source="p-pmos" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#d97706;" target="p-bat">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="pe-buck-3v3" edge="1" parent="p1" source="p-buck" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#16a34a;fontSize=12;" target="p-3v3" value="3.3 V">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="960" y="550" />
+              <mxPoint x="960" y="213" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="pe-bat-rtc" edge="1" parent="p1" source="p-bat" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#7c3aed;fontSize=12;exitX=1;exitY=0.75;entryX=0;entryY=0.5;" target="p-rtc-reg" value="BAT">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="pe-rtc-vrtc" edge="1" parent="p1" source="p-rtc-reg" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#7c3aed;fontSize=12;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="p-vrtc" value="V-RTC">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1130" y="852.5294117647059" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="pe-18-max" edge="1" parent="p1" source="p-18-reg" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#0891b2;fontSize=12;" target="p-max" value="1.8 V">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="pe-switch-ble" edge="1" parent="p1" source="p-ble-switch" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#7c3aed;fontSize=12;" target="p-ble" value="受控电源">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="pe-wake-diode" edge="1" parent="p1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#d97706;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" target="p-diode">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="279.9999999999998" y="380" as="sourcePoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="pe-diode-en" edge="1" parent="p1" source="p-diode" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#d97706;fontSize=12;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" target="p-en" value="启动">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="pe-mcu-en" edge="1" parent="p1" source="p-mcu" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#2563eb;fontSize=12;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" target="p-en" value="保持 / 释放">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="h-2gWiHQ00n7IMRoIRf1-22" edge="1" parent="p1" source="p-3v3" style="endArrow=classic;html=1;rounded=0;exitX=0.593;exitY=0.98;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.425;entryY=0.012;entryDx=0;entryDy=0;entryPerimeter=0;" target="p-ble-switch" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry">
+            <Array as="points" />
+            <mxPoint x="1170" y="520" as="sourcePoint" />
+            <mxPoint x="1220" y="470" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

@@ -1,0 +1,167 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "F411: Configure (Debug)",
+            "type": "process",
+            "command": "cmake",
+            "args": [
+                "--preset",
+                "Debug"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}/firmware/stm32/f411_watch"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "F411: Build (Debug)",
+            "type": "process",
+            "command": "cmake",
+            "args": [
+                "--build",
+                "--preset",
+                "Debug"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}/firmware/stm32/f411_watch"
+            },
+            "dependsOrder": "sequence",
+            "dependsOn": "F411: Configure (Debug)",
+            "problemMatcher": [
+                "$gcc"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "F411: Flash (CubeProgrammer/ST-Link)",
+            "type": "process",
+            "command": "pwsh",
+            "args": [
+                "-NoProfile",
+                "-File",
+                "${workspaceFolder}/tools/flash-stm32.ps1",
+                "-Elf",
+                "${workspaceFolder}/firmware/stm32/f411_watch/build/Debug/my_watch_f411.elf"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}/firmware/stm32/f411_watch"
+            },
+            "dependsOrder": "sequence",
+            "dependsOn": "F411: Build (Debug)",
+            "problemMatcher": []
+        },
+        {
+            "label": "F411: Flash (OpenOCD/ST-Link)",
+            "type": "process",
+            "command": "${env:APPDATA}/xPacks/@xpack-dev-tools/openocd/0.12.0-7.1/.content/bin/openocd.exe",
+            "args": [
+                "-s",
+                "${env:APPDATA}/xPacks/@xpack-dev-tools/openocd/0.12.0-7.1/.content/openocd/scripts",
+                "-f",
+                "interface/stlink.cfg",
+                "-c",
+                "transport select swd",
+                "-f",
+                "target/stm32f4x.cfg",
+                "-c",
+                "adapter speed 1000",
+                "-c",
+                "program build/Debug/my_watch_f411.elf verify reset exit"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}/firmware/stm32/f411_watch"
+            },
+            "dependsOrder": "sequence",
+            "dependsOn": "F411: Build (Debug)",
+            "problemMatcher": []
+        },
+        {
+            "label": "ESP32-S3: Build",
+            "type": "process",
+            "command": "pwsh",
+            "args": [
+                "-NoProfile",
+                "-File",
+                "${workspaceFolder}/tools/run-idf.ps1",
+                "-Action",
+                "build"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}/firmware/espressif/esp32s3_board"
+            },
+            "problemMatcher": [
+                "$gcc"
+            ]
+        },
+        {
+            "label": "ESP32-S3: Flash (UART)",
+            "type": "process",
+            "command": "pwsh",
+            "args": [
+                "-NoProfile",
+                "-File",
+                "${workspaceFolder}/tools/run-idf.ps1",
+                "-Action",
+                "flash",
+                "-Port",
+                "${input:espPort}"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}/firmware/espressif/esp32s3_board"
+            },
+            "dependsOrder": "sequence",
+            "dependsOn": "ESP32-S3: Build",
+            "problemMatcher": []
+        },
+        {
+            "label": "ESP32-S3: Monitor (UART)",
+            "type": "process",
+            "command": "pwsh",
+            "args": [
+                "-NoProfile",
+                "-File",
+                "${workspaceFolder}/tools/run-idf.ps1",
+                "-Action",
+                "monitor",
+                "-Port",
+                "${input:espPort}"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}/firmware/espressif/esp32s3_board"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "ESP32-S3: Flash + Monitor (UART)",
+            "type": "process",
+            "command": "pwsh",
+            "args": [
+                "-NoProfile",
+                "-File",
+                "${workspaceFolder}/tools/run-idf.ps1",
+                "-Action",
+                "flash-monitor",
+                "-Port",
+                "${input:espPort}"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}/firmware/espressif/esp32s3_board"
+            },
+            "dependsOrder": "sequence",
+            "dependsOn": "ESP32-S3: Build",
+            "problemMatcher": []
+        }
+    ],
+    "inputs": [
+        {
+            "id": "espPort",
+            "type": "promptString",
+            "description": "ESP32-S3 serial port",
+            "default": "COM5"
+        }
+    ]
+}

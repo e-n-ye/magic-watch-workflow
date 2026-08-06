@@ -1,0 +1,205 @@
+<mxfile host="Electron" modified="2026-08-06T00:00:00.000Z" agent="Codex" version="26.0.9">
+  <diagram id="layered-architecture" name="分层架构">
+    <mxGraphModel dx="1600" dy="1350" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="1350" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <mxCell id="title" value="OV-Watch F411 软件架构" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=26;fontStyle=1;fontColor=#1f2937;" vertex="1" parent="1">
+          <mxGeometry x="40" y="20" width="520" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="subtitle" value="目标架构第一版 · 纯 C 核心 + 单一 LVGL UI 任务 + 服务事件队列" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=14;fontColor=#6b7280;" vertex="1" parent="1">
+          <mxGeometry x="40" y="60" width="760" height="28" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="build-lane" value="PC 端构建期（独立兼容性验证，不是 F411 运行时依赖）" style="rounded=1;whiteSpace=wrap;html=1;arcSize=6;dashed=1;fillColor=#fffbeb;strokeColor=#d97706;strokeWidth=1.5;fontSize=13;fontColor=#78350f;align=left;verticalAlign=top;spacingTop=8;spacingLeft=12;" vertex="1" parent="1">
+          <mxGeometry x="850" y="18" width="700" height="72" as="geometry"/>
+        </mxCell>
+        <mxCell id="xml-source" value="XML UI source" style="rounded=1;whiteSpace=wrap;html=1;arcSize=6;fillColor=#fef3c7;strokeColor=#d97706;strokeWidth=1;fontSize=13;fontColor=#78350f;" vertex="1" parent="1">
+          <mxGeometry x="900" y="48" width="145" height="32" as="geometry"/>
+        </mxCell>
+        <mxCell id="xml-codegen" value="codegen + probe" style="rounded=1;whiteSpace=wrap;html=1;arcSize=6;fillColor=#fef3c7;strokeColor=#d97706;strokeWidth=1;fontSize=13;fontColor=#78350f;" vertex="1" parent="1">
+          <mxGeometry x="1070" y="48" width="165" height="32" as="geometry"/>
+        </mxCell>
+        <mxCell id="xml-output" value="generated C / assets" style="rounded=1;whiteSpace=wrap;html=1;arcSize=6;fillColor=#fef3c7;strokeColor=#d97706;strokeWidth=1;fontSize=13;fontColor=#78350f;" vertex="1" parent="1">
+          <mxGeometry x="1260" y="48" width="190" height="32" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="band-app" value="Application / Domain" style="rounded=1;whiteSpace=wrap;html=1;arcSize=5;dashed=1;fillColor=#dcfce7;strokeColor=#16a34a;strokeWidth=1.5;fontSize=16;fontStyle=1;fontColor=#14532d;align=left;verticalAlign=top;spacingTop=10;spacingLeft=14;" vertex="1" parent="1">
+          <mxGeometry x="40" y="115" width="1520" height="190" as="geometry"/>
+        </mxCell>
+        <mxCell id="core" value="&lt;b&gt;watch_core（纯 C）&lt;/b&gt;&lt;br&gt;状态机 · 页面导航 · 数据模型&lt;br&gt;输入事件 / 服务命令 / 状态快照" style="rounded=1;whiteSpace=wrap;html=1;arcSize=7;fillColor=#bbf7d0;strokeColor=#16a34a;strokeWidth=2;fontSize=15;fontColor=#14532d;" vertex="1" parent="1">
+          <mxGeometry x="80" y="170" width="390" height="105" as="geometry"/>
+        </mxCell>
+        <mxCell id="power-policy" value="&lt;b&gt;Power Policy&lt;/b&gt;&lt;br&gt;唤醒 / 休眠 / 关机&lt;br&gt;POWER_EN 策略" style="rounded=1;whiteSpace=wrap;html=1;arcSize=7;fillColor=#bbf7d0;strokeColor=#16a34a;strokeWidth=1.5;fontSize=14;fontColor=#14532d;" vertex="1" parent="1">
+          <mxGeometry x="530" y="170" width="270" height="105" as="geometry"/>
+        </mxCell>
+        <mxCell id="health-policy" value="&lt;b&gt;Health Supervisor&lt;/b&gt;&lt;br&gt;任务心跳 · 错误状态&lt;br&gt;条件满足后喂看门狗" style="rounded=1;whiteSpace=wrap;html=1;arcSize=7;fillColor=#bbf7d0;strokeColor=#16a34a;strokeWidth=1.5;fontSize=14;fontColor=#14532d;" vertex="1" parent="1">
+          <mxGeometry x="860" y="170" width="300" height="105" as="geometry"/>
+        </mxCell>
+        <mxCell id="contracts" value="&lt;b&gt;Contracts&lt;/b&gt;&lt;br&gt;事件 / 命令 / 数据快照&lt;br&gt;PC 与 F411 共用接口" style="rounded=1;whiteSpace=wrap;html=1;arcSize=7;fillColor=#bbf7d0;strokeColor=#16a34a;strokeWidth=1.5;fontSize=14;fontColor=#14532d;" vertex="1" parent="1">
+          <mxGeometry x="1220" y="170" width="290" height="105" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="band-ui" value="Presentation" style="rounded=1;whiteSpace=wrap;html=1;arcSize=5;dashed=1;fillColor=#dbeafe;strokeColor=#2563eb;strokeWidth=1.5;fontSize=16;fontStyle=1;fontColor=#1e3a8a;align=left;verticalAlign=top;spacingTop=10;spacingLeft=14;" vertex="1" parent="1">
+          <mxGeometry x="40" y="330" width="1520" height="185" as="geometry"/>
+        </mxCell>
+        <mxCell id="ui-task" value="&lt;b&gt;LVGL UI Task&lt;/b&gt;&lt;br&gt;唯一允许调用 LVGL&lt;br&gt;事件输入 · 状态渲染 · flush DMA" style="rounded=1;whiteSpace=wrap;html=1;arcSize=7;fillColor=#bfdbfe;strokeColor=#2563eb;strokeWidth=2;fontSize=15;fontColor=#1e3a8a;" vertex="1" parent="1">
+          <mxGeometry x="80" y="385" width="360" height="100" as="geometry"/>
+        </mxCell>
+        <mxCell id="ui-pages" value="&lt;b&gt;轻量 UI Pages&lt;/b&gt;&lt;br&gt;Watchface · Launcher/Menu · Settings&lt;br&gt;Heart / Weather 等按资源预算加入" style="rounded=1;whiteSpace=wrap;html=1;arcSize=7;fillColor=#bfdbfe;strokeColor=#2563eb;strokeWidth=1.5;fontSize=14;fontColor=#1e3a8a;" vertex="1" parent="1">
+          <mxGeometry x="500" y="385" width="390" height="100" as="geometry"/>
+        </mxCell>
+        <mxCell id="ui-adapter" value="&lt;b&gt;UI Adapter&lt;/b&gt;&lt;br&gt;把 watch_core 状态映射为 LVGL 对象&lt;br&gt;页面不承载业务规则" style="rounded=1;whiteSpace=wrap;html=1;arcSize=7;fillColor=#bfdbfe;strokeColor=#2563eb;strokeWidth=1.5;fontSize=14;fontColor=#1e3a8a;" vertex="1" parent="1">
+          <mxGeometry x="950" y="385" width="300" height="100" as="geometry"/>
+        </mxCell>
+        <mxCell id="ui-budget" value="&lt;b&gt;Resource Budget&lt;/b&gt;&lt;br&gt;RGB565 · partial buffer · 小资源&lt;br&gt;禁止全帧常驻与大动画资产" style="rounded=1;whiteSpace=wrap;html=1;arcSize=7;fillColor=#bfdbfe;strokeColor=#2563eb;strokeWidth=1.5;fontSize=14;fontColor=#1e3a8a;" vertex="1" parent="1">
+          <mxGeometry x="1310" y="385" width="200" height="100" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="band-services" value="Services" style="rounded=1;whiteSpace=wrap;html=1;arcSize=5;dashed=1;fillColor=#f0fdf4;strokeColor=#0f766e;strokeWidth=1.5;fontSize=16;fontStyle=1;fontColor=#134e4a;align=left;verticalAlign=top;spacingTop=10;spacingLeft=14;" vertex="1" parent="1">
+          <mxGeometry x="40" y="540" width="1520" height="190" as="geometry"/>
+        </mxCell>
+        <mxCell id="input-service" value="&lt;b&gt;Input Service&lt;/b&gt;&lt;br&gt;触摸 / 编码器 / 按键&lt;br&gt;输出统一 InputEvent" style="rounded=1;whiteSpace=wrap;html=1;arcSize=7;fillColor=#ccfbf1;strokeColor=#0f766e;strokeWidth=1.5;fontSize=14;fontColor=#134e4a;" vertex="1" parent="1">
+          <mxGeometry x="80" y="595" width="260" height="105" as="geometry"/>
+        </mxCell>
+        <mxCell id="sensor-service" value="&lt;b&gt;Sensor Service&lt;/b&gt;&lt;br&gt;周期采集 / 快照 / 错误状态&lt;br&gt;I2C1 访问集中管理" style="rounded=1;whiteSpace=wrap;html=1;arcSize=7;fillColor=#ccfbf1;strokeColor=#0f766e;strokeWidth=1.5;fontSize=14;fontColor=#134e4a;" vertex="1" parent="1">
+          <mxGeometry x="380" y="595" width="270" height="105" as="geometry"/>
+        </mxCell>
+        <mxCell id="time-service" value="&lt;b&gt;Time Service&lt;/b&gt;&lt;br&gt;RTC / 时间格式化&lt;br&gt;为 UI 提供只读快照" style="rounded=1;whiteSpace=wrap;html=1;arcSize=7;fillColor=#ccfbf1;strokeColor=#0f766e;strokeWidth=1.5;fontSize=14;fontColor=#134e4a;" vertex="1" parent="1">
+          <mxGeometry x="690" y="595" width="240" height="105" as="geometry"/>
+        </mxCell>
+        <mxCell id="storage-service" value="&lt;b&gt;Storage Service&lt;/b&gt;&lt;br&gt;W25Q / FatFs 串行访问&lt;br&gt;静态资源 · 日志 · OTA 暂存（可选）" style="rounded=1;whiteSpace=wrap;html=1;arcSize=7;fillColor=#ccfbf1;strokeColor=#0f766e;strokeWidth=1.5;fontSize=14;fontColor=#134e4a;" vertex="1" parent="1">
+          <mxGeometry x="970" y="595" width="270" height="105" as="geometry"/>
+        </mxCell>
+        <mxCell id="connectivity-service" value="&lt;b&gt;Connectivity Service（可选）&lt;/b&gt;&lt;br&gt;KT6368 / USB / OTA&lt;br&gt;不进入第一版核心路径" style="rounded=1;whiteSpace=wrap;html=1;arcSize=7;dashed=1;fillColor=#ccfbf1;strokeColor=#0f766e;strokeWidth=1.5;fontSize=14;fontColor=#134e4a;" vertex="1" parent="1">
+          <mxGeometry x="1280" y="595" width="230" height="105" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="band-bsp" value="Board Support / Device Drivers" style="rounded=1;whiteSpace=wrap;html=1;arcSize=5;dashed=1;fillColor=#fff7ed;strokeColor=#ea580c;strokeWidth=1.5;fontSize=16;fontStyle=1;fontColor=#7c2d12;align=left;verticalAlign=top;spacingTop=10;spacingLeft=14;" vertex="1" parent="1">
+          <mxGeometry x="40" y="755" width="1520" height="185" as="geometry"/>
+        </mxCell>
+        <mxCell id="display-drivers" value="&lt;b&gt;Display / Input&lt;/b&gt;&lt;br&gt;ST7789 · CST816&lt;br&gt;编码器 · 按键" style="rounded=1;whiteSpace=wrap;html=1;arcSize=7;fillColor=#fed7aa;strokeColor=#ea580c;strokeWidth=1.5;fontSize=14;fontColor=#7c2d12;" vertex="1" parent="1">
+          <mxGeometry x="80" y="810" width="300" height="100" as="geometry"/>
+        </mxCell>
+        <mxCell id="sensor-drivers" value="&lt;b&gt;Sensor Drivers&lt;/b&gt;&lt;br&gt;LSM6DS3 · LIS2MDL · AHT20&lt;br&gt;MAX30102 · CW2015 · EEPROM" style="rounded=1;whiteSpace=wrap;html=1;arcSize=7;fillColor=#fed7aa;strokeColor=#ea580c;strokeWidth=1.5;fontSize=14;fontColor=#7c2d12;" vertex="1" parent="1">
+          <mxGeometry x="430" y="810" width="350" height="100" as="geometry"/>
+        </mxCell>
+        <mxCell id="storage-driver" value="&lt;b&gt;Storage / Comms&lt;/b&gt;&lt;br&gt;W25Q128 · FatFs / USB&lt;br&gt;KT6368 UART" style="rounded=1;whiteSpace=wrap;html=1;arcSize=7;fillColor=#fed7aa;strokeColor=#ea580c;strokeWidth=1.5;fontSize=14;fontColor=#7c2d12;" vertex="1" parent="1">
+          <mxGeometry x="830" y="810" width="300" height="100" as="geometry"/>
+        </mxCell>
+        <mxCell id="system-drivers" value="&lt;b&gt;System Drivers&lt;/b&gt;&lt;br&gt;Watchdog · GPIO · PWM · RTC&lt;br&gt;电源保持 / NRST" style="rounded=1;whiteSpace=wrap;html=1;arcSize=7;fillColor=#fed7aa;strokeColor=#ea580c;strokeWidth=1.5;fontSize=14;fontColor=#7c2d12;" vertex="1" parent="1">
+          <mxGeometry x="1180" y="810" width="330" height="100" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="band-platform" value="Middleware / Platform" style="rounded=1;whiteSpace=wrap;html=1;arcSize=5;dashed=1;fillColor=#f3f4f6;strokeColor=#6b7280;strokeWidth=1.5;fontSize=16;fontStyle=1;fontColor=#111827;align=left;verticalAlign=top;spacingTop=10;spacingLeft=14;" vertex="1" parent="1">
+          <mxGeometry x="40" y="965" width="1520" height="180" as="geometry"/>
+        </mxCell>
+        <mxCell id="lvgl-platform" value="&lt;b&gt;LVGL + Display Port&lt;/b&gt;&lt;br&gt;局部绘制缓冲 · SPI1 DMA" style="rounded=1;whiteSpace=wrap;html=1;arcSize=7;fillColor=#e5e7eb;strokeColor=#6b7280;strokeWidth=1.5;fontSize=14;fontColor=#111827;" vertex="1" parent="1">
+          <mxGeometry x="80" y="1020" width="300" height="95" as="geometry"/>
+        </mxCell>
+        <mxCell id="rtos-platform" value="&lt;b&gt;FreeRTOS&lt;/b&gt;&lt;br&gt;Task · Queue · Event · Mutex&lt;br&gt;I2C1 互斥锁 / 优先级继承" style="rounded=1;whiteSpace=wrap;html=1;arcSize=7;fillColor=#e5e7eb;strokeColor=#6b7280;strokeWidth=1.5;fontSize=14;fontColor=#111827;" vertex="1" parent="1">
+          <mxGeometry x="430" y="1020" width="330" height="95" as="geometry"/>
+        </mxCell>
+        <mxCell id="fs-platform" value="&lt;b&gt;FatFs / USB Device&lt;/b&gt;&lt;br&gt;与 Storage Service 协作&lt;br&gt;USB MSC 导入功能后置" style="rounded=1;whiteSpace=wrap;html=1;arcSize=7;fillColor=#e5e7eb;strokeColor=#6b7280;strokeWidth=1.5;fontSize=14;fontColor=#111827;" vertex="1" parent="1">
+          <mxGeometry x="810" y="1020" width="300" height="95" as="geometry"/>
+        </mxCell>
+        <mxCell id="hal-platform" value="&lt;b&gt;STM32 HAL / CMSIS&lt;/b&gt;&lt;br&gt;I2C · SPI · UART · DMA · GPIO&lt;br&gt;由 CubeMX 生成和维护" style="rounded=1;whiteSpace=wrap;html=1;arcSize=7;fillColor=#e5e7eb;strokeColor=#6b7280;strokeWidth=1.5;fontSize=14;fontColor=#111827;" vertex="1" parent="1">
+          <mxGeometry x="1160" y="1020" width="350" height="95" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="hardware" value="&lt;b&gt;STM32F411CEU6 + OV-Watch 板级硬件&lt;/b&gt;&lt;br&gt;240 × 280 LCD · 24 MHz HSE · 3.3 V 电源域" style="rounded=1;whiteSpace=wrap;html=1;arcSize=7;fillColor=#d1d5db;strokeColor=#374151;strokeWidth=2;fontSize=17;fontColor=#111827;align=center;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="40" y="1190" width="1520" height="90" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="note" value="说明：CubeMX 当前生成的任务只是工程模板；本图定义的是目标架构。XML、CMake、Git、CI、PC 模拟器属于独立开发工作流视图。" style="rounded=1;whiteSpace=wrap;html=1;arcSize=6;fillColor=#fffbeb;strokeColor=#d97706;strokeWidth=1;fontSize=13;fontColor=#78350f;align=left;spacingLeft=12;" vertex="1" parent="1">
+          <mxGeometry x="40" y="1300" width="1520" height="45" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="e-xml-codegen" value="生成 / 验证" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;dashed=1;endArrow=block;endFill=1;strokeWidth=1.5;strokeColor=#d97706;fontSize=11;" edge="1" parent="1" source="xml-source" target="xml-codegen"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e-xml-output" value="兼容后接入" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;dashed=1;endArrow=block;endFill=1;strokeWidth=1.5;strokeColor=#d97706;fontSize=11;" edge="1" parent="1" source="xml-codegen" target="xml-output"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e-xml-ui" value="候选输入" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;dashed=1;endArrow=block;endFill=1;strokeWidth=1.5;strokeColor=#d97706;fontSize=11;" edge="1" parent="1" source="xml-output" target="ui-adapter"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e-core-ui" value="状态快照 / UI 事件" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#2563eb;fontSize=12;" edge="1" parent="1" source="core" target="ui-task"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e-ui-core" value="用户事件" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;startArrow=block;startFill=1;endArrow=none;strokeWidth=2;strokeColor=#2563eb;fontSize=12;" edge="1" parent="1" source="core" target="ui-task"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e-ui-service" value="命令 / 请求" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#0f766e;fontSize=12;" edge="1" parent="1" source="ui-task" target="sensor-service"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e-service-bsp" value="服务 API" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#ea580c;fontSize=12;" edge="1" parent="1" source="sensor-service" target="sensor-drivers"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e-bsp-platform" value="设备访问" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#6b7280;fontSize=12;" edge="1" parent="1" source="sensor-drivers" target="rtos-platform"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e-platform-hw" value="HAL / 外设" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#374151;fontSize=12;" edge="1" parent="1" source="hal-platform" target="hardware"><mxGeometry relative="1" as="geometry"/></mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+
+  <diagram id="runtime-tasks" name="任务与事件">
+    <mxGraphModel dx="1600" dy="1120" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="1120" math="0" shadow="0">
+      <root>
+        <mxCell id="r0"/>
+        <mxCell id="r1" parent="r0"/>
+        <mxCell id="r-title" value="OV-Watch F411 运行时任务与事件" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=26;fontStyle=1;fontColor=#1f2937;" vertex="1" parent="r1">
+          <mxGeometry x="40" y="20" width="680" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="r-subtitle" value="目标运行时视图 · 不依赖 CubeMX 任务命名或数量" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=14;fontColor=#6b7280;" vertex="1" parent="r1">
+          <mxGeometry x="40" y="60" width="680" height="28" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="r-ui" value="&lt;b&gt;ui_task&lt;/b&gt;&lt;br&gt;唯一 LVGL Owner&lt;br&gt;取事件 · 更新状态 · flush DMA" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#dbeafe;strokeColor=#2563eb;strokeWidth=2;fontSize=15;fontColor=#1e3a8a;" vertex="1" parent="r1">
+          <mxGeometry x="50" y="150" width="300" height="125" as="geometry"/>
+        </mxCell>
+        <mxCell id="r-sensor" value="&lt;b&gt;sensor_task&lt;/b&gt;&lt;br&gt;周期采集传感器&lt;br&gt;I2C1 Bus + Mutex" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#ccfbf1;strokeColor=#0f766e;strokeWidth=2;fontSize=15;fontColor=#134e4a;" vertex="1" parent="r1">
+          <mxGeometry x="430" y="150" width="300" height="125" as="geometry"/>
+        </mxCell>
+        <mxCell id="r-input" value="&lt;b&gt;input_task&lt;/b&gt;&lt;br&gt;触摸 / 编码器 / 按键扫描&lt;br&gt;生成 InputEvent" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#fef3c7;strokeColor=#d97706;strokeWidth=2;fontSize=15;fontColor=#78350f;" vertex="1" parent="r1">
+          <mxGeometry x="810" y="150" width="300" height="125" as="geometry"/>
+        </mxCell>
+        <mxCell id="r-supervisor" value="&lt;b&gt;system_supervisor_task&lt;/b&gt;&lt;br&gt;电源策略 / 任务心跳&lt;br&gt;满足条件后喂外置看门狗" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#fee2e2;strokeColor=#dc2626;strokeWidth=2;fontSize=15;fontColor=#7f1d1d;" vertex="1" parent="r1">
+          <mxGeometry x="1190" y="150" width="340" height="125" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="r-event-bus" value="&lt;b&gt;Service Event Queue&lt;/b&gt;&lt;br&gt;InputEvent · SensorSnapshot · PowerEvent · ErrorEvent" style="rounded=1;whiteSpace=wrap;html=1;arcSize=7;fillColor=#e0f2fe;strokeColor=#0284c7;strokeWidth=2;fontSize=16;fontColor=#0c4a6e;" vertex="1" parent="r1">
+          <mxGeometry x="300" y="365" width="1000" height="75" as="geometry"/>
+        </mxCell>
+        <mxCell id="r-core" value="&lt;b&gt;watch_core&lt;/b&gt;&lt;br&gt;状态机消费事件，产生状态快照和服务命令" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#dcfce7;strokeColor=#16a34a;strokeWidth=2;fontSize=16;fontColor=#14532d;" vertex="1" parent="r1">
+          <mxGeometry x="500" y="515" width="600" height="100" as="geometry"/>
+        </mxCell>
+        <mxCell id="r-command-bus" value="&lt;b&gt;Service Command Queue&lt;/b&gt;&lt;br&gt;SensorRequest · StorageRequest · PowerCommand · FirmwareUpdate（可选）" style="rounded=1;whiteSpace=wrap;html=1;arcSize=7;fillColor=#e0f2fe;strokeColor=#0284c7;strokeWidth=2;fontSize=15;fontColor=#0c4a6e;" vertex="1" parent="r1">
+          <mxGeometry x="300" y="685" width="1000" height="75" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="r-sensor-service" value="&lt;b&gt;Sensor Service&lt;/b&gt;&lt;br&gt;驱动调用 · 快照发布" style="rounded=1;whiteSpace=wrap;html=1;arcSize=7;fillColor=#ccfbf1;strokeColor=#0f766e;strokeWidth=1.5;fontSize=14;fontColor=#134e4a;" vertex="1" parent="r1">
+          <mxGeometry x="80" y="835" width="260" height="95" as="geometry"/>
+        </mxCell>
+        <mxCell id="r-storage-service" value="&lt;b&gt;Storage Service&lt;/b&gt;&lt;br&gt;W25Q / FatFs 串行化" style="rounded=1;whiteSpace=wrap;html=1;arcSize=7;fillColor=#ccfbf1;strokeColor=#0f766e;strokeWidth=1.5;fontSize=14;fontColor=#134e4a;" vertex="1" parent="r1">
+          <mxGeometry x="400" y="835" width="260" height="95" as="geometry"/>
+        </mxCell>
+        <mxCell id="r-power-service" value="&lt;b&gt;Power Service&lt;/b&gt;&lt;br&gt;POWER_EN / Sleep / Wake" style="rounded=1;whiteSpace=wrap;html=1;arcSize=7;fillColor=#ccfbf1;strokeColor=#0f766e;strokeWidth=1.5;fontSize=14;fontColor=#134e4a;" vertex="1" parent="r1">
+          <mxGeometry x="720" y="835" width="260" height="95" as="geometry"/>
+        </mxCell>
+        <mxCell id="r-comm-service" value="&lt;b&gt;Connectivity Service（可选）&lt;/b&gt;&lt;br&gt;BLE / USB / OTA" style="rounded=1;whiteSpace=wrap;html=1;arcSize=7;dashed=1;fillColor=#ccfbf1;strokeColor=#0f766e;strokeWidth=1.5;fontSize=14;fontColor=#134e4a;" vertex="1" parent="r1">
+          <mxGeometry x="1040" y="835" width="260" height="95" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="r-i2c" value="I2C1 Mutex&lt;br&gt;优先级继承 · 驱动边界持锁" style="rounded=1;whiteSpace=wrap;html=1;arcSize=7;fillColor=#f3f4f6;strokeColor=#6b7280;strokeWidth=1.5;fontSize=14;fontColor=#111827;" vertex="1" parent="r1">
+          <mxGeometry x="80" y="990" width="310" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="r-lvgl" value="LVGL single-owner&lt;br&gt;其他任务不直接调用 LVGL" style="rounded=1;whiteSpace=wrap;html=1;arcSize=7;fillColor=#f3f4f6;strokeColor=#6b7280;strokeWidth=1.5;fontSize=14;fontColor=#111827;" vertex="1" parent="r1">
+          <mxGeometry x="460" y="990" width="310" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="r-dma" value="SPI1 DMA completion&lt;br&gt;UI task 等待/消费完成事件" style="rounded=1;whiteSpace=wrap;html=1;arcSize=7;fillColor=#f3f4f6;strokeColor=#6b7280;strokeWidth=1.5;fontSize=14;fontColor=#111827;" vertex="1" parent="r1">
+          <mxGeometry x="840" y="990" width="310" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="r-note" value="CubeMX freertos.c 的任务只是生成模板；实际实现可重新配置、删除或重建，不以历史任务名为架构约束。" style="rounded=1;whiteSpace=wrap;html=1;arcSize=6;fillColor=#fffbeb;strokeColor=#d97706;strokeWidth=1;fontSize=13;fontColor=#78350f;align=left;spacingLeft=12;" vertex="1" parent="r1">
+          <mxGeometry x="1190" y="980" width="340" height="90" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="re-sensor-event" value="SensorSnapshot" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#0f766e;fontSize=12;" edge="1" parent="r1" source="r-sensor" target="r-event-bus"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="re-input-event" value="InputEvent" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#d97706;fontSize=12;" edge="1" parent="r1" source="r-input" target="r-event-bus"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="re-super-event" value="Power / Error" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#dc2626;fontSize=12;" edge="1" parent="r1" source="r-supervisor" target="r-event-bus"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="re-event-core" value="consume" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#0284c7;fontSize=12;" edge="1" parent="r1" source="r-event-bus" target="r-core"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="re-core-command" value="commands" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeWidth=2;strokeColor=#16a34a;fontSize=12;" edge="1" parent="r1" source="r-core" target="r-command-bus"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="re-command-sensor" value="SensorRequest" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeWidth=1.5;strokeColor=#0f766e;fontSize=11;" edge="1" parent="r1" source="r-command-bus" target="r-sensor-service"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="re-command-storage" value="StorageRequest" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeWidth=1.5;strokeColor=#0f766e;fontSize=11;" edge="1" parent="r1" source="r-command-bus" target="r-storage-service"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="re-command-power" value="PowerCommand" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeWidth=1.5;strokeColor=#0f766e;fontSize=11;" edge="1" parent="r1" source="r-command-bus" target="r-power-service"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="re-command-comm" value="optional" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;dashed=1;endArrow=block;endFill=1;strokeWidth=1.5;strokeColor=#0f766e;fontSize=11;" edge="1" parent="r1" source="r-command-bus" target="r-comm-service"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="re-sensor-i2c" value="lock" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeWidth=1.5;strokeColor=#6b7280;fontSize=11;" edge="1" parent="r1" source="r-sensor-service" target="r-i2c"><mxGeometry relative="1" as="geometry"/></mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
