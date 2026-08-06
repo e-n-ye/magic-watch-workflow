@@ -16,7 +16,7 @@ A CMake-first embedded watch workflow for STM32F411 and ESP32-S3, with reproduci
 
 ### Hardware
 
-- [F411 schematic PDF](<firmware/stm32/f411_watch/docs/hardware/my_watch原理图_V2.0.pdf>)
+- [F411 schematic / PCB design reference PDF](<firmware/stm32/f411_watch/docs/hardware/my_watch原理图_V2.0.pdf>)
 - [Hardware block diagram source](firmware/stm32/f411_watch/docs/hardware/hardware-block-diagram.drawio)
 - [Hardware system diagram](firmware/stm32/f411_watch/docs/hardware/hardware-block-diagram-系统结构图.drawio.png)
 - [Power tree diagram](firmware/stm32/f411_watch/docs/hardware/hardware-block-diagram-电源树.drawio.png)
