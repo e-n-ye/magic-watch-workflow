@@ -270,7 +270,6 @@ void watch_lcd_draw_rgb565(uint16_t x, uint16_t y, uint16_t width, uint16_t heig
     uint16_t line_bytes;
     uint16_t src_width;
     const uint16_t *src;
-    uint16_t pixel;
 
     if ((pixels == 0) || (width == 0U) || (height == 0U) || (x >= WATCH_LCD_WIDTH) || (y >= WATCH_LCD_HEIGHT)) {
         return;
@@ -293,7 +292,7 @@ void watch_lcd_draw_rgb565(uint16_t x, uint16_t y, uint16_t width, uint16_t heig
     for (row = 0U; row < height; ++row) {
         src = &pixels[(uint32_t)row * src_width];
         for (column = 0U; column < width; ++column) {
-            pixel = src[column];
+            uint16_t pixel = src[column];
             s_line_buf[(uint16_t)(column * 2U)] = (uint8_t)(pixel >> 8);
             s_line_buf[(uint16_t)(column * 2U + 1U)] = (uint8_t)(pixel & 0xFFU);
         }
@@ -366,6 +365,8 @@ bool watch_lcd_dma_consume_error(void)
     return had_error != 0U;
 }
 
+// The HAL callback ABI requires a non-const handle pointer.
+// cppcheck-suppress constParameterPointer
 void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi)
 {
     watch_lcd_transfer_done_cb_t done_cb;
@@ -389,6 +390,8 @@ void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi)
     }
 }
 
+// The HAL callback ABI requires a non-const handle pointer.
+// cppcheck-suppress constParameterPointer
 void HAL_SPI_ErrorCallback(SPI_HandleTypeDef *hspi)
 {
     if ((hspi == 0) || (hspi->Instance != SPI1) || (s_dma_transfer_active == 0U)) {
