@@ -1,0 +1,134 @@
+name: CI
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  changes:
+    name: Detect changes
+    runs-on: ubuntu-latest
+    outputs:
+      f411: ${{ steps.paths.outputs.f411 }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Classify changed paths
+        id: paths
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BEFORE_SHA: ${{ github.event.before }}
+          CURRENT_SHA: ${{ github.sha }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [[ "${EVENT_NAME}" == "workflow_dispatch" ]]; then
+            changed_paths="<manual>"
+          elif [[ "${EVENT_NAME}" == "pull_request" ]]; then
+            changed_paths="$(git diff --name-only "${BASE_SHA}" "${HEAD_SHA}")"
+          elif [[ "${BEFORE_SHA}" =~ ^0+$ ]]; then
+            changed_paths="<initial-push>"
+          else
+            changed_paths="$(git diff --name-only "${BEFORE_SHA}" "${CURRENT_SHA}")"
+          fi
+
+          f411=false
+          while IFS= read -r path; do
+            case "${path}" in
+              firmware/stm32/f411_watch/*|tools/docker/f411-ci/*|.github/workflows/ci.yml)
+                f411=true
+                ;;
+            esac
+          done <<< "${changed_paths}"
+
+          printf 'f411=%s\n' "${f411}" >> "${GITHUB_OUTPUT}"
+
+  f411_config:
+    name: F411 CI Configuration
+    needs: changes
+    if: needs.changes.outputs.f411 == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require an immutable Docker Hub image reference
+        env:
+          F411_CI_IMAGE: ${{ vars.F411_CI_IMAGE }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ ! "${F411_CI_IMAGE}" =~ ^docker\.io/enen001/magic-watch-f411-ci@sha256:[0-9a-f]{64}$ ]]; then
+            echo 'Repository variable F411_CI_IMAGE must be docker.io/enen001/magic-watch-f411-ci@sha256:<64 lowercase hex characters>.' >&2
+            exit 1
+          fi
+
+  f411:
+    name: F411 Build and Cppcheck
+    needs:
+      - changes
+      - f411_config
+    if: needs.changes.outputs.f411 == 'true' && needs.f411_config.result == 'success'
+    runs-on: ubuntu-latest
+    container:
+      image: ${{ vars.F411_CI_IMAGE }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Verify pinned tools
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(cmake --version | head -n 1)" = "cmake version 3.31.4"
+          test "$(ninja --version)" = "1.13.2"
+          arm-none-eabi-gcc --version | head -n 1 | grep -F '13.3.Rel1'
+          test "$(cppcheck --version)" = "Cppcheck 2.21"
+
+      - name: Configure F411 Debug
+        working-directory: firmware/stm32/f411_watch
+        run: cmake --preset Debug
+
+      - name: Build F411 Debug
+        working-directory: firmware/stm32/f411_watch
+        run: cmake --build --preset Debug
+
+      - name: Run F411 Cppcheck
+        working-directory: firmware/stm32/f411_watch
+        run: cmake --build --preset Debug --target cppcheck
+
+  ci-gate:
+    name: CI Gate
+    if: always()
+    needs:
+      - changes
+      - f411_config
+      - f411
+    runs-on: ubuntu-latest
+    steps:
+      - name: Evaluate required checks
+        env:
+          CHANGES_RESULT: ${{ needs.changes.result }}
+          F411_CHANGED: ${{ needs.changes.outputs.f411 }}
+          F411_CONFIG_RESULT: ${{ needs.f411_config.result }}
+          F411_RESULT: ${{ needs.f411.result }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "${CHANGES_RESULT}" = success
+
+          if [[ "${F411_CHANGED}" == "true" ]]; then
+            test "${F411_CONFIG_RESULT}" = success
+            test "${F411_RESULT}" = success
+          fi
