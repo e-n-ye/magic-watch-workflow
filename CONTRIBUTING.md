@@ -3,7 +3,7 @@
 本仓库的目标之一是把嵌入式开发流程本身跑通。所有修改都遵循下面的顺序：
 
 ```text
-branch --> code change --> Build + Cppcheck --> commit --> push
+branch --> code change --> Build + format-check + Cppcheck --> commit --> push
   --> pull request --> GitHub Actions (build + analysis)
   --> Merge or Rework
 ```
@@ -33,6 +33,7 @@ CubeMX 工程遵循最小化修改原则：不直接编辑 `.ioc`；需要改变
 cd firmware/stm32/f411_watch
 cmake --preset Debug
 cmake --build --preset Debug
+cmake --build --preset Debug --target format-check
 cmake --build --preset Debug --target cppcheck
 ```
 
@@ -62,7 +63,7 @@ docs:workflow:document guarded delivery flow
 
 创建目标为 `main` 的 Pull Request，检查变更范围和提交历史。等待 GitHub Actions 完成：
 
-- F411 相关修改：Debug configure、build 和 Cppcheck；
+- F411 相关修改：Debug configure、format-check、build 和 Cppcheck；
 - 文档-only 修改：F411 job 可以按路径规则跳过；
 - 所有 PR：`CI / CI Gate` 必须成功。
 
