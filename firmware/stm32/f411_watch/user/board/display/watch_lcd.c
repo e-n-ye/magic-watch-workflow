@@ -6,11 +6,11 @@
 #include "tim.h"
 
 #define LCD_SPI_TIMEOUT_MS 100U
-#define LCD_OFFSET_X       0U
-#define LCD_OFFSET_Y       20U
-#define LCD_BL_PWM_MAX     999U
+#define LCD_OFFSET_X 0U
+#define LCD_OFFSET_Y 20U
+#define LCD_BL_PWM_MAX 999U
 #define LCD_LINE_BUF_BYTES (WATCH_LCD_WIDTH * 2U)
-#define LCD_DMA_MIN_BYTES  128U
+#define LCD_DMA_MIN_BYTES 128U
 
 static const uint8_t kGammaPositive[] = {
     0xD0U, 0x04U, 0x0DU, 0x11U, 0x13U, 0x2BU, 0x3FU,
@@ -93,13 +93,8 @@ static bool lcd_rgb565_byte_count_matches(uint16_t width, uint16_t height, uint1
     return expected <= UINT16_MAX && byte_count == (uint16_t)expected;
 }
 
-static void lcd_draw_rgb565_bytes_blocking(
-    uint16_t x,
-    uint16_t y,
-    uint16_t width,
-    uint16_t height,
-    const uint8_t *bytes,
-    uint16_t byte_count)
+static void lcd_draw_rgb565_bytes_blocking(uint16_t x, uint16_t y, uint16_t width, uint16_t height,
+                                           const uint8_t *bytes, uint16_t byte_count)
 {
     lcd_select();
     lcd_set_window(x, y, (uint16_t)(x + width - 1U), (uint16_t)(y + height - 1U));
@@ -107,17 +102,11 @@ static void lcd_draw_rgb565_bytes_blocking(
     lcd_unselect();
 }
 
-void watch_lcd_draw_rgb565_bytes_blocking(
-    uint16_t x,
-    uint16_t y,
-    uint16_t width,
-    uint16_t height,
-    const uint8_t *bytes,
-    uint16_t byte_count)
+void watch_lcd_draw_rgb565_bytes_blocking(uint16_t x, uint16_t y, uint16_t width, uint16_t height,
+                                          const uint8_t *bytes, uint16_t byte_count)
 {
-    if ((bytes == 0) ||
-        !lcd_area_is_valid(x, y, width, height) ||
-        !lcd_rgb565_byte_count_matches(width, height, byte_count)) {
+    if ((bytes == 0) || !lcd_area_is_valid(x, y, width, height)
+        || !lcd_rgb565_byte_count_matches(width, height, byte_count)) {
         return;
     }
 
@@ -263,7 +252,8 @@ void watch_lcd_fill_rect(uint16_t x, uint16_t y, uint16_t width, uint16_t height
     lcd_unselect();
 }
 
-void watch_lcd_draw_rgb565(uint16_t x, uint16_t y, uint16_t width, uint16_t height, const uint16_t *pixels)
+void watch_lcd_draw_rgb565(uint16_t x, uint16_t y, uint16_t width, uint16_t height,
+                           const uint16_t *pixels)
 {
     uint16_t row;
     uint16_t column;
@@ -271,7 +261,8 @@ void watch_lcd_draw_rgb565(uint16_t x, uint16_t y, uint16_t width, uint16_t heig
     uint16_t src_width;
     const uint16_t *src;
 
-    if ((pixels == 0) || (width == 0U) || (height == 0U) || (x >= WATCH_LCD_WIDTH) || (y >= WATCH_LCD_HEIGHT)) {
+    if ((pixels == 0) || (width == 0U) || (height == 0U) || (x >= WATCH_LCD_WIDTH)
+        || (y >= WATCH_LCD_HEIGHT)) {
         return;
     }
 
@@ -302,21 +293,16 @@ void watch_lcd_draw_rgb565(uint16_t x, uint16_t y, uint16_t width, uint16_t heig
     lcd_unselect();
 }
 
-watch_lcd_transfer_result_t watch_lcd_draw_rgb565_bytes(
-    uint16_t x,
-    uint16_t y,
-    uint16_t width,
-    uint16_t height,
-    const uint8_t *bytes,
-    uint16_t byte_count,
-    watch_lcd_transfer_done_cb_t done_cb,
-    void *context)
+watch_lcd_transfer_result_t watch_lcd_draw_rgb565_bytes(uint16_t x, uint16_t y, uint16_t width,
+                                                        uint16_t height, const uint8_t *bytes,
+                                                        uint16_t byte_count,
+                                                        watch_lcd_transfer_done_cb_t done_cb,
+                                                        void *context)
 {
     HAL_StatusTypeDef status;
 
-    if ((bytes == 0) ||
-        !lcd_area_is_valid(x, y, width, height) ||
-        !lcd_rgb565_byte_count_matches(width, height, byte_count)) {
+    if ((bytes == 0) || !lcd_area_is_valid(x, y, width, height)
+        || !lcd_rgb565_byte_count_matches(width, height, byte_count)) {
         return WATCH_LCD_TRANSFER_FAILED;
     }
 
@@ -324,9 +310,8 @@ watch_lcd_transfer_result_t watch_lcd_draw_rgb565_bytes(
         return WATCH_LCD_TRANSFER_FAILED;
     }
 
-    if (!lcd_dma_available() ||
-        (byte_count < LCD_DMA_MIN_BYTES) ||
-        (HAL_SPI_GetState(&hspi1) != HAL_SPI_STATE_READY)) {
+    if (!lcd_dma_available() || (byte_count < LCD_DMA_MIN_BYTES)
+        || (HAL_SPI_GetState(&hspi1) != HAL_SPI_STATE_READY)) {
         lcd_draw_rgb565_bytes_blocking(x, y, width, height, bytes, byte_count);
         return WATCH_LCD_TRANSFER_BLOCKING_DONE;
     }
@@ -415,5 +400,6 @@ void watch_lcd_show_bringup_pattern(void)
     watch_lcd_fill_rect(0U, (uint16_t)(3U * stripe), WATCH_LCD_WIDTH, stripe, WATCH_LCD_YELLOW);
     watch_lcd_fill_rect(0U, (uint16_t)(4U * stripe), WATCH_LCD_WIDTH, stripe, WATCH_LCD_CYAN);
     watch_lcd_fill_rect(0U, (uint16_t)(5U * stripe), WATCH_LCD_WIDTH, stripe, WATCH_LCD_MAGENTA);
-    watch_lcd_fill_rect(0U, (uint16_t)(6U * stripe), WATCH_LCD_WIDTH, (uint16_t)(WATCH_LCD_HEIGHT - (6U * stripe)), WATCH_LCD_WHITE);
+    watch_lcd_fill_rect(0U, (uint16_t)(6U * stripe), WATCH_LCD_WIDTH,
+                        (uint16_t)(WATCH_LCD_HEIGHT - (6U * stripe)), WATCH_LCD_WHITE);
 }
