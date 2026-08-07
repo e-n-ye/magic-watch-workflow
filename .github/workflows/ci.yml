@@ -94,7 +94,7 @@ jobs:
           test "$(cmake --version | head -n 1)" = "cmake version 3.31.4"
           test "$(ninja --version)" = "1.13.2"
           arm-none-eabi-gcc --version | head -n 1 | grep -F '13.3.Rel1'
-          test "$(cppcheck --version)" = "Cppcheck 2.21"
+          test "$(cppcheck --version)" = "Cppcheck 2.21.0"
 
       - name: Configure F411 Debug
         working-directory: firmware/stm32/f411_watch
