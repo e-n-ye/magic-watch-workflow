@@ -15,8 +15,8 @@ ARG CPPCHECK_VERSION=2.21.0
 ARG CPPCHECK_SHA256=f028ff75ca5372738f3737c8b3e8611426a6526b6aea2ef01301ab0f5902f044
 ARG CPPCHECK_URL=https://github.com/cppcheck-opensource/cppcheck/archive/refs/tags/2.21.0.tar.gz
 ARG CLANG_FORMAT_VERSION=18.1.3
-ARG CLANG_FORMAT_PACKAGE_SHA256=0e5a65d63168ffe878efa03a38860f42236506dd830f3a9360a5ef845e00f126
-ARG CLANG_FORMAT_PACKAGE_URL=https://archive.ubuntu.com/ubuntu/pool/universe/l/llvm-toolchain-18/clang-format-18_18.1.3-1_amd64.deb
+ARG CLANG_FORMAT_PACKAGE_SHA256=a537abdf3c30f63769c7c8062b8d781d1718fc9ae7e5c54ce6a93c412261cc08
+ARG CLANG_FORMAT_PACKAGE_URL=https://mirrors.aliyun.com/ubuntu/pool/universe/l/llvm-toolchain-18/clang-format-18_18.1.3-1ubuntu1_amd64.deb
 ARG UBUNTU_MIRROR=http://mirrors.aliyun.com/ubuntu
 
 ENV DEBIAN_FRONTEND=noninteractive
