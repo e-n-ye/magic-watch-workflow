@@ -37,6 +37,33 @@
             }
         },
         {
+            "label": "F411: Static Analysis (cppcheck)",
+            "type": "process",
+            "command": "cmake",
+            "args": [
+                "--build",
+                "--preset",
+                "Debug",
+                "--target",
+                "cppcheck"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}/firmware/stm32/f411_watch"
+            },
+            "dependsOrder": "sequence",
+            "dependsOn": "F411: Configure (Debug)",
+            "problemMatcher": []
+        },
+        {
+            "label": "F411: Validate",
+            "dependsOrder": "sequence",
+            "dependsOn": [
+                "F411: Build (Debug)",
+                "F411: Static Analysis (cppcheck)"
+            ],
+            "problemMatcher": []
+        },
+        {
             "label": "F411: Flash (CubeProgrammer/ST-Link)",
             "type": "process",
             "command": "pwsh",

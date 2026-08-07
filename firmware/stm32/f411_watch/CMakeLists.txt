@@ -27,6 +27,10 @@ include("cmake/gcc-arm-none-eabi.cmake")
 # Enable compile command to ease indexing with e.g. clangd
 set(CMAKE_EXPORT_COMPILE_COMMANDS TRUE)
 
+# Optional static-analysis executable override. The cppcheck target resolves
+# the tool when it is invoked, so normal configure/build does not require it.
+set(WATCH_CPPCHECK_EXECUTABLE "" CACHE FILEPATH "Optional path to the cppcheck executable")
+
 # Core project settings
 project(${CMAKE_PROJECT_NAME})
 message("Build type: " ${CMAKE_BUILD_TYPE})
