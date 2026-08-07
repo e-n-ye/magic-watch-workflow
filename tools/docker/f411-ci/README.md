@@ -9,6 +9,7 @@
 - Ninja `1.13.2`
 - Arm GNU Toolchain `13.3.Rel1` (`95c011cee430e64dd6087c75c800f04b9c49832cc1000127a92a97f9c8d83af4`)
 - Cppcheck `2.21.0`
+- clang-format `18.1.3` (`clang-format-18_18.1.3-1_amd64.deb`, SHA-256 `0e5a65d63168ffe878efa03a38860f42236506dd830f3a9360a5ef845e00f126`)
 
 所有上游归档在 Dockerfile 中使用 SHA-256 校验。
 
@@ -34,7 +35,7 @@ docker run --rm \
   --volume "${PWD}:/workspace" \
   --workdir /workspace/firmware/stm32/f411_watch \
   enen001/magic-watch-f411-ci:13.3-rel1 \
-  sh -c 'cmake --preset Debug && cmake --build --preset Debug && cmake --build --preset Debug --target cppcheck'
+  sh -c 'cmake --preset Debug && cmake --build --preset Debug --target format-check && cmake --build --preset Debug && cmake --build --preset Debug --target cppcheck'
 ```
 
 Docker Hub 推送后，GitHub Actions 必须使用该镜像的 digest 引用，不使用 `latest`。

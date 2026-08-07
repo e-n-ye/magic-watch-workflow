@@ -30,6 +30,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS TRUE)
 # Optional static-analysis executable override. The cppcheck target resolves
 # the tool when it is invoked, so normal configure/build does not require it.
 set(WATCH_CPPCHECK_EXECUTABLE "" CACHE FILEPATH "Optional path to the cppcheck executable")
+set(WATCH_CLANG_FORMAT_EXECUTABLE "" CACHE FILEPATH "Optional path to the clang-format executable")
 
 # Core project settings
 project(${CMAKE_PROJECT_NAME})

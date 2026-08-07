@@ -14,6 +14,9 @@ ARG ARM_TOOLCHAIN_URL=https://armkeil.blob.core.windows.net/developer/Files/down
 ARG CPPCHECK_VERSION=2.21.0
 ARG CPPCHECK_SHA256=f028ff75ca5372738f3737c8b3e8611426a6526b6aea2ef01301ab0f5902f044
 ARG CPPCHECK_URL=https://github.com/cppcheck-opensource/cppcheck/archive/refs/tags/2.21.0.tar.gz
+ARG CLANG_FORMAT_VERSION=18.1.3
+ARG CLANG_FORMAT_PACKAGE_SHA256=0e5a65d63168ffe878efa03a38860f42236506dd830f3a9360a5ef845e00f126
+ARG CLANG_FORMAT_PACKAGE_URL=https://archive.ubuntu.com/ubuntu/pool/universe/l/llvm-toolchain-18/clang-format-18_18.1.3-1_amd64.deb
 ARG UBUNTU_MIRROR=http://mirrors.aliyun.com/ubuntu
 
 ENV DEBIAN_FRONTEND=noninteractive
@@ -74,12 +77,18 @@ RUN curl --fail --ipv4 --location --retry 5 --retry-delay 2 \
     && cp --archive /tmp/cppcheck/platforms/. /opt/cppcheck/share/cppcheck/platforms/ \
     && rm -rf /tmp/cppcheck cppcheck.tar.gz
 
+RUN curl --fail --ipv4 --location --retry 5 --retry-delay 2 \
+        "${CLANG_FORMAT_PACKAGE_URL}" \
+        --output clang-format-18.deb \
+    && echo "${CLANG_FORMAT_PACKAGE_SHA256}  clang-format-18.deb" | sha256sum --check
+
 FROM ${UBUNTU_IMAGE} AS f411-ci
 
 ARG CMAKE_VERSION=3.31.4
 ARG NINJA_VERSION=1.13.2
 ARG ARM_TOOLCHAIN_VERSION=13.3.rel1
 ARG CPPCHECK_VERSION=2.21.0
+ARG CLANG_FORMAT_VERSION=18.1.3
 ARG UBUNTU_MIRROR=http://mirrors.aliyun.com/ubuntu
 
 ENV DEBIAN_FRONTEND=noninteractive
@@ -95,13 +104,16 @@ RUN sed -i \
     && apt-get -o Acquire::Retries=5 update \
     && apt-get install --no-install-recommends --yes \
         git \
+        libclang-cpp18 \
         libgcc-s1 \
         libgmp10 \
         libisl23 \
         libmpc3 \
         libmpfr6 \
         libncurses6 \
+        libllvm18 \
         libstdc++6 \
+        python3 \
         zlib1g \
     && rm -rf /var/lib/apt/lists/*
 
@@ -109,16 +121,22 @@ COPY --from=toolchain-builder /opt/arm-none-eabi /opt/arm-none-eabi
 COPY --from=toolchain-builder /opt/cmake /opt/cmake
 COPY --from=toolchain-builder /opt/cppcheck /opt/cppcheck
 COPY --from=toolchain-builder /usr/local/bin/ninja /usr/local/bin/ninja
+COPY --from=toolchain-builder /tmp/downloads/clang-format-18.deb /tmp/clang-format-18.deb
+
+RUN dpkg --install /tmp/clang-format-18.deb \
+    && rm /tmp/clang-format-18.deb \
+    && ln -s /usr/bin/clang-format-18 /usr/local/bin/clang-format
 
 ENV PATH=/opt/arm-none-eabi/bin:/opt/cmake/bin:/opt/cppcheck/bin:${PATH}
 ENV ARM_GNU_TOOLCHAIN_VERSION=${ARM_TOOLCHAIN_VERSION}
 ENV CMAKE_VERSION=${CMAKE_VERSION}
 ENV NINJA_VERSION=${NINJA_VERSION}
 ENV CPPCHECK_VERSION=${CPPCHECK_VERSION}
+ENV CLANG_FORMAT_VERSION=${CLANG_FORMAT_VERSION}
 
 WORKDIR /workspace
 
 LABEL org.opencontainers.image.title="Magic Watch F411 CI" \
-      org.opencontainers.image.description="Pinned CMake, Ninja, Arm GNU Toolchain and Cppcheck environment for the F411 workflow"
+      org.opencontainers.image.description="Pinned CMake, Ninja, Arm GNU Toolchain, Cppcheck and clang-format environment for the F411 workflow"
 
 CMD ["cmake", "--version"]

@@ -63,7 +63,7 @@ CubeMX 生成区、STM32 HAL/CMSIS、FreeRTOS、FatFs、USB middleware、ESP-IDF
 编码规范由三部分共同维护：
 
 1. `.clang-format` 负责缩进、括号、换行等机械格式。
-2. CMake 的 `format` / `format-check` target 负责本地修复和非修改检查。
+2. CMake 的 `format` target 只修改白名单文件，`format-check` 使用 clang-format 的非修改检查模式。
 3. 编译器、Cppcheck 和代码评审负责 API、资源、并发和错误处理等语义问题。
 
 `// clang-format off` 只允许用于确实需要保持表格或硬件顺序的手写代码，并应当尽量缩小范围。生成代码不通过添加格式注释来管理，而是直接排除在格式化白名单之外。

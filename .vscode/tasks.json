@@ -55,10 +55,47 @@
             "problemMatcher": []
         },
         {
+            "label": "F411: Format",
+            "type": "process",
+            "command": "cmake",
+            "args": [
+                "--build",
+                "--preset",
+                "Debug",
+                "--target",
+                "format"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}/firmware/stm32/f411_watch"
+            },
+            "dependsOrder": "sequence",
+            "dependsOn": "F411: Configure (Debug)",
+            "problemMatcher": []
+        },
+        {
+            "label": "F411: Format Check (clang-format)",
+            "type": "process",
+            "command": "cmake",
+            "args": [
+                "--build",
+                "--preset",
+                "Debug",
+                "--target",
+                "format-check"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}/firmware/stm32/f411_watch"
+            },
+            "dependsOrder": "sequence",
+            "dependsOn": "F411: Configure (Debug)",
+            "problemMatcher": []
+        },
+        {
             "label": "F411: Validate",
             "dependsOrder": "sequence",
             "dependsOn": [
                 "F411: Build (Debug)",
+                "F411: Format Check (clang-format)",
                 "F411: Static Analysis (cppcheck)"
             ],
             "problemMatcher": []
