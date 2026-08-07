@@ -57,6 +57,8 @@ The repository variable `F411_CI_IMAGE` must contain the Docker Hub image refere
 
 ## Working rules
 
+- Read [CONTRIBUTING.md](CONTRIBUTING.md) before contributing. AI coding agents should also read [AGENTS.md](AGENTS.md).
+- The required delivery flow is `branch -> code change -> Build + Cppcheck -> commit -> push -> pull request -> CI Gate -> Rebase and merge or rework`.
 - Keep generated CubeMX files inside their generated boundary. Add hand-written sources through the top-level CMake entry and `user/CMakeLists.txt`.
 - Make one focused change per commit.
 - A commit should build the affected board target.
