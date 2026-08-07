@@ -1,0 +1,30 @@
+# Project-wide style for hand-written C/C++ code.
+# Automation must pass an explicit hand-written file list; generated and third-party
+# directories are never formatted by this repository.
+BasedOnStyle: WebKit
+Language: Cpp
+ColumnLimit: 100
+IndentWidth: 4
+TabWidth: 4
+UseTab: Never
+PointerAlignment: Right
+DerivePointerAlignment: false
+BreakBeforeBinaryOperators: NonAssignment
+BreakBeforeBraces: Custom
+BraceWrapping:
+    AfterClass: true
+    AfterControlStatement: Never
+    AfterEnum: false
+    AfterFunction: true
+    AfterNamespace: false
+    AfterStruct: true
+    AfterUnion: false
+    BeforeCatch: false
+    BeforeElse: false
+    IndentBraces: false
+AlignAfterOpenBracket: Align
+AlwaysBreakTemplateDeclarations: Yes
+AllowShortEnumsOnASingleLine: false
+AllowShortFunctionsOnASingleLine: Empty
+SortIncludes: Never
+IncludeBlocks: Preserve

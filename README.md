@@ -32,6 +32,12 @@ A CMake-first embedded watch workflow for STM32F411 and ESP32-S3, with reproduci
 
 ![Layered software architecture](firmware/stm32/f411_watch/docs/architecture/software-architecture-分层架构.png)
 
+### Coding and formatting
+
+- [C/C++ coding guidelines](docs/coding-guidelines.md)
+- The root `.clang-format` is a project-level configuration for hand-written code.
+- Automatic formatting is limited to the F411 `user/` whitelist; CubeMX-generated and third-party code is excluded.
+
 ## Build
 
 ### STM32F411
