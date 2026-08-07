@@ -1,0 +1,5 @@
+# CMSIS startup tables are linker-defined ranges, not ordinary C objects.
+comparePointers:Drivers/CMSIS/Include/cmsis_gcc.h
+
+# The Cortex-M vector table is accessed through a memory-mapped register.
+constVariablePointer:Drivers/CMSIS/Include/core_cm4.h
