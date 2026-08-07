@@ -9,7 +9,7 @@
 - Ninja `1.13.2`
 - Arm GNU Toolchain `13.3.Rel1` (`95c011cee430e64dd6087c75c800f04b9c49832cc1000127a92a97f9c8d83af4`)
 - Cppcheck `2.21.0`
-- clang-format `18.1.3` (`clang-format-18_18.1.3-1_amd64.deb`, SHA-256 `0e5a65d63168ffe878efa03a38860f42236506dd830f3a9360a5ef845e00f126`)
+- clang-format `18.1.3` (`clang-format-18_18.1.3-1ubuntu1_amd64.deb`, SHA-256 `a537abdf3c30f63769c7c8062b8d781d1718fc9ae7e5c54ce6a93c412261cc08`)
 
 所有上游归档在 Dockerfile 中使用 SHA-256 校验。
 
