@@ -4,7 +4,7 @@
 
 void watch_power_latch_early(void)
 {
-    GPIO_InitTypeDef gpio_init = {0};
+    GPIO_InitTypeDef gpio_init = { 0 };
 
     /* Keep the watch power latch asserted before CubeMX initializes GPIO. */
     __HAL_RCC_GPIOC_CLK_ENABLE();
