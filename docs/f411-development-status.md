@@ -34,15 +34,16 @@ modules are not part of the project.
 
 ## Baseline
 
-- Reference commit: `697a556` (M1 relocation merged to `main`).
-- M0 and M1 CI Gates passed; the current M1 fix branch starts from that
-  merged baseline.
+- Reference commit: `e835ef2` (M1 interrupt-restore fix merged to `main`).
+- M0 and M1 CI Gates passed; the current M2 branch starts from this merged
+  baseline.
 - Before relocation, the verified Debug App image was Flash `64,340 / 524,288 B`
   and RAM `30,208 / 131,072 B`.
-- Current M1 build: Bootloader Flash `1,040 / 65,536 B`, RAM `1,056 /
-  131,072 B`; App Flash `64,356 / 454,656 B`, RAM `30,208 / 131,072 B`.
+- Current M2 build: Bootloader Flash is about `6,564 / 65,536 B`; the App is
+  `64,356 / 454,656 B` before the package trailer.
 - Current checks passed: Debug configure, Debug build, `format-check`,
-  `cppcheck`, ELF section/vector inspection, and linker boundary assertions.
+  `cppcheck`, ELF section/vector inspection, linker boundary assertions, and
+  the signed-package host tests.
 - Current hardware facts: STM32F411, 24 MHz HSE, ST-Link-compatible SWD,
   ST7789 display, CST816 touch, W25Q128, and KT6368 UART wiring.
 
@@ -51,8 +52,8 @@ modules are not part of the project.
 | ID | Scope | Status |
 | --- | --- | --- |
 | M0 | Rolling status page and project baseline | Merged; CI Gate passed |
-| M1 | Bootloader target, App relocation, VTOR, and flash/debug flow | Software and automated board checks complete; visual cold-boot acceptance pending |
-| M2 | Signed image manifest, trailer, and host packaging | Planned |
+| M1 | Bootloader target, App relocation, VTOR, and flash/debug flow | Complete; combined and App-only OpenOCD programming accepted on hardware |
+| M2 | Signed image manifest, trailer, and host packaging | Software complete; valid-image board check passed; negative-path board acceptance pending |
 | M3 | Assertions, reset capsule, logs, memory budgets, Diagnostic build | Planned |
 | M4 | Pure-C core, input contracts, and host tests | Planned |
 | M5 | Input hardware and normalized gesture/button events | Planned |
@@ -69,38 +70,38 @@ modules are not part of the project.
 
 ## Current round
 
-This round adds the standalone Bootloader target, relocates the App to
-`0x08010000`, sets the App VTOR through the existing CMSIS SystemInit path, and
-adds separate/combined programming tasks. The programming tasks explicitly
-initialize and halt the target before flash algorithms run. The Bootloader
-re-enables interrupts before handing control to the App. It does not modify
-`think.md`, the CubeMX `.ioc`, or CubeMX-generated sources.
+This round defines a fixed-offset signed application package. The 448 KiB
+package contains the relocated App at offset zero, erased padding, and a 4 KiB
+trailer at `0x0807F000`. Its 128-byte header carries the `F411` board id,
+version, security counter, load address, image length, SHA-256, key id, and a
+64-byte raw `r || s` ECDSA P-256 signature. The host packer uses OpenSSL; the
+Bootloader verifies the same fields with the vendored TinyCrypt v0.2.8 subset.
 
-Software acceptance is a clean build, format check, Cppcheck, valid ELF/map
-boundaries, and a successful `CI / CI Gate`. Combined programming now completes
-with both images verified. A running target reports App PC `0x0801c1fe`, MSP
-`0x2001ffe0`, `PRIMASK=0`, and VTOR `0x08010000`; a TIM5 breakpoint lands in
-the external interrupt handler. App-only programming leaves the 64 KiB
-Bootloader region unchanged: the before/after SHA-256 is
-`d2549f1b24363b6d66b2b145466d64f9adb141fbd2f6f59ed6317f3c19827722`.
-Remaining hardware acceptance is manual: power-cycle the board, verify the
-240x280 fixed color bars and App entry, and observe the expected input/interrupt
-response on the display. The debugger cannot replace that visual and cold-power
-check.
+OpenOCD/ST-Link is the supported F411 programming path. The VS Code tasks first
+build and sign the package, then program the Bootloader and/or package. The
+CubeProgrammer tasks and helper have been removed because they were unreliable
+on this board.
+
+The valid package was generated with firmware version `1` and security counter
+`1`, verified on the host, programmed with OpenOCD, and observed jumping to the
+App at `0x0801xxxx` after reset. M1 hardware acceptance also passed: combined
+programming, cold-start color bars, App entry, interrupt response, and App-only
+programming with the Bootloader region unchanged. Remaining M2 acceptance is
+manual rejection of an unsigned, corrupted, wrong-board, or out-of-range
+package while confirming the existing App is not touched.
 
 ## Next round
 
-M2 will define the signed manifest, 4 KiB trailer, and host packaging format;
-the Bootloader must accept a valid factory image and reject malformed,
-out-of-range, wrong-board, and unsigned images without touching the App.
+M3 will add assertions, reset capsules, diagnostic logs, and explicit memory
+budgets for Debug, Release, and Diagnostic builds.
 
 ## Risks and blockers
 
 - The LVGL Pro CLI is a local licensed generation tool. Generated C remains
   buildable without a CI Pro token, but regeneration requires a valid local
   license and must never place its token in Git.
-- Bootloader crypto and image verification must be measured against the 64 KiB
-  boot region before accepting the final memory budget.
+- The security counter is signed in M2 but is not persisted or compared against
+  confirmed metadata until the later OTA rounds.
 - EEPROM type/address must be confirmed from the actual board before a driver
   is added; the old 24LC32 behavior is not evidence.
 - KT6368 SPP firmware behavior and enable polarity require a board test; no
@@ -119,8 +120,9 @@ cmake --build --preset Debug --target format-check
 cmake --build --preset Debug --target cppcheck
 ```
 
-ELF inspection confirmed Bootloader vectors at `0x08000000`, App vectors at
-`0x08010000`, and the App image below the reserved `0x0807F000` trailer start.
-OpenOCD combined programming completed with verification for both images, and
-the App-only Bootloader-region comparison passed. The remaining result is the
-manual visual/cold-power acceptance listed above.
+For M2, `python tools/manifest/test_manifest.py` passed all eight host tests.
+The generated package is exactly `458,752` bytes, with the trailer at package
+offset `0x6F000`. OpenOCD verified both the Bootloader and signed package on the
+board; a reset reached the relocated App. The M1 App-only before/after
+Bootloader-region SHA-256 comparison also passed. The next required result is
+the manual negative-path package rejection listed above.

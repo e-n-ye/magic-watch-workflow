@@ -18,6 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       f411: ${{ steps.paths.outputs.f411 }}
+      manifest: ${{ steps.paths.outputs.manifest }}
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -47,15 +48,20 @@ jobs:
           fi
 
           f411=false
+          manifest=false
           while IFS= read -r path; do
             case "${path}" in
               firmware/stm32/f411_watch/*|tools/docker/f411-ci/*|.github/workflows/ci.yml|.clang-format|docs/coding-guidelines.md)
                 f411=true
                 ;;
+              tools/manifest/*)
+                manifest=true
+                ;;
             esac
           done <<< "${changed_paths}"
 
           printf 'f411=%s\n' "${f411}" >> "${GITHUB_OUTPUT}"
+          printf 'manifest=%s\n' "${manifest}" >> "${GITHUB_OUTPUT}"
 
   f411_config:
     name: F411 CI Configuration
@@ -113,6 +119,23 @@ jobs:
         working-directory: firmware/stm32/f411_watch
         run: cmake --build --preset Debug --target cppcheck
 
+  manifest_host:
+    name: Signed Manifest Host Tests
+    needs: changes
+    if: needs.changes.outputs.manifest == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Verify host tools
+        run: |
+          python3 --version
+          openssl version
+
+      - name: Run signed manifest tests
+        run: python3 tools/manifest/test_manifest.py
+
   ci-gate:
     name: CI Gate
     if: always()
@@ -120,6 +143,7 @@ jobs:
       - changes
       - f411_config
       - f411
+      - manifest_host
     runs-on: ubuntu-latest
     steps:
       - name: Evaluate required checks
@@ -128,6 +152,8 @@ jobs:
           F411_CHANGED: ${{ needs.changes.outputs.f411 }}
           F411_CONFIG_RESULT: ${{ needs.f411_config.result }}
           F411_RESULT: ${{ needs.f411.result }}
+          MANIFEST_CHANGED: ${{ needs.changes.outputs.manifest }}
+          MANIFEST_RESULT: ${{ needs.manifest_host.result }}
         shell: bash
         run: |
           set -euo pipefail
@@ -136,4 +162,8 @@ jobs:
           if [[ "${F411_CHANGED}" == "true" ]]; then
             test "${F411_CONFIG_RESULT}" = success
             test "${F411_RESULT}" = success
+          fi
+
+          if [[ "${MANIFEST_CHANGED}" == "true" ]]; then
+            test "${MANIFEST_RESULT}" = success
           fi

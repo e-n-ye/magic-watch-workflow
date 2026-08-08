@@ -2,14 +2,38 @@ set(BOOTLOADER_TARGET f411_bootloader)
 
 add_executable(${BOOTLOADER_TARGET}
     main.c
+    manifest.c
     system.c
     ${CMAKE_SOURCE_DIR}/startup_stm32f411xe.s
+)
+
+add_library(f411_tinycrypt STATIC
+    ${CMAKE_SOURCE_DIR}/third_party/tinycrypt/lib/source/ecc.c
+    ${CMAKE_SOURCE_DIR}/third_party/tinycrypt/lib/source/ecc_dsa.c
+    ${CMAKE_SOURCE_DIR}/third_party/tinycrypt/lib/source/sha256.c
+    ${CMAKE_SOURCE_DIR}/third_party/tinycrypt/lib/source/utils.c
+)
+
+target_include_directories(f411_tinycrypt
+    PRIVATE
+        ${CMAKE_SOURCE_DIR}/third_party/tinycrypt/lib/include
+)
+
+target_compile_options(f411_tinycrypt
+    PRIVATE
+        -Os
+)
+
+target_link_libraries(${BOOTLOADER_TARGET}
+    PRIVATE
+        f411_tinycrypt
 )
 
 target_include_directories(${BOOTLOADER_TARGET}
     PRIVATE
         ${CMAKE_SOURCE_DIR}/Drivers/CMSIS/Device/ST/STM32F4xx/Include
         ${CMAKE_SOURCE_DIR}/Drivers/CMSIS/Include
+        ${CMAKE_SOURCE_DIR}/third_party/tinycrypt/lib/include
 )
 
 target_compile_definitions(${BOOTLOADER_TARGET}

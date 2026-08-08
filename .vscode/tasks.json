@@ -101,35 +101,22 @@
             "problemMatcher": []
         },
         {
-            "label": "F411: Flash (CubeProgrammer/ST-Link)",
+            "label": "F411: Pack Signed App (host)",
             "type": "process",
-            "command": "pwsh",
+            "command": "python",
             "args": [
-                "-NoProfile",
-                "-File",
-                "${workspaceFolder}/tools/flash-stm32.ps1",
-                "-Elf",
-                "${workspaceFolder}/firmware/stm32/f411_watch/build/Debug/my_watch_f411.elf"
-            ],
-            "options": {
-                "cwd": "${workspaceFolder}/firmware/stm32/f411_watch"
-            },
-            "dependsOrder": "sequence",
-            "dependsOn": "F411: Build (Debug)",
-            "problemMatcher": []
-        },
-        {
-            "label": "F411: Flash Bootloader + App (CubeProgrammer/ST-Link)",
-            "type": "process",
-            "command": "pwsh",
-            "args": [
-                "-NoProfile",
-                "-File",
-                "${workspaceFolder}/tools/flash-stm32.ps1",
-                "-BootloaderElf",
-                "${workspaceFolder}/firmware/stm32/f411_watch/build/Debug/f411_bootloader.elf",
-                "-ApplicationElf",
-                "${workspaceFolder}/firmware/stm32/f411_watch/build/Debug/my_watch_f411.elf"
+                "${workspaceFolder}/tools/manifest/manifest.py",
+                "pack",
+                "--image",
+                "build/Debug/my_watch_f411.bin",
+                "--private-key",
+                "${env:F411_SIGNING_KEY}",
+                "--firmware-version",
+                "${env:F411_FIRMWARE_VERSION}",
+                "--security-counter",
+                "${env:F411_SECURITY_COUNTER}",
+                "--output",
+                "build/Debug/f411-app-package.bin"
             ],
             "options": {
                 "cwd": "${workspaceFolder}/firmware/stm32/f411_watch"
@@ -158,13 +145,13 @@
                 "-c",
                 "reset halt",
                 "-c",
-                "program build/Debug/my_watch_f411.elf verify reset exit"
+                "program build/Debug/f411-app-package.bin 0x08010000 verify reset exit"
             ],
             "options": {
                 "cwd": "${workspaceFolder}/firmware/stm32/f411_watch"
             },
             "dependsOrder": "sequence",
-            "dependsOn": "F411: Build (Debug)",
+            "dependsOn": "F411: Pack Signed App (host)",
             "problemMatcher": []
         },
         {
@@ -191,7 +178,7 @@
                 "-c",
                 "reset halt",
                 "-c",
-                "program build/Debug/my_watch_f411.elf verify",
+                "program build/Debug/f411-app-package.bin 0x08010000 verify",
                 "-c",
                 "reset run",
                 "-c",
@@ -201,7 +188,7 @@
                 "cwd": "${workspaceFolder}/firmware/stm32/f411_watch"
             },
             "dependsOrder": "sequence",
-            "dependsOn": "F411: Build (Debug)",
+            "dependsOn": "F411: Pack Signed App (host)",
             "problemMatcher": []
         },
         {
