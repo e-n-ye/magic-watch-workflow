@@ -226,6 +226,8 @@ def build_header(image: bytes, firmware_version: int, security_counter: int) -> 
 
 
 def pack_image(image_path: Path, private_key: Path, output_path: Path, firmware_version: int, security_counter: int) -> None:
+    if not private_key.is_file():
+        raise ManifestError("private key path must name an existing file")
     image = image_path.read_bytes()
     header = bytearray(build_header(image, firmware_version, security_counter))
     header[64:128] = _openssl_sign(bytes(header[:SIGNED_HEADER_SIZE]), private_key)

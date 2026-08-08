@@ -46,6 +46,11 @@ python3 tools/manifest/manifest.py verify \
   --public-key /path/outside/repository/f411-signing-public.pem
 ```
 
+The VS Code `F411: Pack Signed App (host)` task prompts for the external
+private-key path, firmware version, and security counter. The private key must
+match the public key compiled into the Bootloader; generating an unrelated key
+will produce a package that the board correctly rejects.
+
 The package is not a production OTA protocol yet. It defines the signed image
 contract used by the Bootloader; download, metadata journaling, trial boot and
 rollback are later rounds.
