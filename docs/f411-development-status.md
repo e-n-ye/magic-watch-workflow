@@ -34,11 +34,12 @@ modules are not part of the project.
 
 ## Baseline
 
-- Reference commit: `e5fd1c3` (M0 status page merged to `main`).
-- M0 CI Gate passed; the current M1 branch starts from that merged baseline.
+- Reference commit: `697a556` (M1 relocation merged to `main`).
+- M0 and M1 CI Gates passed; the current M1 fix branch starts from that
+  merged baseline.
 - Before relocation, the verified Debug App image was Flash `64,340 / 524,288 B`
   and RAM `30,208 / 131,072 B`.
-- Current M1 build: Bootloader Flash `1,036 / 65,536 B`, RAM `1,056 /
+- Current M1 build: Bootloader Flash `1,040 / 65,536 B`, RAM `1,056 /
   131,072 B`; App Flash `64,356 / 454,656 B`, RAM `30,208 / 131,072 B`.
 - Current checks passed: Debug configure, Debug build, `format-check`,
   `cppcheck`, ELF section/vector inspection, and linker boundary assertions.
@@ -50,7 +51,7 @@ modules are not part of the project.
 | ID | Scope | Status |
 | --- | --- | --- |
 | M0 | Rolling status page and project baseline | Merged; CI Gate passed |
-| M1 | Bootloader target, App relocation, VTOR, and flash/debug flow | Software complete; board acceptance pending |
+| M1 | Bootloader target, App relocation, VTOR, and flash/debug flow | Software and automated board checks complete; visual cold-boot acceptance pending |
 | M2 | Signed image manifest, trailer, and host packaging | Planned |
 | M3 | Assertions, reset capsule, logs, memory budgets, Diagnostic build | Planned |
 | M4 | Pure-C core, input contracts, and host tests | Planned |
@@ -70,14 +71,22 @@ modules are not part of the project.
 
 This round adds the standalone Bootloader target, relocates the App to
 `0x08010000`, sets the App VTOR through the existing CMSIS SystemInit path, and
-adds separate/combined programming tasks. It does not modify `think.md`, the
-CubeMX `.ioc`, or CubeMX-generated sources.
+adds separate/combined programming tasks. The programming tasks explicitly
+initialize and halt the target before flash algorithms run. The Bootloader
+re-enables interrupts before handing control to the App. It does not modify
+`think.md`, the CubeMX `.ioc`, or CubeMX-generated sources.
 
 Software acceptance is a clean build, format check, Cppcheck, valid ELF/map
-boundaries, and a successful `CI / CI Gate`. Hardware acceptance remains
-manual: flash both images, cold-boot the board, verify the fixed color bars and
-App interrupt handling, then flash only the App and verify the Bootloader still
-starts on the next reset.
+boundaries, and a successful `CI / CI Gate`. Combined programming now completes
+with both images verified. A running target reports App PC `0x0801c1fe`, MSP
+`0x2001ffe0`, `PRIMASK=0`, and VTOR `0x08010000`; a TIM5 breakpoint lands in
+the external interrupt handler. App-only programming leaves the 64 KiB
+Bootloader region unchanged: the before/after SHA-256 is
+`d2549f1b24363b6d66b2b145466d64f9adb141fbd2f6f59ed6317f3c19827722`.
+Remaining hardware acceptance is manual: power-cycle the board, verify the
+240x280 fixed color bars and App entry, and observe the expected input/interrupt
+response on the display. The debugger cannot replace that visual and cold-power
+check.
 
 ## Next round
 
@@ -112,4 +121,6 @@ cmake --build --preset Debug --target cppcheck
 
 ELF inspection confirmed Bootloader vectors at `0x08000000`, App vectors at
 `0x08010000`, and the App image below the reserved `0x0807F000` trailer start.
-The remaining result is the manual board acceptance listed above.
+OpenOCD combined programming completed with verification for both images, and
+the App-only Bootloader-region comparison passed. The remaining result is the
+manual visual/cold-power acceptance listed above.

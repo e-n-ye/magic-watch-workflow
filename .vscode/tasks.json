@@ -154,6 +154,10 @@
                 "-c",
                 "adapter speed 1000",
                 "-c",
+                "init",
+                "-c",
+                "reset halt",
+                "-c",
                 "program build/Debug/my_watch_f411.elf verify reset exit"
             ],
             "options": {
@@ -179,9 +183,19 @@
                 "-c",
                 "adapter speed 1000",
                 "-c",
+                "init",
+                "-c",
+                "reset halt",
+                "-c",
                 "program build/Debug/f411_bootloader.elf verify",
                 "-c",
-                "program build/Debug/my_watch_f411.elf verify reset exit"
+                "reset halt",
+                "-c",
+                "program build/Debug/my_watch_f411.elf verify",
+                "-c",
+                "reset run",
+                "-c",
+                "shutdown"
             ],
             "options": {
                 "cwd": "${workspaceFolder}/firmware/stm32/f411_watch"

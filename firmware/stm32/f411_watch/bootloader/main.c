@@ -59,6 +59,8 @@ __attribute__((noreturn)) static void bootloader_jump_to_application(void)
     __DSB();
     __ISB();
     __set_MSP(main_stack_pointer);
+    /* The application initializes and relies on interrupt-driven HAL services. */
+    __enable_irq();
     reset_handler();
 
     while (1) {
