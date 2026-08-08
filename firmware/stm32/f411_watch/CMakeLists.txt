@@ -45,6 +45,13 @@ add_executable(${CMAKE_PROJECT_NAME})
 # Add STM32CubeMX generated sources
 add_subdirectory(cmake/stm32cubemx)
 
+# Keep the generated default handler available for CubeMX regeneration, but
+# route the vector-table symbol to the hand-written diagnostic implementation.
+set_source_files_properties(
+    ${CMAKE_CURRENT_SOURCE_DIR}/Core/Src/stm32f4xx_it.c
+    PROPERTIES COMPILE_DEFINITIONS HardFault_Handler=watch_generated_hard_fault_handler
+)
+
 # The application vector table is linked at the first address after the
 # reserved bootloader region. Keep this definition on the generated interface
 # target so SystemInit receives it when its source is compiled.
