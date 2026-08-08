@@ -165,6 +165,17 @@ SECTIONS
     _edata = .;        /* define a global symbol at data end */
   } >RAM AT> FLASH
 
+  /* Fault capsules survive a software reset and are never initialized by the
+     startup code. They are intentionally outside .bss. */
+  .noinit (NOLOAD) :
+  {
+    . = ALIGN(4);
+    _snoinit = .;
+    *(.noinit)
+    *(.noinit*)
+    . = ALIGN(4);
+    _enoinit = .;
+  } >RAM
 
   /* Uninitialized data section */
   . = ALIGN(4);
@@ -207,5 +218,7 @@ SECTIONS
 
 ASSERT(ORIGIN(FLASH) == 0x08010000, "Application origin must follow the bootloader")
 ASSERT(ORIGIN(FLASH) + LENGTH(FLASH) <= 0x0807F000, "Application overlaps the signed trailer")
+ASSERT(LOADADDR(.data) + SIZEOF(.data) <= ORIGIN(FLASH) + 0x64000, "Application exceeds 400 KiB flash budget")
+ASSERT(ADDR(._user_heap_stack) + SIZEOF(._user_heap_stack) <= ORIGIN(RAM) + LENGTH(RAM), "Application exceeds RAM budget")
 
 

@@ -135,3 +135,5 @@ SECTIONS
 
 ASSERT(ORIGIN(FLASH) == 0x08000000, "Bootloader must start at flash base")
 ASSERT(ORIGIN(FLASH) + LENGTH(FLASH) <= 0x08010000, "Bootloader overlaps application")
+ASSERT(LOADADDR(.data) + SIZEOF(.data) <= ORIGIN(FLASH) + LENGTH(FLASH), "Bootloader exceeds flash budget")
+ASSERT(ADDR(._user_heap_stack) + SIZEOF(._user_heap_stack) <= ORIGIN(RAM) + LENGTH(RAM), "Bootloader exceeds RAM budget")

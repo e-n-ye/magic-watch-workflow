@@ -34,16 +34,16 @@ modules are not part of the project.
 
 ## Baseline
 
-- Reference commit: `e835ef2` (M1 interrupt-restore fix merged to `main`).
-- M0 and M1 CI Gates passed; the current M2 branch starts from this merged
-  baseline.
+- Reference commit: `e3287a3` (M2 OpenOCD and signing workflow fixes merged to
+  `main`).
+- M0, M1, and M2 CI Gates passed; M3a starts from this merged baseline.
 - Before relocation, the verified Debug App image was Flash `64,340 / 524,288 B`
   and RAM `30,208 / 131,072 B`.
-- Current M2 build: Bootloader Flash is about `6,564 / 65,536 B`; the App is
-  `64,356 / 454,656 B` before the package trailer.
-- Current checks passed: Debug configure, Debug build, `format-check`,
-  `cppcheck`, ELF section/vector inspection, linker boundary assertions, and
-  the signed-package host tests.
+- Current Debug build: Bootloader is `6,564 B` Flash and `1,056 B` RAM; App is
+  `65,280 B` Flash and `30,296 B` RAM. Diagnostic App is `73,888 B` Flash and
+  `30,296 B` RAM.
+- M2 host packaging and OpenOCD programming remain the accepted upgrade path;
+  CubeProgrammer is not part of the workflow.
 - Current hardware facts: STM32F411, 24 MHz HSE, ST-Link-compatible SWD,
   ST7789 display, CST816 touch, W25Q128, and KT6368 UART wiring.
 
@@ -54,7 +54,8 @@ modules are not part of the project.
 | M0 | Rolling status page and project baseline | Merged; CI Gate passed |
 | M1 | Bootloader target, App relocation, VTOR, and flash/debug flow | Complete; combined and App-only OpenOCD programming accepted on hardware |
 | M2 | Signed image manifest, trailer, and host packaging | Software complete; key rotation requires Bootloader reflash; negative-path board acceptance pending |
-| M3 | Assertions, reset capsule, logs, memory budgets, Diagnostic build | Planned |
+| M3a | Assertions, reset capsule, memory budgets, Diagnostic build | Complete locally; board cold-start acceptance pending |
+| M3b | USB CDC logging and diagnostic transport | Deferred; current CubeMX USB class is MSC and requires a separate configuration round |
 | M4 | Pure-C core, input contracts, and host tests | Planned |
 | M5 | Input hardware and normalized gesture/button events | Planned |
 | M6 | LVGL 9.5 port, DMA flush, UI task, and 240x280 budget gate | Planned |
@@ -70,35 +71,28 @@ modules are not part of the project.
 
 ## Current round
 
-This round defines a fixed-offset signed application package. The 448 KiB
-package contains the relocated App at offset zero, erased padding, and a 4 KiB
-trailer at `0x0807F000`. Its 128-byte header carries the `F411` board id,
-version, security counter, load address, image length, SHA-256, key id, and a
-64-byte raw `r || s` ECDSA P-256 signature. The host packer uses OpenSSL; the
-Bootloader verifies the same fields with the vendored TinyCrypt v0.2.8 subset.
+M3a adds a reset-surviving diagnostic capsule for HardFault, other Cortex-M
+faults, HAL errors, full assertions, and FreeRTOS stack overflow. The capsule
+stores core fault registers and a checksum in a linker-defined `.noinit`
+section. On the next software reset, the App shows a reason-coded LCD pattern
+once and then clears the capsule; a normal boot keeps the existing 240x280
+color bars.
 
-Key id `0` was rotated after the original external private key could not be
-recovered. The new P-256 public key is committed in the Bootloader; its private
-key remains outside the repository. A board running the previous Bootloader
-must be reflashed before the new package can be accepted.
+Debug and Diagnostic builds now enforce the App `400 KiB` Flash budget and
+`128 KiB` RAM budget after linking. The standalone Bootloader enforces its `64
+KiB` Flash boundary and the same RAM boundary. Diagnostic enables
+`USE_FULL_ASSERT=1`; Debug keeps the existing assertion behavior.
 
-OpenOCD/ST-Link is the supported F411 programming path. The VS Code tasks first
-build and sign the package, then program the Bootloader and/or package. The
-CubeProgrammer tasks and helper have been removed because they were unreliable
-on this board.
-
-Before key rotation, a valid package was verified on the host, programmed with
-OpenOCD, and observed jumping to the App at `0x0801xxxx` after reset. M1
-hardware acceptance also passed: combined programming, cold-start color bars,
-App entry, interrupt response, and App-only programming with the Bootloader
-region unchanged. After rotation, the new package is host-verified; remaining
-M2 acceptance is to reflash the new Bootloader, confirm a valid package boots,
-and reject an unsigned, corrupted, wrong-board, or out-of-range package.
+USB CDC logging is deliberately not included in M3a. The current CubeMX USB
+configuration is MSC, and USART1 is reserved for the KT6368 link. M3b will
+require a real CubeMX configuration decision and a separate acceptance loop.
 
 ## Next round
 
-M3 will add assertions, reset capsules, diagnostic logs, and explicit memory
-budgets for Debug, Release, and Diagnostic builds.
+After M3a board acceptance, the next implementation round is M4: the pure-C
+`watch_core` state machine, normalized events, snapshots, commands, and host
+tests. M3b remains a separately scheduled USB/CubeMX round rather than an empty
+logging module.
 
 ## Risks and blockers
 
@@ -113,21 +107,25 @@ budgets for Debug, Release, and Diagnostic builds.
   undocumented AT command is assumed.
 - There is no battery measurement baseline, so power acceptance is behavioral
   rather than a fabricated current target.
+- The reset capsule survives software reset but not a complete power loss; a
+  power-cycle fault-recovery claim is deferred until backup storage exists.
 
 ## Latest verification
 
-For M1, the following passed from the F411 project directory:
+For M3a, the following passed from the F411 project directory:
 
 ```text
 cmake --preset Debug
 cmake --build --preset Debug
 cmake --build --preset Debug --target format-check
 cmake --build --preset Debug --target cppcheck
+cmake --preset Diagnostic
+cmake --build --preset Diagnostic
 ```
 
-For M2, `python tools/manifest/test_manifest.py` passed all eight host tests,
-including package-padding rejection. The new key pair was generated outside
-the repository, and the public half was installed in the Bootloader. The
-generated package is exactly `458,752` bytes, with the trailer at package offset
-`0x6F000`. The next required result is the manual Bootloader reflash,
-valid-package cold start, and negative-path rejection listed above.
+M2 host packaging tests and OpenOCD hardware acceptance passed before this
+round. M3a software validation also passed `git diff --check`, format-check,
+Cppcheck, both link-time budget checks, and the Debug/Diagnostic builds. The
+remaining M3a result is a normal cold-start board check of the Diagnostic image;
+deliberate fault injection is a manual acceptance step and is not performed by
+the automated flash task.

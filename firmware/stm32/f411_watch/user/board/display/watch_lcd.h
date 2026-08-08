@@ -39,5 +39,6 @@ watch_lcd_transfer_result_t watch_lcd_draw_rgb565_bytes(uint16_t x, uint16_t y, 
 bool watch_lcd_dma_is_busy(void);
 bool watch_lcd_dma_consume_error(void);
 void watch_lcd_show_bringup_pattern(void);
+void watch_lcd_show_diagnostic_pattern(uint32_t reason);
 
 #endif /* WATCH_LCD_H */
