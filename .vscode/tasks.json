@@ -112,9 +112,9 @@
                 "--private-key",
                 "${env:F411_SIGNING_KEY}",
                 "--firmware-version",
-                "${input:f411FirmwareVersion}",
+                "${env:F411_FIRMWARE_VERSION}",
                 "--security-counter",
-                "${input:f411SecurityCounter}",
+                "${env:F411_SECURITY_COUNTER}",
                 "--output",
                 "build/Debug/f411-app-package.bin"
             ],
@@ -143,9 +143,15 @@
                 "-c",
                 "init",
                 "-c",
-                "reset halt",
+                "reset init",
                 "-c",
-                "program build/Debug/f411-app-package.bin 0x08010000 verify reset exit"
+                "flash write_image erase build/Debug/f411-app-package.bin 0x08010000 bin",
+                "-c",
+                "verify_image build/Debug/f411-app-package.bin 0x08010000 bin",
+                "-c",
+                "reset run",
+                "-c",
+                "shutdown"
             ],
             "options": {
                 "cwd": "${workspaceFolder}/firmware/stm32/f411_watch"
@@ -172,13 +178,15 @@
                 "-c",
                 "init",
                 "-c",
-                "reset halt",
+                "reset init",
                 "-c",
-                "program build/Debug/f411_bootloader.elf verify",
+                "flash write_image erase build/Debug/f411_bootloader.elf",
                 "-c",
-                "reset halt",
+                "verify_image build/Debug/f411_bootloader.elf",
                 "-c",
-                "program build/Debug/f411-app-package.bin 0x08010000 verify",
+                "flash write_image erase build/Debug/f411-app-package.bin 0x08010000 bin",
+                "-c",
+                "verify_image build/Debug/f411-app-package.bin 0x08010000 bin",
                 "-c",
                 "reset run",
                 "-c",
@@ -274,18 +282,6 @@
             "type": "promptString",
             "description": "ESP32-S3 serial port",
             "default": "COM5"
-        },
-        {
-            "id": "f411FirmwareVersion",
-            "type": "promptString",
-            "description": "F411 firmware version",
-            "default": "1"
-        },
-        {
-            "id": "f411SecurityCounter",
-            "type": "promptString",
-            "description": "F411 security counter",
-            "default": "1"
         }
     ]
 }
