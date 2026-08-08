@@ -78,20 +78,26 @@ void NMI_Handler(void)
   /* USER CODE BEGIN NonMaskableInt_IRQn 0 */
   watch_diagnostic_record_exception(WATCH_DIAGNOSTIC_REASON_NMI);
   /* USER CODE END NonMaskableInt_IRQn 0 */
+  /* USER CODE BEGIN NonMaskableInt_IRQn 1 */
+   while (1)
+  {
+  }
+  /* USER CODE END NonMaskableInt_IRQn 1 */
 }
 
 /**
   * @brief This function handles Hard fault interrupt.
   */
-__attribute__((naked)) void HardFault_Handler(void)
+void HardFault_Handler(void)
 {
-  __asm volatile(
-      "tst lr, #4\n"
-      "ite eq\n"
-      "mrseq r0, msp\n"
-      "mrsne r0, psp\n"
-      "mov r1, lr\n"
-      "b watch_diagnostic_handle_hard_fault\n");
+  /* USER CODE BEGIN HardFault_IRQn 0 */
+
+  /* USER CODE END HardFault_IRQn 0 */
+  while (1)
+  {
+    /* USER CODE BEGIN W1_HardFault_IRQn 0 */
+    /* USER CODE END W1_HardFault_IRQn 0 */
+  }
 }
 
 /**
@@ -102,6 +108,11 @@ void MemManage_Handler(void)
   /* USER CODE BEGIN MemoryManagement_IRQn 0 */
   watch_diagnostic_record_exception(WATCH_DIAGNOSTIC_REASON_MEMMANAGE);
   /* USER CODE END MemoryManagement_IRQn 0 */
+  while (1)
+  {
+    /* USER CODE BEGIN W1_MemoryManagement_IRQn 0 */
+    /* USER CODE END W1_MemoryManagement_IRQn 0 */
+  }
 }
 
 /**
@@ -112,6 +123,11 @@ void BusFault_Handler(void)
   /* USER CODE BEGIN BusFault_IRQn 0 */
   watch_diagnostic_record_exception(WATCH_DIAGNOSTIC_REASON_BUSFAULT);
   /* USER CODE END BusFault_IRQn 0 */
+  while (1)
+  {
+    /* USER CODE BEGIN W1_BusFault_IRQn 0 */
+    /* USER CODE END W1_BusFault_IRQn 0 */
+  }
 }
 
 /**
@@ -122,6 +138,11 @@ void UsageFault_Handler(void)
   /* USER CODE BEGIN UsageFault_IRQn 0 */
   watch_diagnostic_record_exception(WATCH_DIAGNOSTIC_REASON_USAGEFAULT);
   /* USER CODE END UsageFault_IRQn 0 */
+  while (1)
+  {
+    /* USER CODE BEGIN W1_UsageFault_IRQn 0 */
+    /* USER CODE END W1_UsageFault_IRQn 0 */
+  }
 }
 
 /**

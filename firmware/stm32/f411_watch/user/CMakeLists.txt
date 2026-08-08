@@ -1,8 +1,11 @@
 add_library(f411_watch_user OBJECT
     app/watch_app.c
     app/watch_diagnostic.c
+    app/watch_fault_handlers.c
+    app/watch_usb_diagnostic.c
     board/display/watch_lcd.c
     board/power/watch_power.c
+    board/usb/watch_usb_cdc.c
 )
 
 target_include_directories(f411_watch_user

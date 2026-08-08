@@ -26,6 +26,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "app/watch_diagnostic.h"
+#include "app/watch_usb_diagnostic.h"
 
 /* USER CODE END Includes */
 
@@ -46,6 +47,12 @@
 
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN Variables */
+osThreadId_t usbDiagnosticTaskHandle;
+const osThreadAttr_t usbDiagnosticTask_attributes = {
+  .name = "usbDiagnostic",
+  .stack_size = 1024 * 2,
+  .priority = (osPriority_t) osPriorityBelowNormal,
+};
 
 /* USER CODE END Variables */
 /* Definitions for defaultTask */
@@ -58,6 +65,7 @@ const osThreadAttr_t defaultTask_attributes = {
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
+void StartUsbDiagnosticTask(void *argument);
 
 /* USER CODE END FunctionPrototypes */
 
@@ -124,7 +132,8 @@ void MX_FREERTOS_Init(void) {
   defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
-  /* add threads, ... */
+  usbDiagnosticTaskHandle = osThreadNew(StartUsbDiagnosticTask, NULL,
+                                        &usbDiagnosticTask_attributes);
   /* USER CODE END RTOS_THREADS */
 
   /* USER CODE BEGIN RTOS_EVENTS */
@@ -155,6 +164,15 @@ void StartDefaultTask(void *argument)
 
 /* Private application code --------------------------------------------------*/
 /* USER CODE BEGIN Application */
+void StartUsbDiagnosticTask(void *argument)
+{
+  (void)argument;
+
+  for (;;) {
+    watch_usb_diagnostic_process();
+    osDelay(1);
+  }
+}
 
 /* USER CODE END Application */
 

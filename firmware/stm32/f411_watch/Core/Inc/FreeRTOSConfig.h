@@ -45,6 +45,16 @@
 
 /* USER CODE BEGIN Includes */
 /* Section where include file can be added */
+#if defined(WATCH_DIAGNOSTIC)
+#if defined(__GNUC__)
+#define WATCH_DIAGNOSTIC_CONFIG_NORETURN __attribute__((noreturn))
+#else
+#define WATCH_DIAGNOSTIC_CONFIG_NORETURN
+#endif
+void watch_diagnostic_assert(const char *file,
+                            uint32_t line) WATCH_DIAGNOSTIC_CONFIG_NORETURN;
+#undef WATCH_DIAGNOSTIC_CONFIG_NORETURN
+#endif
 /* USER CODE END Includes */
 
 /* Ensure definitions are only used by the compiler, and not by the assembler. */
@@ -55,16 +65,6 @@
 #ifndef CMSIS_device_header
 #define CMSIS_device_header "stm32f4xx.h"
 #endif /* CMSIS_device_header */
-
-#if defined(WATCH_DIAGNOSTIC)
-#if defined(__GNUC__)
-#define WATCH_DIAGNOSTIC_CONFIG_NORETURN __attribute__((noreturn))
-#else
-#define WATCH_DIAGNOSTIC_CONFIG_NORETURN
-#endif
-void watch_diagnostic_assert(const char *file, uint32_t line) WATCH_DIAGNOSTIC_CONFIG_NORETURN;
-#undef WATCH_DIAGNOSTIC_CONFIG_NORETURN
-#endif
 
 #define configENABLE_FPU                         0
 #define configENABLE_MPU                         0
