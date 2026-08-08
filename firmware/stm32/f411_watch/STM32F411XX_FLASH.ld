@@ -7,7 +7,7 @@
 **  Author		: STM32CubeMX
 **
 **  Abstract    : Linker script for STM32F411CEUx series
-**                512Kbytes FLASH and 128Kbytes RAM
+**                448Kbytes application slot and 128Kbytes RAM
 **
 **                Set heap size, stack size and stack location according
 **                to application requirements.
@@ -58,11 +58,12 @@ _estack = ORIGIN(RAM) + LENGTH(RAM);    /* end of RAM */
 _Min_Heap_Size = 0x200;      /* required amount of heap  */
 _Min_Stack_Size = 0x400; /* required amount of stack */
 
-/* Specify the memory areas */
+/* The first 64 KiB is reserved for the standalone bootloader. The final
+   4 KiB of the application slot is reserved for the signed image trailer. */
 MEMORY
 {
 RAM (xrw)      : ORIGIN = 0x20000000, LENGTH = 128K
-FLASH (rx)      : ORIGIN = 0x8000000, LENGTH = 512K
+FLASH (rx)      : ORIGIN = 0x08010000, LENGTH = 444K
 }
 
 /* Define output sections */
@@ -203,5 +204,8 @@ SECTIONS
   }
 
 }
+
+ASSERT(ORIGIN(FLASH) == 0x08010000, "Application origin must follow the bootloader")
+ASSERT(ORIGIN(FLASH) + LENGTH(FLASH) <= 0x0807F000, "Application overlaps the signed trailer")
 
 

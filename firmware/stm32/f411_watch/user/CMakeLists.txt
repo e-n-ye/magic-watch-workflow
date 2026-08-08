@@ -31,6 +31,7 @@ add_custom_target(cppcheck
 add_custom_target(format
     COMMAND ${CMAKE_COMMAND}
         -DFORMAT_ROOT=${CMAKE_CURRENT_SOURCE_DIR}
+        -DFORMAT_EXTRA_ROOT=${CMAKE_SOURCE_DIR}/bootloader
         -DFORMAT_MODE=fix
         -DCLANG_FORMAT_EXECUTABLE=${WATCH_CLANG_FORMAT_EXECUTABLE}
         -P ${CMAKE_SOURCE_DIR}/cmake/run_clang_format.cmake
@@ -41,6 +42,7 @@ add_custom_target(format
 add_custom_target(format-check
     COMMAND ${CMAKE_COMMAND}
         -DFORMAT_ROOT=${CMAKE_CURRENT_SOURCE_DIR}
+        -DFORMAT_EXTRA_ROOT=${CMAKE_SOURCE_DIR}/bootloader
         -DFORMAT_MODE=check
         -DCLANG_FORMAT_EXECUTABLE=${WATCH_CLANG_FORMAT_EXECUTABLE}
         -P ${CMAKE_SOURCE_DIR}/cmake/run_clang_format.cmake

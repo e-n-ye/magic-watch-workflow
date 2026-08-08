@@ -39,6 +39,7 @@ execute_process(
     COMMAND "${CPPCHECK_EXECUTABLE}"
         "--project=${COMPILE_COMMANDS}"
         "--file-filter=user/**"
+        "--file-filter=bootloader/**"
         "--cppcheck-build-dir=${CPPCHECK_BUILD_DIR}"
         "--platform=arm32-wchar_t4"
         "--check-level=normal"

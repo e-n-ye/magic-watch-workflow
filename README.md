@@ -50,7 +50,7 @@ cmake --preset Debug
 cmake --build --preset Debug
 ```
 
-The generated ELF is written to `build/Debug/my_watch_f411.elf`. VS Code provides build, OpenOCD/ST-Link, and STM32CubeProgrammer tasks. The CubeProgrammer task accepts `STM32_PROGRAMMER_CLI` as an override and otherwise checks PATH and the existing local installation.
+The generated App ELF is written to `build/Debug/my_watch_f411.elf`; the standalone Bootloader ELF is written to `build/Debug/f411_bootloader.elf`. VS Code provides build, OpenOCD/ST-Link, and STM32CubeProgrammer tasks. The CubeProgrammer task accepts `STM32_PROGRAMMER_CLI` as an override and otherwise checks PATH.
 
 ### ESP32-S3
 

@@ -29,6 +29,13 @@ set(FORMAT_FILES
     "${FORMAT_ROOT}/config/user_config.h"
 )
 
+if(DEFINED FORMAT_EXTRA_ROOT AND NOT FORMAT_EXTRA_ROOT STREQUAL "")
+    list(APPEND FORMAT_FILES
+        "${FORMAT_EXTRA_ROOT}/main.c"
+        "${FORMAT_EXTRA_ROOT}/system.c"
+    )
+endif()
+
 foreach(FORMAT_FILE IN LISTS FORMAT_FILES)
     if(NOT EXISTS "${FORMAT_FILE}")
         message(FATAL_ERROR "Formatting whitelist file does not exist: ${FORMAT_FILE}")
