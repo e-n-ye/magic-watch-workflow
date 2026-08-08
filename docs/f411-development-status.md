@@ -53,7 +53,7 @@ modules are not part of the project.
 | --- | --- | --- |
 | M0 | Rolling status page and project baseline | Merged; CI Gate passed |
 | M1 | Bootloader target, App relocation, VTOR, and flash/debug flow | Complete; combined and App-only OpenOCD programming accepted on hardware |
-| M2 | Signed image manifest, trailer, and host packaging | Software complete; valid-image board check passed; negative-path board acceptance pending |
+| M2 | Signed image manifest, trailer, and host packaging | Software complete; key rotation requires Bootloader reflash; negative-path board acceptance pending |
 | M3 | Assertions, reset capsule, logs, memory budgets, Diagnostic build | Planned |
 | M4 | Pure-C core, input contracts, and host tests | Planned |
 | M5 | Input hardware and normalized gesture/button events | Planned |
@@ -77,18 +77,23 @@ version, security counter, load address, image length, SHA-256, key id, and a
 64-byte raw `r || s` ECDSA P-256 signature. The host packer uses OpenSSL; the
 Bootloader verifies the same fields with the vendored TinyCrypt v0.2.8 subset.
 
+Key id `0` was rotated after the original external private key could not be
+recovered. The new P-256 public key is committed in the Bootloader; its private
+key remains outside the repository. A board running the previous Bootloader
+must be reflashed before the new package can be accepted.
+
 OpenOCD/ST-Link is the supported F411 programming path. The VS Code tasks first
 build and sign the package, then program the Bootloader and/or package. The
 CubeProgrammer tasks and helper have been removed because they were unreliable
 on this board.
 
-The valid package was generated with firmware version `1` and security counter
-`1`, verified on the host, programmed with OpenOCD, and observed jumping to the
-App at `0x0801xxxx` after reset. M1 hardware acceptance also passed: combined
-programming, cold-start color bars, App entry, interrupt response, and App-only
-programming with the Bootloader region unchanged. Remaining M2 acceptance is
-manual rejection of an unsigned, corrupted, wrong-board, or out-of-range
-package while confirming the existing App is not touched.
+Before key rotation, a valid package was verified on the host, programmed with
+OpenOCD, and observed jumping to the App at `0x0801xxxx` after reset. M1
+hardware acceptance also passed: combined programming, cold-start color bars,
+App entry, interrupt response, and App-only programming with the Bootloader
+region unchanged. After rotation, the new package is host-verified; remaining
+M2 acceptance is to reflash the new Bootloader, confirm a valid package boots,
+and reject an unsigned, corrupted, wrong-board, or out-of-range package.
 
 ## Next round
 
@@ -120,9 +125,9 @@ cmake --build --preset Debug --target format-check
 cmake --build --preset Debug --target cppcheck
 ```
 
-For M2, `python tools/manifest/test_manifest.py` passed all eight host tests.
-The generated package is exactly `458,752` bytes, with the trailer at package
-offset `0x6F000`. OpenOCD verified both the Bootloader and signed package on the
-board; a reset reached the relocated App. The M1 App-only before/after
-Bootloader-region SHA-256 comparison also passed. The next required result is
-the manual negative-path package rejection listed above.
+For M2, `python tools/manifest/test_manifest.py` passed all eight host tests,
+including package-padding rejection. The new key pair was generated outside
+the repository, and the public half was installed in the Bootloader. The
+generated package is exactly `458,752` bytes, with the trailer at package offset
+`0x6F000`. The next required result is the manual Bootloader reflash,
+valid-package cold start, and negative-path rejection listed above.
