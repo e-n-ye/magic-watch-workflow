@@ -11,6 +11,7 @@ A CMake-first embedded watch workflow for STM32F411 and ESP32-S3, with reproduci
 - ESP32-S3 工程已经通过 ESP-IDF 点亮板载 RGB LED，并保留 UART 监视入口。
 - CubeMX 生成区与手写 `user/` 代码已经分开；CubeMX 强制保留的 `defaultTask` 不承载手表业务。
 - LVGL、XML UI、主机模拟器和状态机将在版本兼容性与真实需求明确后逐步加入。
+- [F411 rolling development status](docs/f411-development-status.md)
 
 ## Documentation
 
