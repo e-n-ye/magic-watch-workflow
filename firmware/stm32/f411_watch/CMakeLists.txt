@@ -53,6 +53,13 @@ target_compile_definitions(stm32cubemx INTERFACE
     VECT_TAB_OFFSET=0x00010000U
 )
 
+if(CMAKE_BUILD_TYPE STREQUAL "Diagnostic")
+    target_compile_definitions(stm32cubemx INTERFACE
+        WATCH_DIAGNOSTIC=1
+        USE_FULL_ASSERT=1
+    )
+endif()
+
 # Add hand-written board and application sources
 add_subdirectory(user)
 add_subdirectory(bootloader)
@@ -71,6 +78,13 @@ add_custom_command(TARGET ${CMAKE_PROJECT_NAME} POST_BUILD
         -O binary
         "$<TARGET_FILE:${CMAKE_PROJECT_NAME}>"
         "${CMAKE_BINARY_DIR}/${CMAKE_PROJECT_NAME}.bin"
+    COMMAND ${CMAKE_COMMAND}
+        -DSIZE_EXECUTABLE=${CMAKE_SIZE}
+        -DELF_FILE=$<TARGET_FILE:${CMAKE_PROJECT_NAME}>
+        -DFLASH_BUDGET=409600
+        -DRAM_BUDGET=131072
+        -DTARGET_LABEL=${CMAKE_PROJECT_NAME}
+        -P ${CMAKE_SOURCE_DIR}/cmake/check_memory_budget.cmake
     VERBATIM
 )
 

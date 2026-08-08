@@ -1,5 +1,6 @@
 add_library(f411_watch_user OBJECT
     app/watch_app.c
+    app/watch_diagnostic.c
     board/display/watch_lcd.c
     board/power/watch_power.c
 )

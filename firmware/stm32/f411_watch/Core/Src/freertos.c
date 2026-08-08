@@ -25,6 +25,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "app/watch_diagnostic.h"
 
 /* USER CODE END Includes */
 
@@ -87,9 +88,8 @@ void vApplicationIdleHook( void )
 /* USER CODE BEGIN 4 */
 void vApplicationStackOverflowHook(xTaskHandle xTask, signed char *pcTaskName)
 {
-   /* Run time stack overflow checking is performed if
-   configCHECK_FOR_STACK_OVERFLOW is defined to 1 or 2. This hook function is
-   called if a stack overflow is detected. */
+   (void)xTask;
+   watch_diagnostic_stack_overflow(pcTaskName);
 }
 /* USER CODE END 4 */
 

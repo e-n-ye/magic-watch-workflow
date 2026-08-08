@@ -18,6 +18,13 @@
             }
         },
         {
+            "name": "Diagnostic",
+            "inherits": "default",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Diagnostic"
+            }
+        },
+        {
             "name": "RelWithDebInfo",
             "inherits": "default",
             "cacheVariables": {
@@ -43,6 +50,10 @@
         {
             "name": "Debug",
             "configurePreset": "Debug"
+        },
+        {
+            "name": "Diagnostic",
+            "configurePreset": "Diagnostic"
         },
         {
             "name": "RelWithDebInfo",

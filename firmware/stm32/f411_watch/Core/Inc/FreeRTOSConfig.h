@@ -56,6 +56,16 @@
 #define CMSIS_device_header "stm32f4xx.h"
 #endif /* CMSIS_device_header */
 
+#if defined(WATCH_DIAGNOSTIC)
+#if defined(__GNUC__)
+#define WATCH_DIAGNOSTIC_CONFIG_NORETURN __attribute__((noreturn))
+#else
+#define WATCH_DIAGNOSTIC_CONFIG_NORETURN
+#endif
+void watch_diagnostic_assert(const char *file, uint32_t line) WATCH_DIAGNOSTIC_CONFIG_NORETURN;
+#undef WATCH_DIAGNOSTIC_CONFIG_NORETURN
+#endif
+
 #define configENABLE_FPU                         0
 #define configENABLE_MPU                         0
 
@@ -152,7 +162,16 @@ See http://www.FreeRTOS.org/RTOS-Cortex-M3-M4.html. */
 /* Normal assert() semantics without relying on the provision of an assert.h
 header file. */
 /* USER CODE BEGIN 1 */
-#define configASSERT( x ) if ((x) == 0) {taskDISABLE_INTERRUPTS(); for( ;; );}
+#if defined(WATCH_DIAGNOSTIC)
+#define configASSERT(x) \
+    do { \
+        if ((x) == 0) { \
+            watch_diagnostic_assert(__FILE__, __LINE__); \
+        } \
+    } while (0)
+#else
+#define configASSERT(x) if ((x) == 0) {taskDISABLE_INTERRUPTS(); for( ;; );}
+#endif
 /* USER CODE END 1 */
 
 /* Definitions that map the FreeRTOS port interrupt handlers to their CMSIS

@@ -32,6 +32,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "app/watch_app.h"
+#include "app/watch_diagnostic.h"
 #include "board/power/watch_power.h"
 
 /* USER CODE END Includes */
@@ -214,11 +215,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 void Error_Handler(void)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
-  /* User can add his own implementation to report the HAL error return state */
-  __disable_irq();
-  while (1)
-  {
-  }
+  watch_diagnostic_error();
   /* USER CODE END Error_Handler_Debug */
 }
 
@@ -233,8 +230,7 @@ void Error_Handler(void)
 void assert_failed(uint8_t *file, uint32_t line)
 {
   /* USER CODE BEGIN 6 */
-  /* User can add his own implementation to report the file name and line number,
-     ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
+  watch_diagnostic_assert((const char *)file, line);
   /* USER CODE END 6 */
 }
 #endif /* USE_FULL_ASSERT */

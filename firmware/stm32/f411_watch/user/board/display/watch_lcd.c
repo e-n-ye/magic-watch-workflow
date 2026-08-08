@@ -403,3 +403,21 @@ void watch_lcd_show_bringup_pattern(void)
     watch_lcd_fill_rect(0U, (uint16_t)(6U * stripe), WATCH_LCD_WIDTH,
                         (uint16_t)(WATCH_LCD_HEIGHT - (6U * stripe)), WATCH_LCD_WHITE);
 }
+
+void watch_lcd_show_diagnostic_pattern(uint32_t reason)
+{
+    static const uint16_t colors[] = {
+        WATCH_LCD_RED,  WATCH_LCD_MAGENTA, WATCH_LCD_YELLOW, WATCH_LCD_CYAN,
+        WATCH_LCD_BLUE, WATCH_LCD_GREEN,   WATCH_LCD_WHITE,
+    };
+    const uint32_t color_count = (uint32_t)(sizeof(colors) / sizeof(colors[0]));
+    const uint16_t stripe = (uint16_t)(WATCH_LCD_HEIGHT / 8U);
+    uint32_t index;
+
+    watch_lcd_fill(colors[reason % color_count]);
+
+    for (index = 0U; index < (reason % 8U) + 1U; ++index) {
+        watch_lcd_fill_rect(0U, (uint16_t)(index * stripe), WATCH_LCD_WIDTH, stripe,
+                            WATCH_LCD_BLACK);
+    }
+}
