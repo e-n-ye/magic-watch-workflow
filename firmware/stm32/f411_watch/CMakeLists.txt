@@ -45,8 +45,34 @@ add_executable(${CMAKE_PROJECT_NAME})
 # Add STM32CubeMX generated sources
 add_subdirectory(cmake/stm32cubemx)
 
+# The application vector table is linked at the first address after the
+# reserved bootloader region. Keep this definition on the generated interface
+# target so SystemInit receives it when its source is compiled.
+target_compile_definitions(stm32cubemx INTERFACE
+    USER_VECT_TAB_ADDRESS
+    VECT_TAB_OFFSET=0x00010000U
+)
+
 # Add hand-written board and application sources
 add_subdirectory(user)
+add_subdirectory(bootloader)
+
+target_link_options(${CMAKE_PROJECT_NAME} PRIVATE
+    "-T${CMAKE_CURRENT_SOURCE_DIR}/STM32F411XX_FLASH.ld"
+    "-Wl,-Map=${CMAKE_BINARY_DIR}/${CMAKE_PROJECT_NAME}.map"
+)
+
+add_custom_command(TARGET ${CMAKE_PROJECT_NAME} POST_BUILD
+    COMMAND ${CMAKE_OBJCOPY}
+        -O ihex
+        "$<TARGET_FILE:${CMAKE_PROJECT_NAME}>"
+        "${CMAKE_BINARY_DIR}/${CMAKE_PROJECT_NAME}.hex"
+    COMMAND ${CMAKE_OBJCOPY}
+        -O binary
+        "$<TARGET_FILE:${CMAKE_PROJECT_NAME}>"
+        "${CMAKE_BINARY_DIR}/${CMAKE_PROJECT_NAME}.bin"
+    VERBATIM
+)
 
 # Link directories setup
 target_link_directories(${CMAKE_PROJECT_NAME} PRIVATE

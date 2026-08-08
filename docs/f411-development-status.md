@@ -34,10 +34,14 @@ modules are not part of the project.
 
 ## Baseline
 
-- Reference commit: `cefb085` (`fix:ci:discover clang-format from PATH`).
-- Last verified Debug image: Flash `64,340 / 524,288 B`; RAM `30,208 / 131,072 B`.
-- Baseline checks passed: Debug configure, Debug build, `format-check`, and
-  `cppcheck`.
+- Reference commit: `e5fd1c3` (M0 status page merged to `main`).
+- M0 CI Gate passed; the current M1 branch starts from that merged baseline.
+- Before relocation, the verified Debug App image was Flash `64,340 / 524,288 B`
+  and RAM `30,208 / 131,072 B`.
+- Current M1 build: Bootloader Flash `1,036 / 65,536 B`, RAM `1,056 /
+  131,072 B`; App Flash `64,356 / 454,656 B`, RAM `30,208 / 131,072 B`.
+- Current checks passed: Debug configure, Debug build, `format-check`,
+  `cppcheck`, ELF section/vector inspection, and linker boundary assertions.
 - Current hardware facts: STM32F411, 24 MHz HSE, ST-Link-compatible SWD,
   ST7789 display, CST816 touch, W25Q128, and KT6368 UART wiring.
 
@@ -45,8 +49,8 @@ modules are not part of the project.
 
 | ID | Scope | Status |
 | --- | --- | --- |
-| M0 | Rolling status page and project baseline | Local complete; CI pending |
-| M1 | Bootloader target, App relocation, VTOR, and flash/debug flow | Planned |
+| M0 | Rolling status page and project baseline | Merged; CI Gate passed |
+| M1 | Bootloader target, App relocation, VTOR, and flash/debug flow | Software complete; board acceptance pending |
 | M2 | Signed image manifest, trailer, and host packaging | Planned |
 | M3 | Assertions, reset capsule, logs, memory budgets, Diagnostic build | Planned |
 | M4 | Pure-C core, input contracts, and host tests | Planned |
@@ -64,19 +68,22 @@ modules are not part of the project.
 
 ## Current round
 
-This round adds only this status page and its README entry. It does not modify
-`think.md`, CubeMX `.ioc` files, generated code, or firmware sources.
+This round adds the standalone Bootloader target, relocates the App to
+`0x08010000`, sets the App VTOR through the existing CMSIS SystemInit path, and
+adds separate/combined programming tasks. It does not modify `think.md`, the
+CubeMX `.ioc`, or CubeMX-generated sources.
 
-Acceptance for this round is a clean documentation diff, no local paths or
-tokens, a successful `CI / CI Gate`, and a status page that identifies the
-next closed loop: M1 Bootloader/Application layout and relocation.
+Software acceptance is a clean build, format check, Cppcheck, valid ELF/map
+boundaries, and a successful `CI / CI Gate`. Hardware acceptance remains
+manual: flash both images, cold-boot the board, verify the fixed color bars and
+App interrupt handling, then flash only the App and verify the Bootloader still
+starts on the next reset.
 
 ## Next round
 
-M1 will add a minimal standalone Bootloader and relocate the existing App to
-`0x08010000`. It must preserve the current fixed-color bring-up display, set
-VTOR correctly, and prove separate and combined ST-Link/OpenOCD programming
-without erasing the Bootloader region.
+M2 will define the signed manifest, 4 KiB trailer, and host packaging format;
+the Bootloader must accept a valid factory image and reject malformed,
+out-of-range, wrong-board, and unsigned images without touching the App.
 
 ## Risks and blockers
 
@@ -94,6 +101,15 @@ without erasing the Bootloader region.
 
 ## Latest verification
 
-For this documentation round, run `git diff --check`, inspect the README and
-this page, and check modified Chinese text for the repository's known encoding
-markers. Firmware build checks become mandatory again from M1 onward.
+For M1, the following passed from the F411 project directory:
+
+```text
+cmake --preset Debug
+cmake --build --preset Debug
+cmake --build --preset Debug --target format-check
+cmake --build --preset Debug --target cppcheck
+```
+
+ELF inspection confirmed Bootloader vectors at `0x08000000`, App vectors at
+`0x08010000`, and the App image below the reserved `0x0807F000` trailer start.
+The remaining result is the manual board acceptance listed above.
