@@ -34,9 +34,9 @@ modules are not part of the project.
 
 ## Baseline
 
-- Reference commit: `b7cf2f5` (M3a diagnostics and memory budgets merged to
+- Reference commit: `5346cf7` (M3b USB CDC diagnostic transport merged to
   `main`).
-- M0, M1, M2, and M3a CI Gates passed; M3b starts from this merged baseline.
+- M0, M1, M2, M3a, and M3b CI Gates passed; M3a board acceptance is complete.
 - Before relocation, the verified Debug App image was Flash `64,340 / 524,288 B`
   and RAM `30,208 / 131,072 B`.
 - M3a pre-CDC Debug build: Bootloader was `6,564 B` Flash and `1,056 B` RAM;
@@ -55,7 +55,7 @@ modules are not part of the project.
 | M0 | Rolling status page and project baseline | Merged; CI Gate passed |
 | M1 | Bootloader target, App relocation, VTOR, and flash/debug flow | Complete; combined and App-only OpenOCD programming accepted on hardware |
 | M2 | Signed image manifest, trailer, and host packaging | Software complete; key rotation requires Bootloader reflash; negative-path board acceptance pending |
-| M3a | Assertions, reset capsule, memory budgets, Diagnostic build | Complete locally; board cold-start acceptance pending |
+| M3a | Assertions, reset capsule, memory budgets, Diagnostic build | Complete; Diagnostic cold-start and HardFault injection accepted on hardware |
 | M3b | USB CDC logging and diagnostic transport | Complete locally; CubeMX CDC generation, software checks, OpenOCD programming, and COM6 host acceptance passed |
 | M4 | Pure-C core, input contracts, and host tests | Planned |
 | M5 | Input hardware and normalized gesture/button events | Planned |
@@ -90,6 +90,13 @@ owns bounded RX/TX rings and a non-blocking 64-byte packet sender. The service
 task accepts line-oriented `help`, `ping`, `info`, `diag`, and `stats` commands;
 unknown commands and overlong lines return explicit errors. No `printf`
 redirection, MSC mode, resource protocol, or OTA transport is included here.
+
+M3a board acceptance is now complete. A Diagnostic App cold start after a full
+power cycle showed the backlight and the normal 240x280 color bars. A controlled
+ST-Link/OpenOCD/GDB fault injection then stopped the CPU in the diagnostic halt
+path; a reset showed the one-time HardFault pattern (observed as roughly 30%
+black and 70% yellow), and the following reset restored the normal color bars.
+The capsule is only required to survive a reset, not a complete power loss.
 
 The generated HardFault function remains a CubeMX placeholder. A source-level
 CMake symbol remap routes the vector table to the hand-written diagnostic
@@ -141,5 +148,6 @@ combined OpenOCD task wrote and verified the Bootloader plus signed App. The
 board enumerated as `USB Serial Device (COM6)` with VID/PID `0483:5740`; `ping`,
 `info`, `diag`, `stats`, and `help` returned the expected lines, an unknown
 command and an overlong line returned explicit errors, and a close/reopen cycle
-accepted `ping` again. M3a Diagnostic cold-start and deliberate fault injection
-are still not performed by the automated flash task.
+accepted `ping` again. M3a Diagnostic cold-start and deliberate HardFault
+injection were then accepted on hardware using the Diagnostic App, OpenOCD, and
+GDB; the capsule pattern and post-reset recovery matched the acceptance steps.
