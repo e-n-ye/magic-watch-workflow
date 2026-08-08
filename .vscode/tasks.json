@@ -110,7 +110,7 @@
                 "--image",
                 "build/Debug/my_watch_f411.bin",
                 "--private-key",
-                "${input:f411SigningKey}",
+                "${env:F411_SIGNING_KEY}",
                 "--firmware-version",
                 "${input:f411FirmwareVersion}",
                 "--security-counter",
@@ -274,12 +274,6 @@
             "type": "promptString",
             "description": "ESP32-S3 serial port",
             "default": "COM5"
-        },
-        {
-            "id": "f411SigningKey",
-            "type": "promptString",
-            "description": "External F411 ECDSA private key path matching the Bootloader public key",
-            "password": true
         },
         {
             "id": "f411FirmwareVersion",

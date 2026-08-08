@@ -52,6 +52,18 @@ cmake --build --preset Debug
 
 The generated App ELF is written to `build/Debug/my_watch_f411.elf`; the standalone Bootloader ELF is written to `build/Debug/f411_bootloader.elf`. VS Code provides build, signed-package, and OpenOCD/ST-Link tasks. OpenOCD is the supported F411 programming path.
 
+Signed-package tasks read the external ECDSA private key from the machine-local
+`F411_SIGNING_KEY` user environment variable, so the path is configured once and
+is not stored in Git. In PowerShell, run this once with your own key path, then
+restart VS Code so its task process inherits the variable:
+
+```powershell
+[Environment]::SetEnvironmentVariable("F411_SIGNING_KEY", "<path-to-f411-signing-key.pem>", "User")
+```
+
+The package task still asks for firmware version and security counter on each
+run; these values are signed metadata and must not be silently reused.
+
 ### ESP32-S3
 
 Set `IDF_TOOLS_PATH` when ESP-IDF is not installed in the default local location, then run the VS Code ESP32-S3 build or flash task. The serial port is requested by the task instead of being fixed in the repository.
