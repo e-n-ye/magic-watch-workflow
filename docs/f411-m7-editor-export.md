@@ -19,6 +19,14 @@ on the user's UI-only project. When the screen is edited in the Editor, export
 the generated C again and review the resulting `*_gen.c`/`*_gen.h` diff. Do not
 commit Editor account data, licenses, tokens, or local installation paths.
 
+## Generated-output rule
+
+`*_gen.c`, `*_gen.h`, generated file lists, and generated CMake files are owned
+by the LVGL Pro Editor export. They must never be hand-edited. Make the change
+in XML, run the Editor Code/export action, and review the resulting generated
+diff. If the Editor cannot export, leave the XML change pending and do not
+synthesize or patch an equivalent generated file manually.
+
 ## Build and test
 
 The simulator uses the LVGL 9.5.0 source already committed under the F411

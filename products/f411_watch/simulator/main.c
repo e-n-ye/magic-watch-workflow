@@ -59,6 +59,12 @@ static bool watch_simulator_label_is(lv_obj_t *screen, int32_t index, const char
     return strcmp(lv_label_get_text(child), text) == 0;
 }
 
+static bool watch_simulator_background_is_opaque(lv_obj_t *screen)
+{
+    return lv_color_eq(lv_obj_get_style_bg_color(screen, LV_PART_MAIN), lv_color_hex(0x101820))
+        && lv_obj_get_style_bg_opa(screen, LV_PART_MAIN) == LV_OPA_COVER;
+}
+
 static bool watch_simulator_show_page(watch_page_lifecycle_t *lifecycle,
                                       const watch_snapshot_t *snapshot, const char *page_name,
                                       const char *hint)
@@ -70,7 +76,8 @@ static bool watch_simulator_show_page(watch_page_lifecycle_t *lifecycle,
     result = watch_page_lifecycle_apply(lifecycle, snapshot);
     screen = watch_page_lifecycle_active_screen(lifecycle);
     if (result && screen != NULL) {
-        result = watch_simulator_label_is(screen, 0, "MAGIC WATCH")
+        result = watch_simulator_background_is_opaque(screen)
+            && watch_simulator_label_is(screen, 0, "MAGIC WATCH")
             && watch_simulator_label_is(screen, 1, page_name)
             && watch_simulator_label_is(screen, 2, hint);
     }

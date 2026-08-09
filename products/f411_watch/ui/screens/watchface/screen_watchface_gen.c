@@ -42,6 +42,7 @@ lv_obj_t * screen_watchface_create(void)
         /*Init all styles*/
         lv_style_init(&style_watchface);
 
+        lv_style_set_bg_opa(&style_watchface, (255 * 100 / 100));
         lv_style_set_bg_color(&style_watchface, lv_color_hex(0x101820));
 
         style_inited = true;

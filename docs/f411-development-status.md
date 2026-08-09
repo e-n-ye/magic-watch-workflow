@@ -25,7 +25,7 @@ modules are not part of the project.
 | LVGL | Pinned v9.5.0; only the UI task calls LVGL, with a 240x20 double partial buffer |
 | Display flush | ST7789 SPI1 DMA; RGB565 byte order is converted before the transfer and completion is acknowledged in the UI task |
 | UI ownership | One LVGL UI task owns LVGL and the core; services use bounded queues |
-| XML | XML is maintained in LVGL Pro Editor; generated C is exported manually and committed; F411 does not parse XML at runtime |
+| XML | XML is maintained in LVGL Pro Editor; generated C is produced only by Editor Code/export and committed; generated files are never hand-edited; F411 does not parse XML at runtime |
 | Boot layout | Bootloader `0x08000000-0x0800FFFF`; application `0x08010000-0x0807FFFF` |
 | App budget | 448 KiB slot with a 4 KiB signed trailer; linked image budget is 400 KiB |
 | External flash | W25Q128 metadata, candidate, rollback, and littlefs partitions are separate |
@@ -63,8 +63,8 @@ modules are not part of the project.
 | M5 | Input hardware and normalized gesture/button events | Complete; M5a/M5b CI Gates and board acceptance passed |
 | M6 | LVGL 9.5 port, DMA flush, UI task, and 240x280 budget gate | Complete; CI Gate and focused board acceptance passed |
 | M7 | Editor-exported XML UI, generated C, and PC simulator | Implemented locally; host CTest passed; no board acceptance required |
-| M8 | Page lifecycle and watch pages | Implemented locally; host/F411 checks passed; board acceptance pending |
-| M9 | Time, service queues, task health, and initialization policy | Implemented locally; host/F411 checks passed; board acceptance pending |
+| M8 | Page lifecycle and watch pages | Functional board acceptance passed; this PR corrects exported screen opacity; fixed-image visual check pending |
+| M9 | Time, service queues, task health, and initialization policy | USB health board acceptance passed; fixed-image visual check pending |
 | M10 | Confirmed sensor drivers and sensor service | Planned |
 | M11 | Power states, wake sources, Stop recovery, and watchdog | Planned |
 | M12 | W25Q128 raw driver, littlefs, and resource streaming | Planned |
@@ -88,6 +88,11 @@ OTA behavior, or an unbounded cross-task event bus. The queue is a small
 service-command contract with a real USB diagnostic consumer; existing core
 and input queues remain unchanged. XML remains the source of truth and
 committed generated C/H is the only firmware/runtime UI input.
+
+This corrective UI change makes every screen background explicitly opaque in
+XML (`bg_opa="100%"`) and records the matching Editor-exported C. The host
+smoke test now checks both the background color and opacity, so a future export
+that drops the property fails before a board flash.
 
 ## Next round
 
@@ -219,10 +224,9 @@ queue, FIFO, and heartbeat timeout checks. The existing core/input suite and
 the LVGL page lifecycle smoke also passed. The linked Debug App is Flash
 `244,384 B` and RAM `82,968 B`, under the 400 KiB and 128 KiB limits.
 
-M9 board acceptance is pending together with the M8 page check. After flashing
-the Debug image with OpenOCD, open the existing USB CDC terminal and send
-`health\r\n`. The response must report `stage=3`, `app=ok`, `ui=ok`, `usb=ok`,
-and a bounded `queue=0` during normal idle operation. Send `help\r\n` and
-confirm `health` is listed; send an unknown command and confirm the existing
-error response still works. No new sensor, RTC, watchdog, or power behavior is
-part of this demonstration.
+M9 USB CDC health acceptance passed on the pre-fix Debug image: `health\r\n`
+reported `stage=3`, `app=ok`, `ui=ok`, `usb=ok`, and `queue=0`; `help\r\n`
+listed `health`. No new sensor, RTC, watchdog, or power behavior is part of
+that demonstration. The only remaining human check for this corrective change
+is to flash the new Debug image with OpenOCD and confirm the 240x280 pages now
+show the XML dark background (`0x101820`) with the expected text colors.

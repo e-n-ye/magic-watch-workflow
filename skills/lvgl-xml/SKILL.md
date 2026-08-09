@@ -17,7 +17,10 @@ the firmware and simulator input.
 - Do not parse XML at F411 runtime. The F411 configuration keeps `LV_USE_XML=0`;
   XML parser work belongs to a later, explicitly scoped round.
 - Treat `*_gen.c`, `*_gen.h`, generated file lists, and generated CMake as
-  export output. Do not hand-edit them to make an XML change appear to work.
+  export output. Never hand-edit any generated file. Every generated-file
+  change must come from the Editor Code/export action; if the Editor cannot
+  export, stop with the XML change pending and ask for an Editor export rather
+  than synthesizing equivalent C by hand.
 - Put hand-written UI extensions in the existing user hook, normally
   `products/f411_watch/ui/user_config.cmake`, and add a real consumer and test
   before creating a new component or widget.
