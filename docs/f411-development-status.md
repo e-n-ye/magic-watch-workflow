@@ -25,7 +25,7 @@ modules are not part of the project.
 | LVGL | Pinned v9.5.0; only the UI task calls LVGL, with a 240x20 double partial buffer |
 | Display flush | ST7789 SPI1 DMA; RGB565 byte order is converted before the transfer and completion is acknowledged in the UI task |
 | UI ownership | One LVGL UI task owns LVGL and the core; services use bounded queues |
-| XML | XML is the layout source and generated C is committed; F411 does not parse XML at runtime |
+| XML | XML is maintained in LVGL Pro Editor; generated C is exported manually and committed; F411 does not parse XML at runtime |
 | Boot layout | Bootloader `0x08000000-0x0800FFFF`; application `0x08010000-0x0807FFFF` |
 | App budget | 448 KiB slot with a 4 KiB signed trailer; linked image budget is 400 KiB |
 | External flash | W25Q128 metadata, candidate, rollback, and littlefs partitions are separate |
@@ -62,7 +62,7 @@ modules are not part of the project.
 | M4 | Pure-C core, input contracts, and host tests | Complete; F411 and host CTest passed |
 | M5 | Input hardware and normalized gesture/button events | Complete; M5a/M5b CI Gates and board acceptance passed |
 | M6 | LVGL 9.5 port, DMA flush, UI task, and 240x280 budget gate | Complete; CI Gate and focused board acceptance passed |
-| M7 | XML generation and PC simulator using generated C | Preflight blocked; local licensed LVGL Pro CLI is required |
+| M7 | Editor-exported XML UI, generated C, and PC simulator | Scope revised; manual Editor export selected; implementation pending |
 | M8 | Page lifecycle and watch pages | Planned |
 | M9 | Time, service queues, task health, and initialization policy | Planned |
 | M10 | Confirmed sensor drivers and sensor service | Planned |
@@ -93,24 +93,28 @@ acceptance then confirmed the `MAGIC WATCH` page at 240x280, encoder/select and
 screen-click navigation from `WATCHFACE` to `LAUNCHER` to `STATUS`, and a stable
 left-edge right-swipe `BACK` gesture.
 
-M7 preflight found no LVGL Pro CLI, XML source, generated UI C, simulator
-project, or local license configuration in the repository or current environment.
-No substitute generator or placeholder module is being added. The implementation
-can start when the licensed CLI is made available through local environment
-configuration; its token and absolute installation path must remain outside Git.
+M7 preflight found no XML source, generated UI C, or simulator project in the
+repository. The local LVGL Pro CLI is not required for this project: the user
+selected the lower-cost workflow of maintaining XML in LVGL Pro Editor and
+manually exporting the generated C. No substitute generator or placeholder
+module is being added. The implementation can start when a small 240x280 Editor
+project has been exported; the Editor version and export steps will be recorded,
+while any local account data and absolute installation paths remain outside Git.
 
 ## Next round
 
-The next implementation round remains M7: add the LVGL Pro CLI/XML generation
-boundary and the PC simulator using committed generated C. M7 is blocked until
-the local licensed CLI and its generation schema are available; M6 does not add
-XML, generated UI, or simulator code.
+The next implementation round remains M7: add a manually exported LVGL Pro
+Editor project, commit its generated C, and build a PC simulator using the same
+generated C. M7 does not require a CLI token or CI-side regeneration. It does
+require a documented Editor export contract so that generated-file changes are
+reviewed and refreshed deliberately; M6 does not add XML, generated UI, or
+simulator code.
 
 ## Risks and blockers
 
-- The LVGL Pro CLI is a local licensed generation tool. Generated C remains
-  buildable without a CI Pro token, but regeneration requires a valid local
-  license and must never place its token in Git.
+- Editor export is a manual, local generation step. CI can build committed
+  generated C but cannot prove that a later Editor export is reproducible, so
+  the Editor version and export procedure must remain part of the M7 record.
 - The security counter is signed in M2 but is not persisted or compared against
   confirmed metadata until the later OTA rounds.
 - EEPROM type/address must be confirmed from the actual board before a driver
@@ -124,8 +128,9 @@ XML, generated UI, or simulator code.
   rather than a fabricated current target.
 - The reset capsule survives software reset but not a complete power loss; a
   power-cycle fault-recovery claim is deferred until backup storage exists.
-- M7 XML regeneration requires a local LVGL Pro CLI license and a documented
-  project schema; CI must build committed generated C without a Pro token.
+- M7 regeneration requires a local LVGL Pro Editor project and a documented
+  export procedure; CI only builds the committed generated C and does not need
+  a Pro token.
 
 ## Latest verification
 
