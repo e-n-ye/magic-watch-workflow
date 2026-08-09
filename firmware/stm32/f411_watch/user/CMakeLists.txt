@@ -30,6 +30,7 @@ add_library(f411_watch_user OBJECT
     board/power/watch_power.c
     board/usb/watch_usb_cdc.c
     ui/watch_ui.c
+    ${CMAKE_SOURCE_DIR}/../../../products/f411_watch/ui/f411_watch_ui_gen.c
     ${CMAKE_SOURCE_DIR}/../../../products/f411_watch/ui/watch_page_lifecycle.c
     ${CMAKE_SOURCE_DIR}/../../../products/f411_watch/ui/screens/watchface/screen_watchface_gen.c
     ${CMAKE_SOURCE_DIR}/../../../products/f411_watch/ui/screens/launcher/screen_launcher_gen.c

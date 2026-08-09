@@ -82,6 +82,11 @@ launcher hint for selection changes, and exposes create/destroy counters for the
 host smoke test. The F411 `watch_ui_task` and the Windows/headless simulator use
 the same adapter; `watch_core` remains the only owner of page-stack state.
 
+The current manual Editor export also includes the generated target-selection,
+object-name, and translation scaffolding. The hand-written simulator and F411
+CMake entries connect the generated global source and the lifecycle user object
+without editing the generated source files.
+
 M8 does not add runtime XML parsing, Pro CLI integration, new hardware input,
 service queues, sensors, time, power, storage, or OTA behavior. XML remains the
 source of truth and committed generated C/H is the only firmware/runtime input.
@@ -160,21 +165,23 @@ validated the Editor-compatible `<style name="..." />` view syntax, the XML
 documents parse successfully, and the Windows native path waits for its delayed
 framebuffer allocation before forcing the first visible frame.
 
-For M8, the following passed from the repository root:
+For the current M8 Editor export integration, the following passed from the
+repository root:
 
 ```text
-cmake -S products/f411_watch/simulator -B build/host-m7 -G Ninja
-cmake --build build/host-m7
-ctest --test-dir build/host-m7 --output-on-failure
-build/host-m7/watch_ui_simulator.exe --smoke
-cmake -S tests -B build/host-tests-m8 -G Ninja
-cmake --build build/host-tests-m8
-ctest --test-dir build/host-tests-m8 --output-on-failure
+cmake -S products/f411_watch/simulator -B build/host-m8-editor -G Ninja
+cmake --build build/host-m8-editor
+ctest --test-dir build/host-m8-editor --output-on-failure
+build/host-m8-editor/watch_ui_simulator.exe --smoke
+cmake -S tests -B build/host-tests-m8-editor -G Ninja
+cmake --build build/host-tests-m8-editor
+ctest --test-dir build/host-tests-m8-editor --output-on-failure
 ```
 
 The lifecycle smoke output was `watch_ui_smoke: PASS display=240x280 pages=5
-creates=5 destroys=4 active=WATCHFACE`. All four changed XML files parse with
-the host XML parser. The F411 Debug checks also passed:
+creates=5 destroys=4 active=WATCHFACE`. The four screen XML files, globals,
+translations, and project metadata parse as XML. The F411 Debug checks also
+passed:
 
 ```text
 cmake --preset Debug
@@ -183,8 +190,10 @@ cmake --build --preset Debug --target format-check
 cmake --build --preset Debug --target cppcheck
 ```
 
-The linked Debug App is Flash `241,400 B` and RAM `82,728 B`, under the 400 KiB
-App and 128 KiB RAM limits. M8 board acceptance is still pending: flash the
+The linked Debug App is Flash `242,356 B` and RAM `82,808 B`, under the 400 KiB
+App and 128 KiB RAM limits. The Editor preview runtime remains local and is
+ignored as `preview-bin`; only the exported C/H and build lists are candidates
+for Git. M8 board acceptance is still pending: flash the
 Debug image with OpenOCD, confirm `MAGIC WATCH` and the four page labels on the
 240x280 display, use select/down to reach `LAUNCHER` then `STATUS` or `SETTINGS`,
 and use the existing left-edge `BACK` gesture or encoder/button back path to

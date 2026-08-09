@@ -34,6 +34,23 @@ set(LV_EDITOR_COMPONENT_LIB_LIST watch_ui_lvgl)
 add_subdirectory(${WATCH_UI_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR}/ui)
 target_include_directories(watch_ui_generated PUBLIC ${WATCH_UI_SOURCE_DIR})
 
+# The Editor-generated user object target does not consistently inherit the
+# component library's usage requirements when it is compiled as an object
+# library. Keep the hand-written lifecycle adapter on the same LVGL contract.
+set(WATCH_UI_GENERATED_USER_TARGET "${LVGL_COMPONENT_LIB_NAME}_user")
+if(TARGET ${WATCH_UI_GENERATED_USER_TARGET})
+    target_include_directories(${WATCH_UI_GENERATED_USER_TARGET}
+        PRIVATE
+            ${WATCH_LVGL_SOURCE_DIR}
+            ${WATCH_LVGL_SOURCE_DIR}/src
+            ${CMAKE_CURRENT_LIST_DIR}
+    )
+    target_compile_definitions(${WATCH_UI_GENERATED_USER_TARGET} PRIVATE
+        LV_CONF_INCLUDE_SIMPLE
+        LV_LVGL_H_INCLUDE_SIMPLE
+    )
+endif()
+
 add_executable(watch_ui_simulator
     main.c
     ${WATCH_CORE_SOURCE_DIR}/watch_core.c
