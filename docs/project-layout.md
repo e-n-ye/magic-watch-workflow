@@ -22,6 +22,7 @@
 ├── products/
 │   └── f411_watch/
 │       ├── core/                 # 纯 C 核心，与 F411 和主机测试共用
+│       ├── runtime/              # 纯 C 时间、服务队列和任务健康契约
 │       ├── ui/                   # LVGL Pro Editor XML 和生成 C
 │       └── simulator/            # 独立 PC CMake/CTest 消费者
 ├── docs/                         # 仓库级工作流和目录说明
@@ -63,6 +64,7 @@ CubeMX main USER CODE
 products/f411_watch/
 ├── core/        # 纯 C 状态机和跨平台契约
 ├── input/       # 纯 C 输入归一化和消抖契约
+├── runtime/     # 纯 C 时间、服务队列和任务健康契约
 ├── ui/          # Editor XML 和提交的生成 C
 └── simulator/   # 独立 PC CMake 工程与 CTest smoke
 ```
