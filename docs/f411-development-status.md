@@ -64,7 +64,7 @@ modules are not part of the project.
 | M6 | LVGL 9.5 port, DMA flush, UI task, and 240x280 budget gate | Complete; CI Gate and focused board acceptance passed |
 | M7 | Editor-exported XML UI, generated C, and PC simulator | Implemented locally; host CTest passed; no board acceptance required |
 | M8 | Page lifecycle and watch pages | Implemented locally; host/F411 checks passed; board acceptance pending |
-| M9 | Time, service queues, task health, and initialization policy | Planned |
+| M9 | Time, service queues, task health, and initialization policy | Implemented locally; host/F411 checks passed; board acceptance pending |
 | M10 | Confirmed sensor drivers and sensor service | Planned |
 | M11 | Power states, wake sources, Stop recovery, and watchdog | Planned |
 | M12 | W25Q128 raw driver, littlefs, and resource streaming | Planned |
@@ -74,28 +74,26 @@ modules are not part of the project.
 
 ## Current round
 
-M8 keeps the M7 LVGL `v9.5.0` and manual Editor export contract. Four small
-Editor-maintained screens now cover `WATCHFACE`, `LAUNCHER`, `STATUS`, and
-`SETTINGS`. The shared `watch_page_lifecycle` adapter creates a new screen on a
-core page transition, loads it before deleting the previous screen, updates the
-launcher hint for selection changes, and exposes create/destroy counters for the
-host smoke test. The F411 `watch_ui_task` and the Windows/headless simulator use
-the same adapter; `watch_core` remains the only owner of page-stack state.
+M9 keeps the M8 LVGL `v9.5.0` and manual Editor export contract. The new pure-C
+`watch_runtime` contract provides wrap-safe millisecond elapsed time, a fixed
+capacity service event queue, ordered initialization stages, and APP/UI/USB
+health records with a 2-second heartbeat timeout. `watch_app_init` now advances
+the central policy only after core and input initialization succeeds. The UI
+and USB tasks register and refresh their health records; USB diagnostic command
+lines are parsed into the bounded service queue before dispatch, and `health`
+reports stage, service states, heartbeat counts, and queue depth.
 
-The current manual Editor export also includes the generated target-selection,
-object-name, and translation scaffolding. The hand-written simulator and F411
-CMake entries connect the generated global source and the lifecycle user object
-without editing the generated source files.
-
-M8 does not add runtime XML parsing, Pro CLI integration, new hardware input,
-service queues, sensors, time, power, storage, or OTA behavior. XML remains the
-source of truth and committed generated C/H is the only firmware/runtime input.
+M9 does not add RTC, sensor drivers, watchdog policy, power states, storage,
+OTA behavior, or an unbounded cross-task event bus. The queue is a small
+service-command contract with a real USB diagnostic consumer; existing core
+and input queues remain unchanged. XML remains the source of truth and
+committed generated C/H is the only firmware/runtime UI input.
 
 ## Next round
 
-M9 will add time/service contracts, bounded service queues, task health, and a
-central initialization policy. It will not expand the M8 page set or add sensor
-drivers before those contracts have consumers and host tests.
+M10 will add one confirmed sensor driver and its service contract. It will not
+expand the page set or add a second sensor until the first driver has a host
+model, board evidence, and bounded service consumer.
 
 ## Risks and blockers
 
@@ -199,3 +197,32 @@ Debug image with OpenOCD, confirm `MAGIC WATCH` and the four page labels on the
 and use the existing left-edge `BACK` gesture or encoder/button back path to
 return. Confirm the USB log has the expected normalized events and no unexpected
 `drop` or `i2c_err` increments. This is the only remaining M8 acceptance step.
+
+For M9, the following validation passed from the repository root and F411
+project directory:
+
+```text
+cmake --preset Debug
+cmake --build --preset Debug
+cmake --build --preset Debug --target format-check
+cmake --build --preset Debug --target cppcheck
+cmake -S tests -B build/host-tests-m9 -G Ninja
+cmake --build build/host-tests-m9
+ctest --test-dir build/host-tests-m9 --output-on-failure
+cmake -S products/f411_watch/simulator -B build/host-m9 -G Ninja
+cmake --build build/host-m9
+ctest --test-dir build/host-m9 --output-on-failure
+```
+
+The host runtime suite passed the wrap-safe time, initialization order, bounded
+queue, FIFO, and heartbeat timeout checks. The existing core/input suite and
+the LVGL page lifecycle smoke also passed. The linked Debug App is Flash
+`244,384 B` and RAM `82,968 B`, under the 400 KiB and 128 KiB limits.
+
+M9 board acceptance is pending together with the M8 page check. After flashing
+the Debug image with OpenOCD, open the existing USB CDC terminal and send
+`health\r\n`. The response must report `stage=3`, `app=ok`, `ui=ok`, `usb=ok`,
+and a bounded `queue=0` during normal idle operation. Send `help\r\n` and
+confirm `health` is listed; send an unknown command and confirm the existing
+error response still works. No new sensor, RTC, watchdog, or power behavior is
+part of this demonstration.

@@ -9,6 +9,7 @@
 #include "main.h"
 #include "watch_core.h"
 #include "watch_diagnostic.h"
+#include "watch_runtime.h"
 
 static watch_core_t s_core;
 static bool s_app_ready;
@@ -99,18 +100,29 @@ static void watch_app_report_event(const watch_event_t *event, bool dispatched,
 void watch_app_init(void)
 {
     watch_diagnostic_capsule_t capsule;
+    uint32_t now_ms = HAL_GetTick();
+
+    s_app_ready = false;
+    (void)watch_runtime_init(now_ms);
 
     watch_lcd_init();
     watch_lcd_backlight_on();
 
     if (watch_diagnostic_get(&capsule)) {
+        watch_runtime_fail();
         watch_lcd_show_diagnostic_pattern(capsule.reason);
         watch_diagnostic_clear();
         return;
     }
 
-    (void)watch_core_init(&s_core);
-    (void)watch_input_hw_init();
+    if (!watch_core_init(&s_core) || !watch_runtime_advance_init(WATCH_RUNTIME_INIT_CORE)
+        || !watch_input_hw_init() || !watch_runtime_advance_init(WATCH_RUNTIME_INIT_INPUT)
+        || !watch_runtime_advance_init(WATCH_RUNTIME_INIT_RUNNING)
+        || !watch_runtime_start_service(WATCH_RUNTIME_SERVICE_APP, now_ms)) {
+        watch_runtime_fail();
+        return;
+    }
+
     s_status_reported = false;
     s_touch_reported_sequence = 0U;
     s_app_ready = true;
@@ -118,18 +130,21 @@ void watch_app_init(void)
 
 bool watch_app_is_ready(void)
 {
-    return s_app_ready;
+    return s_app_ready && watch_runtime_is_ready();
 }
 
 void watch_app_process(void)
 {
     watch_event_t event;
+    uint32_t now_ms;
 
     if (!s_app_ready) {
         return;
     }
 
-    watch_input_hw_process(HAL_GetTick());
+    now_ms = HAL_GetTick();
+    (void)watch_runtime_heartbeat(WATCH_RUNTIME_SERVICE_APP, now_ms);
+    watch_input_hw_process(now_ms);
     watch_app_report_touch_if_new();
     if (!s_status_reported) {
         watch_app_report_status();

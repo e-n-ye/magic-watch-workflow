@@ -9,6 +9,7 @@
 #include "app/watch_app.h"
 #include "board/display/watch_lcd.h"
 #include "watch_page_lifecycle.h"
+#include "watch_runtime.h"
 
 #define WATCH_UI_BUFFER_LINES 20U
 #define WATCH_UI_BUFFER_PIXELS (WATCH_LCD_WIDTH * WATCH_UI_BUFFER_LINES)
@@ -141,9 +142,15 @@ static void watch_ui_task(void *argument)
             osDelay(1000U);
         }
     }
+    if (!watch_runtime_start_service(WATCH_RUNTIME_SERVICE_UI, HAL_GetTick())) {
+        for (;;) {
+            osDelay(1000U);
+        }
+    }
     s_last_tick = HAL_GetTick();
 
     for (;;) {
+        (void)watch_runtime_heartbeat(WATCH_RUNTIME_SERVICE_UI, HAL_GetTick());
         watch_ui_update_tick();
         watch_app_process();
         if (watch_app_read_snapshot(&snapshot)) {
