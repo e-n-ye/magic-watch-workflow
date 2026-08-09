@@ -1,3 +1,5 @@
+set(WATCH_CORE_SOURCE_DIR "${CMAKE_SOURCE_DIR}/../../../products/f411_watch/core")
+
 add_library(f411_watch_user OBJECT
     app/watch_app.c
     app/watch_diagnostic.c
@@ -6,11 +8,13 @@ add_library(f411_watch_user OBJECT
     board/display/watch_lcd.c
     board/power/watch_power.c
     board/usb/watch_usb_cdc.c
+    ${WATCH_CORE_SOURCE_DIR}/watch_core.c
 )
 
 target_include_directories(f411_watch_user
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}
+        ${WATCH_CORE_SOURCE_DIR}
 )
 
 target_link_libraries(f411_watch_user
@@ -36,6 +40,7 @@ add_custom_target(format
     COMMAND ${CMAKE_COMMAND}
         -DFORMAT_ROOT=${CMAKE_CURRENT_SOURCE_DIR}
         -DFORMAT_EXTRA_ROOT=${CMAKE_SOURCE_DIR}/bootloader
+        -DFORMAT_CORE_ROOT=${WATCH_CORE_SOURCE_DIR}
         -DFORMAT_MODE=fix
         -DCLANG_FORMAT_EXECUTABLE=${WATCH_CLANG_FORMAT_EXECUTABLE}
         -P ${CMAKE_SOURCE_DIR}/cmake/run_clang_format.cmake
@@ -47,6 +52,7 @@ add_custom_target(format-check
     COMMAND ${CMAKE_COMMAND}
         -DFORMAT_ROOT=${CMAKE_CURRENT_SOURCE_DIR}
         -DFORMAT_EXTRA_ROOT=${CMAKE_SOURCE_DIR}/bootloader
+        -DFORMAT_CORE_ROOT=${WATCH_CORE_SOURCE_DIR}
         -DFORMAT_MODE=check
         -DCLANG_FORMAT_EXECUTABLE=${WATCH_CLANG_FORMAT_EXECUTABLE}
         -P ${CMAKE_SOURCE_DIR}/cmake/run_clang_format.cmake

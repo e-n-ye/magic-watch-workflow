@@ -36,6 +36,13 @@ if(DEFINED FORMAT_EXTRA_ROOT AND NOT FORMAT_EXTRA_ROOT STREQUAL "")
     )
 endif()
 
+if(DEFINED FORMAT_CORE_ROOT AND NOT FORMAT_CORE_ROOT STREQUAL "")
+    list(APPEND FORMAT_FILES
+        "${FORMAT_CORE_ROOT}/watch_core.c"
+        "${FORMAT_CORE_ROOT}/watch_core.h"
+    )
+endif()
+
 foreach(FORMAT_FILE IN LISTS FORMAT_FILES)
     if(NOT EXISTS "${FORMAT_FILE}")
         message(FATAL_ERROR "Formatting whitelist file does not exist: ${FORMAT_FILE}")

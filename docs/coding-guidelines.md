@@ -4,6 +4,7 @@
 
 ```text
 firmware/stm32/f411_watch/user/**
+products/f411_watch/core/**
 ```
 
 CubeMX 生成区、STM32 HAL/CMSIS、FreeRTOS、FatFs、USB middleware、ESP-IDF

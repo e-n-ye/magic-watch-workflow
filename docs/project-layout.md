@@ -19,6 +19,8 @@
 │   │   │   └── config/           # 板级编译配置
 │   │   └── docs/                 # F411 原理图和架构图
 │   └── espressif/esp32s3_board/  # 独立的 ESP-IDF 工程
+├── products/
+│   └── f411_watch/core/          # 纯 C 核心，与 F411 和主机测试共用
 ├── docs/                         # 仓库级工作流和目录说明
 ├── tools/                        # 构建/烧录辅助脚本
 ├── .vscode/                      # 本仓库的构建和调试入口
@@ -55,7 +57,7 @@ CubeMX main USER CODE
 
 ```text
 products/f411_watch/
-├── core/        # 第一段真实状态机或业务规则出现时
+├── core/        # 纯 C 状态机和跨平台契约
 ├── ui/          # LVGL 版本和 XML 兼容性验证完成后
 └── simulator/   # UI 技术路线确定后建立独立 PC CMake 工程
 ```
