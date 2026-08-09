@@ -66,7 +66,7 @@ modules are not part of the project.
 | M8 | Page lifecycle and watch pages | Functional board acceptance passed; exported screen opacity corrected and fixed-image board check passed |
 | M9 | Time, service queues, task health, and initialization policy | USB health and fixed-image board acceptance passed |
 | M10 | Confirmed sensor drivers and sensor service | Complete; LSM6DS3 host model, F411 polling service, and board USB acceptance passed |
-| M11 | Power states, wake sources, Stop recovery, and watchdog | Planned |
+| M11 | Power states, wake sources, Stop recovery, and watchdog | Implemented locally; host/F411 checks passed; board acceptance pending |
 | M12 | W25Q128 raw driver, littlefs, and resource streaming | Planned |
 | M13 | USB CDC resource protocol and KT6368 SPP transport | Planned |
 | M14 | Candidate download, install recovery, trial boot, and rollback | Planned |
@@ -74,25 +74,25 @@ modules are not part of the project.
 
 ## Current round
 
-M10 adds the first confirmed sensor closure: an LSM6DS3TR-C pure-C driver and
-periodic service model with an injectable I2C bus, 20 ms sampling cadence,
-raw accelerometer/gyroscope samples, and a bounded sample event. The F411
-adapter uses CubeMX I2C1 on PB8/PB9 at 100 kHz and the V2.1-confirmed 7-bit
-address `0x6A` (SA0 grounded); it does not expose `hi2c1` beyond the board
-adapter. The service publishes only a sample-ready event and keeps the latest
-sample/status for the USB diagnostic consumer.
+M11 adds a pure-C power state contract and watchdog contract, then connects the
+F411 adapter to the existing LSE-backed RTC, KEY_WAKE EXTI, and PWR Stop entry.
+The USB diagnostic consumer can request display-off, Stop, or a software-off
+state. Stop suspends the HAL/RTOS tick and temporarily masks the USB IRQ;
+the RTC wake timer and KEY_WAKE restore the PLL clock and resume the scheduler.
+The independent watchdog uses the STM32 IWDG with a board adapter and is
+refreshed only while APP, UI, USB, and sensor health records are all current.
 
-M10 does not add LIS2MDL sensor-hub configuration, other sensor drivers, UI
-widgets, interrupt-driven sampling, or a second service task. If the device is
-absent, the application remains usable while the sensor service reports
-`ready=0`; a later hardware acceptance decides whether the wiring evidence is
-sufficient for the next sensor.
+The software-off command only blanks the display and enters the power contract's
+`off` state; it intentionally keeps `POWER_EN` asserted until the board-level
+power-latch polarity is separately confirmed. M11 does not add automatic idle
+timeouts, sensor interrupts, new UI pages, battery current targets, or a claim
+that the external WDI/WDOG_EN circuit has been validated.
 
 ## Next round
 
-M11 will add power states, wake sources, Stop recovery, and watchdog behavior.
-M10 remains limited to the confirmed LSM6DS3 polling closure; the sensor set will
-not expand in M11.
+M12 will add the W25Q128 raw driver, littlefs partitioning, and resource
+streaming. M11 remains limited to behavioral power transitions and does not
+expand the sensor set or OTA/storage behavior.
 
 ## Risks and blockers
 
@@ -109,6 +109,12 @@ not expand in M11.
 - LSM6DS3 wiring and `0x6A` address are taken from the V2.1 reference project:
   I2C1 is PB8/PB9, INT1 is PA8, and INT2 is PB15. M10 polls the device and does
   not claim the interrupt paths are validated.
+- Stop acceptance depends on the board's LSE, RTC wake IRQ, KEY_WAKE EXTI, and
+  USB re-enumeration behavior; the code does not claim a measured current
+  reduction. The IWDG timeout uses the internal LSI's nominal frequency and is
+  a reset-safety value, not a precision timebase.
+- `POWER_EN` polarity and the external WDI/WDOG_EN circuit remain unverified;
+  M11's software-off path therefore leaves the power latch asserted.
 - KT6368 SPP firmware behavior and enable polarity require a board test; no
   undocumented AT command is assumed.
 - There is no battery measurement baseline, so power acceptance is behavioral
@@ -249,3 +255,35 @@ existing UI remained usable; no interrupt-path or sensor-widget behavior is
 claimed. A missing device still reports `lsm6ds3=0` without preventing the UI
 from starting, but that is a diagnostic result rather than a passing sensor
 acceptance.
+
+For M11, the following host and F411 checks passed on the power branch:
+
+```text
+cmake -S tests -B build/host-tests-m11 -G Ninja
+cmake --build build/host-tests-m11
+ctest --test-dir build/host-tests-m11 --output-on-failure
+cmake --preset Debug
+cmake --build --preset Debug
+cmake --build --preset Debug --target format-check
+cmake --build --preset Debug --target cppcheck
+```
+
+The host suite passed the power-state transition and health-gated watchdog
+tests (`watch_power`), together with the existing core, runtime, and LSM6DS3
+tests. The linked Debug App is Flash `254,304 B` and RAM `83,096 B`, under the
+400 KiB and 128 KiB limits.
+
+M11 board acceptance is still required. After flashing the signed Debug App
+with OpenOCD, send `help\r\n` and confirm that `power`, `display-off`, `sleep`,
+and `shutdown` are listed. Send `power\r\n` and confirm `state=active`,
+`watchdog=1`, an increasing `refresh` count, and `blocked=0 fail=0`. Send
+`display-off\r\n`; the backlight should turn off and `power` should report
+`state=display-off`. Press KEY_WAKE and confirm the backlight returns and the
+state becomes `active wake=key`. Send `sleep\r\n`; the display should remain
+off while the MCU enters Stop, then the board should wake after roughly three
+seconds through RTC (`wake=rtc`) or immediately through KEY_WAKE (`wake=key`).
+After USB re-enumeration if necessary, `power` should report `stops=1 wakes=1`
+and the existing UI should remain usable. Finally, `shutdown\r\n` should report
+`state=off` with the backlight off; KEY_WAKE should return to `active`. This is
+a software-off check only and must not be treated as proof of physical power
+cutoff.
