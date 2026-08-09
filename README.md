@@ -31,6 +31,7 @@ A CMake-first embedded watch workflow for STM32F411 and ESP32-S3, with reproduci
 - [Runtime tasks and events](firmware/stm32/f411_watch/docs/architecture/software-architecture-任务与事件.png)
 - [Project layout and dependency rules](docs/project-layout.md)
 - [M7 Editor export contract](docs/f411-m7-editor-export.md)
+- [LVGL XML development skill](skills/lvgl-xml/SKILL.md)
 
 ![Layered software architecture](firmware/stm32/f411_watch/docs/architecture/software-architecture-分层架构.png)
 
