@@ -15,7 +15,7 @@
 │   │   ├── cmake/stm32cubemx/    # CubeMX 生成的构建描述
 │   │   ├── user/                 # 手写的 F411 代码
 │   │   │   ├── app/              # 启动和组合，不放硬件寄存器操作
-│   │   │   ├── board/            # F411 板级适配和显示/电源入口
+│   │   │   ├── board/            # F411 板级适配和显示/电源/传感器入口
 │   │   │   └── config/           # 板级编译配置
 │   │   └── docs/                 # F411 原理图和架构图
 │   └── espressif/esp32s3_board/  # 独立的 ESP-IDF 工程
@@ -23,6 +23,7 @@
 │   └── f411_watch/
 │       ├── core/                 # 纯 C 核心，与 F411 和主机测试共用
 │       ├── runtime/              # 纯 C 时间、服务队列和任务健康契约
+│       ├── sensors/              # 纯 C 传感器协议、采样和服务模型
 │       ├── ui/                   # LVGL Pro Editor XML 和生成 C
 │       └── simulator/            # 独立 PC CMake/CTest 消费者
 ├── docs/                         # 仓库级工作流和目录说明
@@ -65,6 +66,7 @@ products/f411_watch/
 ├── core/        # 纯 C 状态机和跨平台契约
 ├── input/       # 纯 C 输入归一化和消抖契约
 ├── runtime/     # 纯 C 时间、服务队列和任务健康契约
+├── sensors/     # 纯 C 传感器协议、采样和服务模型
 ├── ui/          # Editor XML 和提交的生成 C
 └── simulator/   # 独立 PC CMake 工程与 CTest smoke
 ```

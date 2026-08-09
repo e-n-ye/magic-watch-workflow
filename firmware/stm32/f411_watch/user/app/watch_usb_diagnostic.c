@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include "board/usb/watch_usb_cdc.h"
+#include "board/sensors/watch_lsm6ds3_board.h"
 #include "main.h"
 #include "watch_app.h"
 #include "watch_diagnostic.h"
@@ -22,6 +23,7 @@ typedef enum {
     WATCH_USB_COMMAND_DIAG,
     WATCH_USB_COMMAND_STATS,
     WATCH_USB_COMMAND_HEALTH,
+    WATCH_USB_COMMAND_SENSOR,
     WATCH_USB_COMMAND_UNKNOWN,
     WATCH_USB_COMMAND_COUNT
 } watch_usb_command_t;
@@ -86,27 +88,57 @@ static const char *health_state_name(watch_runtime_health_state_t state)
 
 static void send_health(void)
 {
-    char response[224];
+    char response[256];
     watch_runtime_health_t app_health;
     watch_runtime_health_t ui_health;
     watch_runtime_health_t usb_health;
+    watch_runtime_health_t sensor_health;
     uint32_t now_ms = HAL_GetTick();
     int length;
 
     if (!watch_runtime_read_health(WATCH_RUNTIME_SERVICE_APP, now_ms, &app_health)
         || !watch_runtime_read_health(WATCH_RUNTIME_SERVICE_UI, now_ms, &ui_health)
-        || !watch_runtime_read_health(WATCH_RUNTIME_SERVICE_USB, now_ms, &usb_health)) {
+        || !watch_runtime_read_health(WATCH_RUNTIME_SERVICE_USB, now_ms, &usb_health)
+        || !watch_runtime_read_health(WATCH_RUNTIME_SERVICE_SENSOR, now_ms, &sensor_health)) {
         send_text("health=unavailable\r\n");
         return;
     }
 
     length = snprintf(response, sizeof(response),
-                      "health stage=%u app=%s/%lu ui=%s/%lu usb=%s/%lu queue=%u\r\n",
+                      "health stage=%u app=%s/%lu ui=%s/%lu usb=%s/%lu sensor=%s/%lu queue=%u\r\n",
                       (unsigned int)watch_runtime_init_stage(), health_state_name(app_health.state),
                       (unsigned long)app_health.heartbeat_count, health_state_name(ui_health.state),
                       (unsigned long)ui_health.heartbeat_count, health_state_name(usb_health.state),
-                      (unsigned long)usb_health.heartbeat_count,
+                      (unsigned long)usb_health.heartbeat_count, health_state_name(sensor_health.state),
+                      (unsigned long)sensor_health.heartbeat_count,
                       (unsigned int)watch_runtime_service_event_count());
+    if ((length > 0) && ((size_t)length < sizeof(response))) {
+        watch_usb_cdc_write((const uint8_t *)response, (size_t)length);
+    }
+}
+
+static void send_sensor(void)
+{
+    char response[256];
+    watch_lsm6ds3_service_status_t status;
+    watch_lsm6ds3_sample_t sample = { 0 };
+    bool sample_valid;
+    int length;
+
+    if (!watch_lsm6ds3_board_read_status(&status)) {
+        send_text("sensor lsm6ds3=unavailable\r\n");
+        return;
+    }
+
+    sample_valid = watch_lsm6ds3_board_read_latest(&sample);
+    length = snprintf(response, sizeof(response),
+                      "sensor lsm6ds3=%u id=0x%02x sample=%u count=%lu errors=%lu drop=%lu "
+                      "accel=%d,%d,%d gyro=%d,%d,%d\r\n",
+                      status.ready ? 1U : 0U, status.who_am_i, sample_valid ? 1U : 0U,
+                      (unsigned long)status.sample_count, (unsigned long)status.read_error_count,
+                      (unsigned long)status.event_drop_count, (int)sample.accel_x,
+                      (int)sample.accel_y, (int)sample.accel_z, (int)sample.gyro_x,
+                      (int)sample.gyro_y, (int)sample.gyro_z);
     if ((length > 0) && ((size_t)length < sizeof(response))) {
         watch_usb_cdc_write((const uint8_t *)response, (size_t)length);
     }
@@ -116,7 +148,7 @@ static void handle_command(watch_usb_command_t command)
 {
     switch (command) {
     case WATCH_USB_COMMAND_HELP:
-        send_text("commands: help ping info diag stats health\r\n");
+        send_text("commands: help ping info diag stats health sensor\r\n");
         break;
     case WATCH_USB_COMMAND_PING:
         send_text("pong\r\n");
@@ -132,6 +164,9 @@ static void handle_command(watch_usb_command_t command)
         break;
     case WATCH_USB_COMMAND_HEALTH:
         send_health();
+        break;
+    case WATCH_USB_COMMAND_SENSOR:
+        send_sensor();
         break;
     case WATCH_USB_COMMAND_UNKNOWN:
     case WATCH_USB_COMMAND_COUNT:
@@ -156,6 +191,8 @@ static watch_usb_command_t parse_command(void)
         return WATCH_USB_COMMAND_STATS;
     } else if (strcmp(s_command, "health") == 0) {
         return WATCH_USB_COMMAND_HEALTH;
+    } else if (strcmp(s_command, "sensor") == 0) {
+        return WATCH_USB_COMMAND_SENSOR;
     }
 
     return WATCH_USB_COMMAND_UNKNOWN;
@@ -204,6 +241,8 @@ static void process_service_events(void)
         if (event.type == WATCH_USB_DIAGNOSTIC_EVENT_COMMAND
             && event.value >= WATCH_USB_COMMAND_HELP && event.value < WATCH_USB_COMMAND_COUNT) {
             handle_command((watch_usb_command_t)event.value);
+        } else if (event.type == WATCH_LSM6DS3_SERVICE_EVENT_SAMPLE) {
+            /* The latest sample is exposed by the sensor command. */
         } else {
             send_text("error=unknown-service-event\r\n");
         }
@@ -216,6 +255,7 @@ void watch_usb_diagnostic_process(void)
     size_t length = watch_usb_cdc_read(input, sizeof(input));
     uint32_t now_ms = HAL_GetTick();
 
+    watch_lsm6ds3_board_process(now_ms);
     (void)watch_runtime_start_service(WATCH_RUNTIME_SERVICE_USB, now_ms);
     (void)watch_runtime_heartbeat(WATCH_RUNTIME_SERVICE_USB, now_ms);
 

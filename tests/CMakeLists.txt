@@ -34,4 +34,16 @@ if(BUILD_TESTING)
     )
 
     add_test(NAME watch_runtime COMMAND watch_runtime_tests)
+
+    add_executable(watch_lsm6ds3_tests
+        ${CMAKE_CURRENT_LIST_DIR}/watch_lsm6ds3_test.c
+        ${CMAKE_CURRENT_LIST_DIR}/../products/f411_watch/sensors/watch_lsm6ds3.c
+    )
+
+    target_include_directories(watch_lsm6ds3_tests
+        PRIVATE
+            ${CMAKE_CURRENT_LIST_DIR}/../products/f411_watch/sensors
+    )
+
+    add_test(NAME watch_lsm6ds3 COMMAND watch_lsm6ds3_tests)
 endif()

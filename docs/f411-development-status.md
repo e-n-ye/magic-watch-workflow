@@ -65,7 +65,7 @@ modules are not part of the project.
 | M7 | Editor-exported XML UI, generated C, and PC simulator | Implemented locally; host CTest passed; no board acceptance required |
 | M8 | Page lifecycle and watch pages | Functional board acceptance passed; exported screen opacity corrected and fixed-image board check passed |
 | M9 | Time, service queues, task health, and initialization policy | USB health and fixed-image board acceptance passed |
-| M10 | Confirmed sensor drivers and sensor service | Planned |
+| M10 | Confirmed sensor drivers and sensor service | Complete; LSM6DS3 host model, F411 polling service, and board USB acceptance passed |
 | M11 | Power states, wake sources, Stop recovery, and watchdog | Planned |
 | M12 | W25Q128 raw driver, littlefs, and resource streaming | Planned |
 | M13 | USB CDC resource protocol and KT6368 SPP transport | Planned |
@@ -74,31 +74,25 @@ modules are not part of the project.
 
 ## Current round
 
-M9 keeps the M8 LVGL `v9.5.0` and manual Editor export contract. The new pure-C
-`watch_runtime` contract provides wrap-safe millisecond elapsed time, a fixed
-capacity service event queue, ordered initialization stages, and APP/UI/USB
-health records with a 2-second heartbeat timeout. `watch_app_init` now advances
-the central policy only after core and input initialization succeeds. The UI
-and USB tasks register and refresh their health records; USB diagnostic command
-lines are parsed into the bounded service queue before dispatch, and `health`
-reports stage, service states, heartbeat counts, and queue depth.
+M10 adds the first confirmed sensor closure: an LSM6DS3TR-C pure-C driver and
+periodic service model with an injectable I2C bus, 20 ms sampling cadence,
+raw accelerometer/gyroscope samples, and a bounded sample event. The F411
+adapter uses CubeMX I2C1 on PB8/PB9 at 100 kHz and the V2.1-confirmed 7-bit
+address `0x6A` (SA0 grounded); it does not expose `hi2c1` beyond the board
+adapter. The service publishes only a sample-ready event and keeps the latest
+sample/status for the USB diagnostic consumer.
 
-M9 does not add RTC, sensor drivers, watchdog policy, power states, storage,
-OTA behavior, or an unbounded cross-task event bus. The queue is a small
-service-command contract with a real USB diagnostic consumer; existing core
-and input queues remain unchanged. XML remains the source of truth and
-committed generated C/H is the only firmware/runtime UI input.
-
-This corrective UI change makes every screen background explicitly opaque in
-XML (`bg_opa="100%"`) and records the matching Editor-exported C. The host
-smoke test now checks both the background color and opacity, so a future export
-that drops the property fails before a board flash.
+M10 does not add LIS2MDL sensor-hub configuration, other sensor drivers, UI
+widgets, interrupt-driven sampling, or a second service task. If the device is
+absent, the application remains usable while the sensor service reports
+`ready=0`; a later hardware acceptance decides whether the wiring evidence is
+sufficient for the next sensor.
 
 ## Next round
 
-M10 will add one confirmed sensor driver and its service contract. It will not
-expand the page set or add a second sensor until the first driver has a host
-model, board evidence, and bounded service consumer.
+M11 will add power states, wake sources, Stop recovery, and watchdog behavior.
+M10 remains limited to the confirmed LSM6DS3 polling closure; the sensor set will
+not expand in M11.
 
 ## Risks and blockers
 
@@ -112,6 +106,9 @@ model, board evidence, and bounded service consumer.
 - CST816 wiring, `0x15` address, the absence of `TP_INT`, encoder direction,
   and the button polarity are confirmed by the V2.1 reference project and the
   completed M5b board acceptance.
+- LSM6DS3 wiring and `0x6A` address are taken from the V2.1 reference project:
+  I2C1 is PB8/PB9, INT1 is PA8, and INT2 is PB15. M10 polls the device and does
+  not claim the interrupt paths are validated.
 - KT6368 SPP firmware behavior and enable polarity require a board test; no
   undocumented AT command is assumed.
 - There is no battery measurement baseline, so power acceptance is behavioral
@@ -229,3 +226,26 @@ Debug App was then flashed with OpenOCD and verified on the board; the 240x280
 pages showed the XML dark background (`0x101820`) with the expected text
 colors. No new sensor, RTC, watchdog, or power behavior is part of this
 demonstration.
+
+For M10, the following host and F411 checks passed on the LSM6DS3 branch:
+
+```text
+cmake -S tests -B build/host-tests-m10 -G Ninja
+cmake --build build/host-tests-m10
+ctest --test-dir build/host-tests-m10 --output-on-failure
+cmake --preset Debug
+cmake --build --preset Debug
+cmake --build --preset Debug --target format-check
+cmake --build --preset Debug --target cppcheck
+```
+
+The new host suite passed the LSM6DS3 WHO_AM_I/configuration, raw sample
+decoding, periodic service, and bounded event-drop checks. The linked Debug App
+is Flash `250,220 B` and RAM `83,048 B`, under the 400 KiB and 128 KiB limits.
+The signed Debug App was flashed with OpenOCD and the board USB CDC acceptance
+passed: `health\r\n` reported the sensor service, and `sensor\r\n` reported
+`lsm6ds3=1`, `id=0x6a`, a nonzero sample count, and zero read/event drops. The
+existing UI remained usable; no interrupt-path or sensor-widget behavior is
+claimed. A missing device still reports `lsm6ds3=0` without preventing the UI
+from starting, but that is a diagnostic result rather than a passing sensor
+acceptance.
