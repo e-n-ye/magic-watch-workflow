@@ -39,6 +39,9 @@
 #define LV_USE_LAYER_DEBUG 0
 #define LV_USE_PARALLEL_DRAW_DEBUG 0
 
+/* Editor-generated screens use static object names and translation hooks. */
+#define LV_USE_OBJ_NAME 1
+
 #define LV_FONT_MONTSERRAT_14 1
 #define LV_FONT_DEFAULT &lv_font_montserrat_14
 #define LV_TXT_ENC LV_TXT_ENC_ASCII
@@ -123,7 +126,7 @@
 #define LV_USE_FILE_EXPLORER 0
 #define LV_USE_FONT_MANAGER 0
 #define LV_USE_TEST 0
-#define LV_USE_TRANSLATION 0
+#define LV_USE_TRANSLATION 1
 #define LV_USE_COLOR_FILTER 0
 #define LV_USE_EXT_DATA 0
 

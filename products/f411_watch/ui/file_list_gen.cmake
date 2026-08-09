@@ -1,10 +1,9 @@
 list(
-    APPEND
-    LV_EDITOR_PROJECT_SOURCES
-    ${CMAKE_CURRENT_LIST_DIR}/f411_watch_ui_gen.c
-    ${CMAKE_CURRENT_LIST_DIR}/f411_watch_ui.c
-    ${CMAKE_CURRENT_LIST_DIR}/screens/watchface/screen_watchface_gen.c
-    ${CMAKE_CURRENT_LIST_DIR}/screens/launcher/screen_launcher_gen.c
-    ${CMAKE_CURRENT_LIST_DIR}/screens/status/screen_status_gen.c
-    ${CMAKE_CURRENT_LIST_DIR}/screens/settings/screen_settings_gen.c
-)
+  APPEND
+  LV_EDITOR_PROJECT_SOURCES
+  ${CMAKE_CURRENT_LIST_DIR}/f411_watch_ui_gen.c
+  ${CMAKE_CURRENT_LIST_DIR}/f411_watch_ui.c
+  ${CMAKE_CURRENT_LIST_DIR}/screens/launcher/screen_launcher_gen.c
+  ${CMAKE_CURRENT_LIST_DIR}/screens/settings/screen_settings_gen.c
+  ${CMAKE_CURRENT_LIST_DIR}/screens/status/screen_status_gen.c
+  ${CMAKE_CURRENT_LIST_DIR}/screens/watchface/screen_watchface_gen.c)

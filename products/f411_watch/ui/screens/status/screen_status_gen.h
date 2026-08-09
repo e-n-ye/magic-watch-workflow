@@ -1,25 +1,52 @@
 /**
  * @file screen_status_gen.h
- * @brief Generated status screen interface from LVGL Pro Editor.
  */
 
-#ifndef SCREEN_STATUS_GEN_H
-#define SCREEN_STATUS_GEN_H
+#ifndef SCREEN_STATUS_H
+#define SCREEN_STATUS_H
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+/*********************
+ *      INCLUDES
+ *********************/
+
 #ifdef LV_LVGL_H_INCLUDE_SIMPLE
-#include "lvgl.h"
+    #include "lvgl.h"
+    #include "lvgl_private.h"
 #else
-#include "lvgl/lvgl.h"
+    #include "lvgl/lvgl.h"
+    #include "lvgl/lvgl_private.h"
 #endif
 
-lv_obj_t *screen_status_create(void);
+#if defined(LV_USE_XML) && LV_USE_XML
+    #include "lv_xml/lv_xml.h"
+#endif
+
+/*********************
+ *      DEFINES
+ *********************/
+
+/**********************
+ *      TYPEDEFS
+ **********************/
+
+/**********************
+ * GLOBAL PROTOTYPES
+ **********************/
+
+
+
+lv_obj_t * screen_status_create(void);
+
+/**********************
+ *      MACROS
+ **********************/
 
 #ifdef __cplusplus
-} /* extern "C" */
+} /*extern "C"*/
 #endif
 
-#endif /* SCREEN_STATUS_GEN_H */
+#endif /*SCREEN_STATUS_H*/
