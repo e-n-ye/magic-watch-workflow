@@ -8,7 +8,7 @@
 #include "main.h"
 #include "app/watch_app.h"
 #include "board/display/watch_lcd.h"
-#include "watch_core.h"
+#include "watch_page_lifecycle.h"
 
 #define WATCH_UI_BUFFER_LINES 20U
 #define WATCH_UI_BUFFER_PIXELS (WATCH_LCD_WIDTH * WATCH_UI_BUFFER_LINES)
@@ -20,42 +20,10 @@ static uint16_t s_draw_buffer_b[WATCH_UI_BUFFER_PIXELS];
 static uint8_t s_dma_buffer[WATCH_UI_BUFFER_BYTES];
 static osThreadId_t s_task_handle;
 static lv_display_t *s_display;
-static lv_obj_t *s_page_label;
-static lv_obj_t *s_hint_label;
+static watch_page_lifecycle_t s_page_lifecycle;
 static volatile uint8_t s_dma_callback_seen;
 static bool s_flush_pending;
 static uint32_t s_last_tick;
-static watch_snapshot_t s_last_snapshot;
-static bool s_snapshot_valid;
-
-static const char *watch_ui_page_name(watch_page_t page)
-{
-    static const char *const names[WATCH_PAGE_COUNT] = {
-        "WATCHFACE",
-        "LAUNCHER",
-        "STATUS",
-        "SETTINGS",
-    };
-
-    if (page >= WATCH_PAGE_COUNT) {
-        return "UNKNOWN";
-    }
-
-    return names[page];
-}
-
-static const char *watch_ui_hint(const watch_snapshot_t *snapshot)
-{
-    if (snapshot->page == WATCH_PAGE_WATCHFACE) {
-        return "SELECT: LAUNCHER";
-    }
-
-    if (snapshot->page == WATCH_PAGE_LAUNCHER) {
-        return snapshot->launcher_index == 0U ? "SELECT: STATUS" : "SELECT: SETTINGS";
-    }
-
-    return "BACK: RETURN";
-}
 
 static void watch_ui_dma_done(void *context)
 {
@@ -133,47 +101,9 @@ static void watch_ui_flush(lv_display_t *display, const lv_area_t *area, uint8_t
     }
 }
 
-static void watch_ui_create_page(void)
-{
-    lv_obj_t *screen = lv_display_get_screen_active(s_display);
-    lv_obj_t *title;
-
-    lv_obj_set_style_bg_color(screen, lv_color_hex(0x101820U), LV_PART_MAIN);
-    lv_obj_set_style_bg_opa(screen, LV_OPA_COVER, LV_PART_MAIN);
-
-    title = lv_label_create(screen);
-    lv_label_set_text(title, "MAGIC WATCH");
-    lv_obj_set_style_text_color(title, lv_color_hex(0xF4F7FAU), LV_PART_MAIN);
-    lv_obj_align(title, LV_ALIGN_TOP_MID, 0, 22);
-
-    s_page_label = lv_label_create(screen);
-    lv_label_set_text(s_page_label, "WATCHFACE");
-    lv_obj_set_style_text_color(s_page_label, lv_color_hex(0x64D2FFU), LV_PART_MAIN);
-    lv_obj_align(s_page_label, LV_ALIGN_CENTER, 0, -8);
-
-    s_hint_label = lv_label_create(screen);
-    lv_label_set_text(s_hint_label, "SELECT: LAUNCHER");
-    lv_obj_set_style_text_color(s_hint_label, lv_color_hex(0xB8C7D9U), LV_PART_MAIN);
-    lv_obj_align(s_hint_label, LV_ALIGN_BOTTOM_MID, 0, -22);
-}
-
 static void watch_ui_update_snapshot(const watch_snapshot_t *snapshot)
 {
-    if ((s_page_label == NULL) || (s_hint_label == NULL) || (snapshot == NULL)) {
-        return;
-    }
-
-    if (s_snapshot_valid && (s_last_snapshot.page == snapshot->page)
-        && (s_last_snapshot.page_depth == snapshot->page_depth)
-        && (s_last_snapshot.launcher_index == snapshot->launcher_index)
-        && (s_last_snapshot.revision == snapshot->revision)) {
-        return;
-    }
-
-    lv_label_set_text(s_page_label, watch_ui_page_name(snapshot->page));
-    lv_label_set_text(s_hint_label, watch_ui_hint(snapshot));
-    s_last_snapshot = *snapshot;
-    s_snapshot_valid = true;
+    (void)watch_page_lifecycle_apply(&s_page_lifecycle, snapshot);
 }
 
 static void watch_ui_update_tick(void)
@@ -206,7 +136,11 @@ static void watch_ui_task(void *argument)
                            LV_DISPLAY_RENDER_MODE_PARTIAL);
     lv_display_set_flush_cb(s_display, watch_ui_flush);
     lv_display_set_flush_wait_cb(s_display, watch_ui_flush_wait);
-    watch_ui_create_page();
+    if (!watch_page_lifecycle_init(&s_page_lifecycle, s_display)) {
+        for (;;) {
+            osDelay(1000U);
+        }
+    }
     s_last_tick = HAL_GetTick();
 
     for (;;) {

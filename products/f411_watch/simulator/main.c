@@ -6,6 +6,7 @@
 #include "f411_watch_ui.h"
 #include "lvgl.h"
 #include "watch_core.h"
+#include "watch_page_lifecycle.h"
 
 #if defined(_WIN32)
 #include "drivers/windows/lv_windows_display.h"
@@ -47,41 +48,96 @@ static lv_display_t *watch_simulator_create_display(bool smoke)
     return display;
 }
 
-static bool watch_simulator_has_label(lv_obj_t *screen, const char *text)
+static bool watch_simulator_label_is(lv_obj_t *screen, int32_t index, const char *text)
 {
-    int32_t index = 0;
-    lv_obj_t *child;
+    lv_obj_t *child = lv_obj_get_child(screen, index);
 
-    while ((child = lv_obj_get_child(screen, index)) != NULL) {
-        if (lv_obj_check_type(child, &lv_label_class)
-            && strcmp(lv_label_get_text(child), text) == 0) {
-            return true;
-        }
-        ++index;
-    }
-
-    return false;
-}
-
-static bool watch_simulator_check_core(void)
-{
-    watch_core_t core;
-    watch_event_t event = { .type = WATCH_EVENT_SELECT };
-    watch_snapshot_t snapshot;
-
-    if (!watch_core_init(&core) || !watch_core_dispatch_event(&core, &event)
-        || !watch_core_read_snapshot(&core, &snapshot)) {
+    if (child == NULL || !lv_obj_check_type(child, &lv_label_class)) {
         return false;
     }
 
-    return snapshot.page == WATCH_PAGE_LAUNCHER;
+    return strcmp(lv_label_get_text(child), text) == 0;
+}
+
+static bool watch_simulator_show_page(watch_page_lifecycle_t *lifecycle,
+                                      const watch_snapshot_t *snapshot, const char *page_name,
+                                      const char *hint)
+{
+    lv_obj_t *screen;
+    bool result;
+
+    lv_lock();
+    result = watch_page_lifecycle_apply(lifecycle, snapshot);
+    screen = watch_page_lifecycle_active_screen(lifecycle);
+    if (result && screen != NULL) {
+        result = watch_simulator_label_is(screen, 0, "MAGIC WATCH")
+            && watch_simulator_label_is(screen, 1, page_name)
+            && watch_simulator_label_is(screen, 2, hint);
+    }
+    lv_unlock();
+    return result;
+}
+
+static bool watch_simulator_check_lifecycle(lv_display_t *display,
+                                            watch_page_lifecycle_t *lifecycle)
+{
+    watch_core_t core;
+    watch_snapshot_t snapshot;
+    watch_event_t event;
+    watch_page_lifecycle_stats_t stats;
+
+    if (!watch_core_init(&core)) {
+        return false;
+    }
+
+    lv_lock();
+    const bool initialized = watch_page_lifecycle_init(lifecycle, display);
+    lv_unlock();
+    if (!initialized || !watch_core_read_snapshot(&core, &snapshot)
+        || !watch_simulator_show_page(lifecycle, &snapshot, "WATCHFACE", "SELECT: LAUNCHER")) {
+        return false;
+    }
+
+    event = (watch_event_t) { .type = WATCH_EVENT_SELECT };
+    if (!watch_core_dispatch_event(&core, &event) || !watch_core_read_snapshot(&core, &snapshot)
+        || !watch_simulator_show_page(lifecycle, &snapshot, "LAUNCHER", "SELECT: STATUS")) {
+        return false;
+    }
+
+    event.type = WATCH_EVENT_DOWN;
+    if (!watch_core_dispatch_event(&core, &event) || !watch_core_read_snapshot(&core, &snapshot)
+        || !watch_simulator_show_page(lifecycle, &snapshot, "LAUNCHER", "SELECT: SETTINGS")) {
+        return false;
+    }
+
+    event.type = WATCH_EVENT_SELECT;
+    if (!watch_core_dispatch_event(&core, &event) || !watch_core_read_snapshot(&core, &snapshot)
+        || !watch_simulator_show_page(lifecycle, &snapshot, "SETTINGS", "BACK: RETURN")) {
+        return false;
+    }
+
+    event.type = WATCH_EVENT_BACK;
+    if (!watch_core_dispatch_event(&core, &event) || !watch_core_read_snapshot(&core, &snapshot)
+        || !watch_simulator_show_page(lifecycle, &snapshot, "LAUNCHER", "SELECT: SETTINGS")) {
+        return false;
+    }
+
+    event.type = WATCH_EVENT_BACK;
+    if (!watch_core_dispatch_event(&core, &event) || !watch_core_read_snapshot(&core, &snapshot)
+        || !watch_simulator_show_page(lifecycle, &snapshot, "WATCHFACE", "SELECT: LAUNCHER")) {
+        return false;
+    }
+
+    watch_page_lifecycle_read_stats(lifecycle, &stats);
+    return stats.created_count == 5U && stats.destroyed_count == 4U;
 }
 
 int main(int argc, char **argv)
 {
     const bool smoke = (argc > 1) && (strcmp(argv[1], "--smoke") == 0);
     lv_display_t *display;
-    lv_obj_t *screen;
+    watch_page_lifecycle_t lifecycle;
+    watch_page_lifecycle_stats_t stats;
 
     lv_init();
     display = watch_simulator_create_display(smoke);
@@ -93,14 +149,13 @@ int main(int argc, char **argv)
     lv_display_set_default(display);
     lv_lock();
     f411_watch_ui_init(NULL);
-    screen = screen_watchface_create();
-    if (screen == NULL) {
-        lv_unlock();
-        fprintf(stderr, "watch_ui_smoke: screen creation failed\n");
+    lv_unlock();
+
+    if (!watch_simulator_check_lifecycle(display, &lifecycle)) {
+        fprintf(stderr, "watch_ui_smoke: lifecycle failed\n");
         return 1;
     }
-    lv_screen_load(screen);
-    lv_unlock();
+
     (void)lv_timer_handler();
 
 #if defined(_WIN32)
@@ -110,21 +165,16 @@ int main(int argc, char **argv)
         lv_sleep_ms(LV_DEF_REFR_PERIOD + 1U);
         (void)lv_timer_handler();
         lv_lock();
-        lv_obj_invalidate(screen);
+        lv_obj_invalidate(watch_page_lifecycle_active_screen(&lifecycle));
         lv_refr_now(display);
         lv_unlock();
     }
 #endif
 
-    if (!watch_simulator_has_label(screen, "MAGIC WATCH")
-        || !watch_simulator_has_label(screen, "WATCHFACE")
-        || !watch_simulator_has_label(screen, "M7 EDITOR UI")
-        || !watch_simulator_check_core()) {
-        fprintf(stderr, "watch_ui_smoke: FAIL\n");
-        return 1;
-    }
-
-    printf("watch_ui_smoke: PASS display=240x280 ui=MAGIC WATCH core=LAUNCHER\n");
+    watch_page_lifecycle_read_stats(&lifecycle, &stats);
+    printf(
+        "watch_ui_smoke: PASS display=240x280 pages=5 creates=%lu destroys=%lu active=WATCHFACE\n",
+        (unsigned long)stats.created_count, (unsigned long)stats.destroyed_count);
     fflush(stdout);
 
 #if defined(_WIN32)
@@ -138,6 +188,15 @@ int main(int argc, char **argv)
         }
     }
 #endif
+
+    lv_lock();
+    watch_page_lifecycle_deinit(&lifecycle);
+    lv_unlock();
+    watch_page_lifecycle_read_stats(&lifecycle, &stats);
+    if (stats.created_count != stats.destroyed_count) {
+        fprintf(stderr, "watch_ui_smoke: lifecycle leak\n");
+        return 1;
+    }
 
     return 0;
 }

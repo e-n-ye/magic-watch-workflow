@@ -14,7 +14,10 @@ target_include_directories(watch_lvgl
         ${CMAKE_CURRENT_SOURCE_DIR}/ui
 )
 
-target_compile_definitions(watch_lvgl PUBLIC LV_CONF_INCLUDE_SIMPLE)
+target_compile_definitions(watch_lvgl PUBLIC
+    LV_CONF_INCLUDE_SIMPLE
+    LV_LVGL_H_INCLUDE_SIMPLE
+)
 
 add_library(f411_watch_user OBJECT
     app/watch_app.c
@@ -27,6 +30,11 @@ add_library(f411_watch_user OBJECT
     board/power/watch_power.c
     board/usb/watch_usb_cdc.c
     ui/watch_ui.c
+    ${CMAKE_SOURCE_DIR}/../../../products/f411_watch/ui/watch_page_lifecycle.c
+    ${CMAKE_SOURCE_DIR}/../../../products/f411_watch/ui/screens/watchface/screen_watchface_gen.c
+    ${CMAKE_SOURCE_DIR}/../../../products/f411_watch/ui/screens/launcher/screen_launcher_gen.c
+    ${CMAKE_SOURCE_DIR}/../../../products/f411_watch/ui/screens/status/screen_status_gen.c
+    ${CMAKE_SOURCE_DIR}/../../../products/f411_watch/ui/screens/settings/screen_settings_gen.c
     ${WATCH_CORE_SOURCE_DIR}/watch_core.c
     ${WATCH_INPUT_SOURCE_DIR}/watch_input.c
 )
@@ -36,6 +44,7 @@ target_include_directories(f411_watch_user
         ${CMAKE_CURRENT_SOURCE_DIR}
         ${WATCH_CORE_SOURCE_DIR}
         ${WATCH_INPUT_SOURCE_DIR}
+        ${CMAKE_SOURCE_DIR}/../../../products/f411_watch/ui
 )
 
 target_link_libraries(f411_watch_user

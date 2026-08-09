@@ -21,6 +21,9 @@ add_library(${LIB_NAME} ${LV_EDITOR_PROJECT_SOURCES})
 
 if(LV_EDITOR_USER_SOURCES)
     add_library(${LIB_NAME}_user OBJECT ${LV_EDITOR_USER_SOURCES})
+    if(DEFINED LV_EDITOR_COMPONENT_LIB_LIST)
+        target_link_libraries(${LIB_NAME}_user PUBLIC ${LV_EDITOR_COMPONENT_LIB_LIST})
+    endif()
     target_link_libraries(${LIB_NAME} PUBLIC $<TARGET_OBJECTS:${LIB_NAME}_user>)
 endif()
 
