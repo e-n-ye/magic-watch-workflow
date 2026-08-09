@@ -36,27 +36,6 @@ static const char *watch_app_event_name(watch_event_type_t type)
     return "invalid";
 }
 
-static uint16_t watch_app_event_color(watch_event_type_t type)
-{
-    switch (type) {
-    case WATCH_EVENT_WAKE:
-        return WATCH_LCD_YELLOW;
-    case WATCH_EVENT_BACK:
-        return WATCH_LCD_RED;
-    case WATCH_EVENT_SELECT:
-        return WATCH_LCD_GREEN;
-    case WATCH_EVENT_UP:
-        return WATCH_LCD_BLUE;
-    case WATCH_EVENT_DOWN:
-        return WATCH_LCD_CYAN;
-    case WATCH_EVENT_NONE:
-    case WATCH_EVENT_COUNT:
-        return WATCH_LCD_MAGENTA;
-    }
-
-    return WATCH_LCD_MAGENTA;
-}
-
 static void watch_app_report_status(void)
 {
     char response[192];
@@ -115,9 +94,6 @@ static void watch_app_report_event(const watch_event_t *event, bool dispatched,
     if ((length > 0) && ((size_t)length < sizeof(response))) {
         (void)watch_usb_cdc_write((const uint8_t *)response, (size_t)length);
     }
-
-    watch_lcd_fill_rect(0U, 0U, WATCH_LCD_WIDTH, 12U,
-                        dispatched ? watch_app_event_color(event->type) : WATCH_LCD_MAGENTA);
 }
 
 void watch_app_init(void)
@@ -138,7 +114,11 @@ void watch_app_init(void)
     s_status_reported = false;
     s_touch_reported_sequence = 0U;
     s_app_ready = true;
-    watch_lcd_show_bringup_pattern();
+}
+
+bool watch_app_is_ready(void)
+{
+    return s_app_ready;
 }
 
 void watch_app_process(void)
@@ -168,4 +148,13 @@ void watch_app_process(void)
         (void)watch_core_read_snapshot(&s_core, &snapshot);
         watch_app_report_event(&event, dispatched, command_type, &snapshot);
     }
+}
+
+bool watch_app_read_snapshot(watch_snapshot_t *snapshot)
+{
+    if (!s_app_ready) {
+        return false;
+    }
+
+    return watch_core_read_snapshot(&s_core, snapshot);
 }

@@ -1,0 +1,2 @@
+# Vendored LVGL is kept byte-for-byte from upstream; project-owned files keep the default checks.
+firmware/stm32/f411_watch/third_party/lvgl/** whitespace=-trailing-space,-space-before-tab
