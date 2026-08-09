@@ -1,11 +1,11 @@
 /**
- * @file screen_watchface_gen.c
- * @brief Generated screen objects from LVGL Pro Editor.
+ * @file screen_launcher_gen.c
+ * @brief Generated launcher screen objects from LVGL Pro Editor.
  */
 
-#include "screen_watchface_gen.h"
+#include "screen_launcher_gen.h"
 
-lv_obj_t *screen_watchface_create(void)
+lv_obj_t *screen_launcher_create(void)
 {
     lv_obj_t *screen = lv_obj_create(NULL);
     lv_obj_t *title;
@@ -31,11 +31,11 @@ lv_obj_t *screen_watchface_create(void)
     lv_obj_set_style_text_color(title, lv_color_hex(0xF4F7FAU), LV_PART_MAIN);
     lv_obj_align(title, LV_ALIGN_TOP_MID, 0, 22);
 
-    lv_label_set_text(page, "WATCHFACE");
+    lv_label_set_text(page, "LAUNCHER");
     lv_obj_set_style_text_color(page, lv_color_hex(0x64D2FFU), LV_PART_MAIN);
     lv_obj_align(page, LV_ALIGN_CENTER, 0, -8);
 
-    lv_label_set_text(footer, "SELECT: LAUNCHER");
+    lv_label_set_text(footer, "SELECT: STATUS");
     lv_obj_set_style_text_color(footer, lv_color_hex(0xB8C7D9U), LV_PART_MAIN);
     lv_obj_align(footer, LV_ALIGN_BOTTOM_MID, 0, -22);
 

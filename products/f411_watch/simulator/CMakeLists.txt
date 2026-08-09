@@ -30,8 +30,8 @@ target_compile_definitions(watch_ui_lvgl PUBLIC
 )
 
 set(LVGL_COMPONENT_LIB_NAME watch_ui_generated)
+set(LV_EDITOR_COMPONENT_LIB_LIST watch_ui_lvgl)
 add_subdirectory(${WATCH_UI_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR}/ui)
-target_link_libraries(watch_ui_generated PUBLIC watch_ui_lvgl)
 target_include_directories(watch_ui_generated PUBLIC ${WATCH_UI_SOURCE_DIR})
 
 add_executable(watch_ui_simulator

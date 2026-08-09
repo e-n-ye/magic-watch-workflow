@@ -8,6 +8,6 @@
         <style name="style_watchface" />
         <lv_label text="MAGIC WATCH" align="top_mid" y="22" style_text_color="0xF4F7FA" />
         <lv_label text="WATCHFACE" align="center" y="-8" style_text_color="0x64D2FF" />
-        <lv_label text="M7 EDITOR UI" align="bottom_mid" y="-22" style_text_color="0xB8C7D9" />
+        <lv_label text="SELECT: LAUNCHER" align="bottom_mid" y="-22" style_text_color="0xB8C7D9" />
     </view>
 </screen>

@@ -36,15 +36,15 @@ modules are not part of the project.
 
 ## Baseline
 
-- Reference commit: `d38e169` (M6 LVGL port and board acceptance merged to
-  `main`).
+- Reference commit: `3b2dad8` (M7 Editor-exported UI and XML development skill
+  merged to `main`).
 - M0 through M6 CI Gates passed; M3a, M5, and M6 board acceptance are complete.
 - Before relocation, the verified Debug App image was Flash `64,340 / 524,288 B`
   and RAM `30,208 / 131,072 B`.
 - M3a pre-CDC Debug build: Bootloader was `6,564 B` Flash and `1,056 B` RAM;
   App was `65,280 B` Flash and `30,296 B` RAM.
-- Current M6 Debug App is `234,772 B` Flash and `82,720 B` RAM; the Diagnostic
-  App is `243,716 B` Flash and `82,720 B` RAM.
+- Current M6 Debug App was `234,772 B` Flash and `82,720 B` RAM; the Diagnostic
+  App was `243,716 B` Flash and `82,720 B` RAM.
 - M2 host packaging and OpenOCD programming remain the accepted upgrade path;
   CubeProgrammer is not part of the workflow.
 - Current hardware facts: STM32F411, 24 MHz HSE, ST-Link-compatible SWD,
@@ -63,7 +63,7 @@ modules are not part of the project.
 | M5 | Input hardware and normalized gesture/button events | Complete; M5a/M5b CI Gates and board acceptance passed |
 | M6 | LVGL 9.5 port, DMA flush, UI task, and 240x280 budget gate | Complete; CI Gate and focused board acceptance passed |
 | M7 | Editor-exported XML UI, generated C, and PC simulator | Implemented locally; host CTest passed; no board acceptance required |
-| M8 | Page lifecycle and watch pages | Planned |
+| M8 | Page lifecycle and watch pages | Implemented locally; host/F411 checks passed; board acceptance pending |
 | M9 | Time, service queues, task health, and initialization policy | Planned |
 | M10 | Confirmed sensor drivers and sensor service | Planned |
 | M11 | Power states, wake sources, Stop recovery, and watchdog | Planned |
@@ -74,24 +74,23 @@ modules are not part of the project.
 
 ## Current round
 
-M7 keeps the M6 LVGL pin at `v9.5.0`, using the already committed source tree
-and the F411 component configuration. The Editor project under
-`products/f411_watch/ui` fixes the display at 240x280 and contains one small
-screen with `MAGIC WATCH`, `WATCHFACE`, and `M7 EDITOR UI` labels. Its XML is the
-source of truth; the committed generated-style C/H is the only runtime input.
+M8 keeps the M7 LVGL `v9.5.0` and manual Editor export contract. Four small
+Editor-maintained screens now cover `WATCHFACE`, `LAUNCHER`, `STATUS`, and
+`SETTINGS`. The shared `watch_page_lifecycle` adapter creates a new screen on a
+core page transition, loads it before deleting the previous screen, updates the
+launcher hint for selection changes, and exposes create/destroy counters for the
+host smoke test. The F411 `watch_ui_task` and the Windows/headless simulator use
+the same adapter; `watch_core` remains the only owner of page-stack state.
 
-The new `products/f411_watch/simulator` CMake project builds the same generated
-C with the repository LVGL sources. On Windows it can open a 240x280 native
-LVGL window; the CTest smoke path uses a headless display and checks all three
-labels plus a `watch_core` `SELECT` transition to `LAUNCHER`. No Pro CLI, token,
-network fetch, or XML parser is required.
+M8 does not add runtime XML parsing, Pro CLI integration, new hardware input,
+service queues, sensors, time, power, storage, or OTA behavior. XML remains the
+source of truth and committed generated C/H is the only firmware/runtime input.
 
 ## Next round
 
-M8 will add page lifecycle and the watch pages around the existing core/UI
-boundary. It will decide how generated screen wrappers are created and destroyed
-without moving LVGL ownership out of the single UI task. M7 does not add real
-hardware input, XML parsing on F411, or page-stack integration.
+M9 will add time/service contracts, bounded service queues, task health, and a
+central initialization policy. It will not expand the M8 page set or add sensor
+drivers before those contracts have consumers and host tests.
 
 ## Risks and blockers
 
@@ -154,10 +153,40 @@ ctest --test-dir build/host-m7 --output-on-failure
 build/host-m7/watch_ui_simulator.exe --smoke
 ```
 
-The smoke output was `watch_ui_smoke: PASS display=240x280 ui=MAGIC WATCH
+The M7 smoke output was `watch_ui_smoke: PASS display=240x280 ui=MAGIC WATCH
 core=LAUNCHER`. This is a host/UI acceptance only; no new board flashing or
 manual M7 hardware demonstration is required. The follow-up preview check also
 validated the Editor-compatible `<style name="..." />` view syntax, the XML
 documents parse successfully, and the Windows native path waits for its delayed
-framebuffer allocation before forcing the first visible frame. A short native
-startup produced the same PASS line and remained running for the window loop.
+framebuffer allocation before forcing the first visible frame.
+
+For M8, the following passed from the repository root:
+
+```text
+cmake -S products/f411_watch/simulator -B build/host-m7 -G Ninja
+cmake --build build/host-m7
+ctest --test-dir build/host-m7 --output-on-failure
+build/host-m7/watch_ui_simulator.exe --smoke
+cmake -S tests -B build/host-tests-m8 -G Ninja
+cmake --build build/host-tests-m8
+ctest --test-dir build/host-tests-m8 --output-on-failure
+```
+
+The lifecycle smoke output was `watch_ui_smoke: PASS display=240x280 pages=5
+creates=5 destroys=4 active=WATCHFACE`. All four changed XML files parse with
+the host XML parser. The F411 Debug checks also passed:
+
+```text
+cmake --preset Debug
+cmake --build --preset Debug
+cmake --build --preset Debug --target format-check
+cmake --build --preset Debug --target cppcheck
+```
+
+The linked Debug App is Flash `241,400 B` and RAM `82,728 B`, under the 400 KiB
+App and 128 KiB RAM limits. M8 board acceptance is still pending: flash the
+Debug image with OpenOCD, confirm `MAGIC WATCH` and the four page labels on the
+240x280 display, use select/down to reach `LAUNCHER` then `STATUS` or `SETTINGS`,
+and use the existing left-edge `BACK` gesture or encoder/button back path to
+return. Confirm the USB log has the expected normalized events and no unexpected
+`drop` or `i2c_err` increments. This is the only remaining M8 acceptance step.
