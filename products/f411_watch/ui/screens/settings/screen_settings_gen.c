@@ -42,6 +42,7 @@ lv_obj_t * screen_settings_create(void)
         /*Init all styles*/
         lv_style_init(&style_settings);
 
+        lv_style_set_bg_opa(&style_settings, (255 * 100 / 100));
         lv_style_set_bg_color(&style_settings, lv_color_hex(0x101820));
 
         style_inited = true;

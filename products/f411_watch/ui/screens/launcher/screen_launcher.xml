@@ -1,7 +1,7 @@
 <!-- 240x280 M8 launcher screen maintained in LVGL Pro Editor. -->
 <screen>
     <styles>
-        <style name="style_launcher" bg_color="0x101820" />
+        <style name="style_launcher" bg_opa="100%" bg_color="0x101820" />
     </styles>
 
     <view>
