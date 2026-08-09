@@ -34,7 +34,7 @@ modules are not part of the project.
 
 ## Baseline
 
-- Reference commit: `5346cf7` (M3b USB CDC diagnostic transport merged to
+- Reference commit: `dd1dcd2` (M3a Diagnostic hardware acceptance merged to
   `main`).
 - M0, M1, M2, M3a, and M3b CI Gates passed; M3a board acceptance is complete.
 - Before relocation, the verified Debug App image was Flash `64,340 / 524,288 B`
@@ -57,7 +57,7 @@ modules are not part of the project.
 | M2 | Signed image manifest, trailer, and host packaging | Software complete; key rotation requires Bootloader reflash; negative-path board acceptance pending |
 | M3a | Assertions, reset capsule, memory budgets, Diagnostic build | Complete; Diagnostic cold-start and HardFault injection accepted on hardware |
 | M3b | USB CDC logging and diagnostic transport | Complete locally; CubeMX CDC generation, software checks, OpenOCD programming, and COM6 host acceptance passed |
-| M4 | Pure-C core, input contracts, and host tests | Planned |
+| M4 | Pure-C core, input contracts, and host tests | Complete; F411 and host CTest passed |
 | M5 | Input hardware and normalized gesture/button events | Planned |
 | M6 | LVGL 9.5 port, DMA flush, UI task, and 240x280 budget gate | Planned |
 | M7 | XML generation and PC simulator using generated C | Planned |
@@ -72,43 +72,25 @@ modules are not part of the project.
 
 ## Current round
 
-M3a adds a reset-surviving diagnostic capsule for HardFault, other Cortex-M
-faults, HAL errors, full assertions, and FreeRTOS stack overflow. The capsule
-stores core fault registers and a checksum in a linker-defined `.noinit`
-section. On the next software reset, the App shows a reason-coded LCD pattern
-once and then clears the capsule; a normal boot keeps the existing 240x280
-color bars.
+M4 adds the first real product core under `products/f411_watch/core`. The pure C
+`watch_core` module has no HAL, FreeRTOS, or LVGL dependency and is compiled by
+both the F411 user target and a standalone host CTest target.
 
-Debug and Diagnostic builds now enforce the App `400 KiB` Flash budget and
-`128 KiB` RAM budget after linking. The standalone Bootloader enforces its `64
-KiB` Flash boundary and the same RAM boundary. Diagnostic enables
-`USE_FULL_ASSERT=1`; Debug keeps the existing assertion behavior.
+The contract defines normalized `watch_event_t` values for wake, back, select,
+up, and down input; `watch_snapshot_t` for the current page, bounded stack
+depth, launcher selection, and revision; and a bounded `watch_command_t` queue
+for page and selection changes. The navigation state machine covers the
+watchface, launcher, status, and settings pages. `WAKE` is accepted as a
+normalized event but remains a no-op until the later power-state round.
 
-M3b changes the CubeMX USB device class to CDC while keeping PA11/PA12, the
-48 MHz USB clock, and USART1 for the KT6368 link. A hand-written board transport
-owns bounded RX/TX rings and a non-blocking 64-byte packet sender. The service
-task accepts line-oriented `help`, `ping`, `info`, `diag`, and `stats` commands;
-unknown commands and overlong lines return explicit errors. No `printf`
-redirection, MSC mode, resource protocol, or OTA transport is included here.
-
-M3a board acceptance is now complete. A Diagnostic App cold start after a full
-power cycle showed the backlight and the normal 240x280 color bars. A controlled
-ST-Link/OpenOCD/GDB fault injection then stopped the CPU in the diagnostic halt
-path; a reset showed the one-time HardFault pattern (observed as roughly 30%
-black and 70% yellow), and the following reset restored the normal color bars.
-The capsule is only required to survive a reset, not a complete power loss.
-
-The generated HardFault function remains a CubeMX placeholder. A source-level
-CMake symbol remap routes the vector table to the hand-written diagnostic
-handler under `user/app`, so a later CubeMX regeneration does not overwrite the
-M3a fault capture path.
+The F411 build only compiles the core. No UI, real input hardware, LVGL/XML,
+FreeRTOS task, or board acceptance is included in M4.
 
 ## Next round
 
-The next implementation round is M4: the pure-C `watch_core` state machine,
-normalized events, snapshots, commands, and host tests. The separate M3a
-Diagnostic cold-start and deliberate fault-injection checks remain manual
-acceptance items.
+The next implementation round is M5: the CST816, encoder, and button hardware
+loop with normalized gesture and button events. The separate M3a Diagnostic
+cold-start and deliberate fault-injection checks remain accepted manual items.
 
 ## Risks and blockers
 
@@ -131,7 +113,8 @@ acceptance items.
 
 ## Latest verification
 
-For M3b, the following passed from the F411 project directory:
+For M4, the following passed from the F411 project directory and repository
+root:
 
 ```text
 cmake --preset Debug
@@ -140,14 +123,13 @@ cmake --build --preset Debug --target format-check
 cmake --build --preset Debug --target cppcheck
 cmake --preset Diagnostic
 cmake --build --preset Diagnostic
+cmake -S tests -B build/host-tests -G Ninja
+cmake --build build/host-tests
+ctest --test-dir build/host-tests --output-on-failure
 ```
 
-M3b software validation passed `git diff --check`, format-check, Cppcheck, both
-Debug/Diagnostic link-time budget checks, and the Debug/Diagnostic builds. The
-combined OpenOCD task wrote and verified the Bootloader plus signed App. The
-board enumerated as `USB Serial Device (COM6)` with VID/PID `0483:5740`; `ping`,
-`info`, `diag`, `stats`, and `help` returned the expected lines, an unknown
-command and an overlong line returned explicit errors, and a close/reopen cycle
-accepted `ping` again. M3a Diagnostic cold-start and deliberate HardFault
-injection were then accepted on hardware using the Diagnostic App, OpenOCD, and
-GDB; the capsule pattern and post-reset recovery matched the acceptance steps.
+M4 software validation passed `git diff --check`, format-check, Cppcheck, the
+Debug/Diagnostic link-time budget checks, the Debug/Diagnostic builds, and the
+host `watch_core` CTest. No new board acceptance was required; the M3a
+Diagnostic cold-start and deliberate HardFault injection remain the recorded
+hardware result.

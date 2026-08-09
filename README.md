@@ -10,7 +10,7 @@ A CMake-first embedded watch workflow for STM32F411 and ESP32-S3, with reproduci
 - F411 当前验收目标是 LCD 背光和固定彩条显示。
 - ESP32-S3 工程已经通过 ESP-IDF 点亮板载 RGB LED，并保留 UART 监视入口。
 - CubeMX 生成区与手写 `user/` 代码已经分开；CubeMX 强制保留的 `defaultTask` 不承载手表业务。
-- LVGL、XML UI、主机模拟器和状态机将在版本兼容性与真实需求明确后逐步加入。
+- 纯 C `watch_core` 和主机 CTest 已加入；LVGL、XML UI 和主机模拟器仍在后续轮次中逐步加入。
 - [F411 rolling development status](docs/f411-development-status.md)
 
 ## Documentation
@@ -37,7 +37,7 @@ A CMake-first embedded watch workflow for STM32F411 and ESP32-S3, with reproduci
 
 - [C/C++ coding guidelines](docs/coding-guidelines.md)
 - The root `.clang-format` is a project-level configuration for hand-written code.
-- Automatic formatting is limited to the F411 `user/` whitelist; CubeMX-generated and third-party code is excluded.
+- Automatic formatting is limited to the explicit F411 `user/` and shared `products/f411_watch/core/` whitelists; CubeMX-generated and third-party code is excluded.
 
 ## Build
 
@@ -51,6 +51,14 @@ cmake --build --preset Debug
 ```
 
 The generated App ELF is written to `build/Debug/my_watch_f411.elf`; the standalone Bootloader ELF is written to `build/Debug/f411_bootloader.elf`. VS Code provides build, signed-package, and OpenOCD/ST-Link tasks. OpenOCD is the supported F411 programming path.
+
+### Host core tests
+
+```sh
+cmake -S tests -B build/host-tests -G Ninja
+cmake --build build/host-tests
+ctest --test-dir build/host-tests --output-on-failure
+```
 
 Signed-package tasks read the external ECDSA private key and signed metadata from
 machine-local user environment variables, so no path or release value is stored
