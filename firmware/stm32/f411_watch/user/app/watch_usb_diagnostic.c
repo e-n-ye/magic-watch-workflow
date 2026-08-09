@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include "board/usb/watch_usb_cdc.h"
+#include "watch_app.h"
 #include "watch_diagnostic.h"
 
 #define WATCH_USB_DIAGNOSTIC_COMMAND_SIZE 96U
@@ -101,6 +102,8 @@ void watch_usb_diagnostic_process(void)
 {
     uint8_t input[WATCH_USB_DIAGNOSTIC_READ_SIZE];
     size_t length = watch_usb_cdc_read(input, sizeof(input));
+
+    watch_app_process();
 
     for (size_t index = 0U; index < length; ++index) {
         consume_byte(input[index]);

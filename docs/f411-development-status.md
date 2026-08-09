@@ -58,7 +58,7 @@ modules are not part of the project.
 | M3a | Assertions, reset capsule, memory budgets, Diagnostic build | Complete; Diagnostic cold-start and HardFault injection accepted on hardware |
 | M3b | USB CDC logging and diagnostic transport | Complete locally; CubeMX CDC generation, software checks, OpenOCD programming, and COM6 host acceptance passed |
 | M4 | Pure-C core, input contracts, and host tests | Complete; F411 and host CTest passed |
-| M5 | Input hardware and normalized gesture/button events | In progress; M5a pure-C normalization complete, M5b board loop pending |
+| M5 | Input hardware and normalized gesture/button events | M5a merged; M5b software loop complete, board acceptance pending |
 | M6 | LVGL 9.5 port, DMA flush, UI task, and 240x280 budget gate | Planned |
 | M7 | XML generation and PC simulator using generated C | Planned |
 | M8 | Page lifecycle and watch pages | Planned |
@@ -72,25 +72,26 @@ modules are not part of the project.
 
 ## Current round
 
-M5a adds the pure C `watch_input` normalizer under `products/f411_watch/input`.
-It debounces BACK, WAKE, and encoder-button samples; maps encoder deltas to
-single-step UP/DOWN events; maps taps and vertical swipes; and accepts a right
-swipe only when it starts within the frozen 240-pixel display edge. Output is a
-bounded `watch_event_t` queue that can be consumed by `watch_core` without any
-HAL, FreeRTOS, or LVGL dependency.
+M5b adds the F411 board loop on top of the M5a `watch_input` normalizer. The
+board facts are now confirmed from the V2.1 reference project: CST816 address
+`0x15`, software I2C on `PA3=SDA` and `PA4=SCL`, reset on `PA2`, no `TP_INT`,
+BACK=`PB10` active-low, WAKE=`PB12` active-high, encoder key=`PB2`
+active-low, and TIM4 encoder `PB6=ENCODER_B/CH1`, `PB7=ENCODER_A/CH2`.
 
-The F411 target compiles the shared input module and host CTest covers debounce,
-queue-full atomicity, touch gesture mapping, and core dispatch. M5a does not
-claim a board loop: CST816 software I2C, GPIO/EXTI callback ownership, TIM4
-encoder startup, LCD/USB feedback, and hardware polarity remain in M5b.
+The hand-written board adapter polls CST816 gestures, starts and filters TIM4
+counts, samples the three buttons through the normalized debounce contract, and
+keeps EXTI callbacks short by recording counters only. `watch_core` consumes
+the resulting events in the existing USB diagnostic task; USB CDC emits the
+input status/event lines and the LCD shows the latest event as a top color bar.
+No CubeMX-generated file, `.ioc`, LVGL, XML, or real page was added.
 
 ## Next round
 
-The next implementation sub-round is M5b: confirm the CST816 bus/address and
-touch wiring, start/consume TIM4 encoder counts, route GPIO EXTI callbacks, and
-exercise the normalized events through USB/LCD diagnostics on hardware. The
-separate M3a Diagnostic cold-start and deliberate fault-injection checks remain
-accepted manual items.
+The next implementation round is M6: fix the LVGL 9.5 integration boundary,
+ST7789 DMA flush, tick ownership, and the first 240x280 representative page.
+M5b still requires a focused board acceptance before it can be marked complete;
+the separate M3a Diagnostic cold-start and deliberate fault-injection checks
+remain accepted manual items.
 
 ## Risks and blockers
 
@@ -101,22 +102,22 @@ accepted manual items.
   confirmed metadata until the later OTA rounds.
 - EEPROM type/address must be confirmed from the actual board before a driver
   is added; the old 24LC32 behavior is not evidence.
-- CST816 has TP_RST/TP_SDA/TP_SCL evidence but no confirmed TP_INT or I2C
-  address in the current project; M5b must not inherit the old driver's
-  software-I2C assumptions without board verification.
+- CST816 wiring, `0x15` address, and the absence of `TP_INT` are now confirmed
+  from the V2.1 reference project; M5b still needs the board transaction and
+  gesture check before this software fact becomes a hardware acceptance.
 - KT6368 SPP firmware behavior and enable polarity require a board test; no
   undocumented AT command is assumed.
 - There is no battery measurement baseline, so power acceptance is behavioral
   rather than a fabricated current target.
 - The reset capsule survives software reset but not a complete power loss; a
   power-cycle fault-recovery claim is deferred until backup storage exists.
-- USB CDC enumeration, bidirectional command exchange, reconnect behavior, and
-  ring-buffer overflow counters require a manual host/board check; CI has no USB
-  hardware job.
+- M5b input status/event lines, button debounce, encoder direction, touch
+  gestures, and LCD color feedback require a manual host/board check; CI has no
+  input hardware job.
 
 ## Latest verification
 
-For M5a, the following passed from the F411 project directory and repository
+For M5b, the following passed from the F411 project directory and repository
 root:
 
 ```text
@@ -126,12 +127,17 @@ cmake --build --preset Debug --target format-check
 cmake --build --preset Debug --target cppcheck
 cmake --preset Diagnostic
 cmake --build --preset Diagnostic
-cmake -S tests -B build/host-tests -G Ninja
-cmake --build build/host-tests
-ctest --test-dir build/host-tests --output-on-failure
+cmake -S tests -B build/host-tests-m5b -G Ninja
+cmake --build build/host-tests-m5b
+ctest --test-dir build/host-tests-m5b --output-on-failure
 ```
 
-M5a software validation passed `git diff --check`, format-check, Cppcheck, the
+M5b software validation passed `git diff --check`, format-check, Cppcheck, the
 Debug/Diagnostic link-time budget checks, the Debug/Diagnostic builds, and the
-host `watch_core_input` CTest. No board acceptance was performed; M5b is the
-next manual hardware boundary.
+host `watch_core_input` CTest. Board acceptance remains pending. After flashing
+the Debug image with OpenOCD, verify the USB line beginning `input hw`, then
+press BACK, WAKE, and the encoder key once each, rotate in both directions,
+tap the panel, and perform a left-edge right swipe. Each accepted normalized
+event must produce one USB `input event=...` line and a matching LCD color bar;
+the status line must show increasing EXTI counters and no unexpected `drop` or
+`i2c_err` increments.

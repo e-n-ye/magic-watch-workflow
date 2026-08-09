@@ -7,6 +7,8 @@ add_library(f411_watch_user OBJECT
     app/watch_fault_handlers.c
     app/watch_usb_diagnostic.c
     board/display/watch_lcd.c
+    board/input/watch_cst816.c
+    board/input/watch_input_hw.c
     board/power/watch_power.c
     board/usb/watch_usb_cdc.c
     ${WATCH_CORE_SOURCE_DIR}/watch_core.c

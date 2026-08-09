@@ -127,6 +127,10 @@ static void test_button_debounce(void)
     watch_input_t input;
 
     assert(watch_input_init(&input));
+    assert(watch_input_seed_button(&input, WATCH_INPUT_BUTTON_WAKE, true, 0U));
+    assert(watch_input_submit_button(&input, WATCH_INPUT_BUTTON_WAKE, true, 100U));
+    assert(!watch_input_take_event(&input, &(watch_event_t){0}));
+
     assert(watch_input_submit_button(&input, WATCH_INPUT_BUTTON_BACK, false, 0U));
     assert(watch_input_submit_button(&input, WATCH_INPUT_BUTTON_BACK, true, 10U));
     assert(!watch_input_take_event(&input, &(watch_event_t){0}));
