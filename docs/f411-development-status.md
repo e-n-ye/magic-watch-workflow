@@ -156,4 +156,8 @@ build/host-m7/watch_ui_simulator.exe --smoke
 
 The smoke output was `watch_ui_smoke: PASS display=240x280 ui=MAGIC WATCH
 core=LAUNCHER`. This is a host/UI acceptance only; no new board flashing or
-manual M7 hardware demonstration is required.
+manual M7 hardware demonstration is required. The follow-up preview check also
+validated the Editor-compatible `<style name="..." />` view syntax, the XML
+documents parse successfully, and the Windows native path waits for its delayed
+framebuffer allocation before forcing the first visible frame. A short native
+startup produced the same PASS line and remained running for the window loop.

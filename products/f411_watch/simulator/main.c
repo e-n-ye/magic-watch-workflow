@@ -103,6 +103,19 @@ int main(int argc, char **argv)
     lv_unlock();
     (void)lv_timer_handler();
 
+#if defined(_WIN32)
+    if (!smoke) {
+        /* The native Windows backend allocates its framebuffer from a timer.
+         * Let that timer run before forcing the first visible frame. */
+        lv_sleep_ms(LV_DEF_REFR_PERIOD + 1U);
+        (void)lv_timer_handler();
+        lv_lock();
+        lv_obj_invalidate(screen);
+        lv_refr_now(display);
+        lv_unlock();
+    }
+#endif
+
     if (!watch_simulator_has_label(screen, "MAGIC WATCH")
         || !watch_simulator_has_label(screen, "WATCHFACE")
         || !watch_simulator_has_label(screen, "M7 EDITOR UI")
