@@ -1,5 +1,20 @@
 set(WATCH_CORE_SOURCE_DIR "${CMAKE_SOURCE_DIR}/../../../products/f411_watch/core")
 set(WATCH_INPUT_SOURCE_DIR "${CMAKE_SOURCE_DIR}/../../../products/f411_watch/input")
+set(WATCH_LVGL_SOURCE_DIR "${CMAKE_SOURCE_DIR}/third_party/lvgl")
+
+file(GLOB_RECURSE WATCH_LVGL_SOURCES CONFIGURE_DEPENDS
+    "${WATCH_LVGL_SOURCE_DIR}/src/*.c"
+)
+
+add_library(watch_lvgl STATIC ${WATCH_LVGL_SOURCES})
+
+target_include_directories(watch_lvgl
+    SYSTEM PUBLIC
+        ${WATCH_LVGL_SOURCE_DIR}
+        ${CMAKE_CURRENT_SOURCE_DIR}/ui
+)
+
+target_compile_definitions(watch_lvgl PUBLIC LV_CONF_INCLUDE_SIMPLE)
 
 add_library(f411_watch_user OBJECT
     app/watch_app.c
@@ -11,6 +26,7 @@ add_library(f411_watch_user OBJECT
     board/input/watch_input_hw.c
     board/power/watch_power.c
     board/usb/watch_usb_cdc.c
+    ui/watch_ui.c
     ${WATCH_CORE_SOURCE_DIR}/watch_core.c
     ${WATCH_INPUT_SOURCE_DIR}/watch_input.c
 )
@@ -25,6 +41,7 @@ target_include_directories(f411_watch_user
 target_link_libraries(f411_watch_user
     PUBLIC
         stm32cubemx
+        watch_lvgl
 )
 
 add_custom_target(cppcheck

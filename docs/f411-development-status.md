@@ -22,6 +22,8 @@ modules are not part of the project.
 | --- | --- |
 | F411 display | ST7789, 240x280; 240x240 is a future independent LilyGo profile |
 | Core | Pure C `watch_core`; no HAL, FreeRTOS, or LVGL dependency |
+| LVGL | Pinned v9.5.0; only the UI task calls LVGL, with a 240x20 double partial buffer |
+| Display flush | ST7789 SPI1 DMA; RGB565 byte order is converted before the transfer and completion is acknowledged in the UI task |
 | UI ownership | One LVGL UI task owns LVGL and the core; services use bounded queues |
 | XML | XML is the layout source and generated C is committed; F411 does not parse XML at runtime |
 | Boot layout | Bootloader `0x08000000-0x0800FFFF`; application `0x08010000-0x0807FFFF` |
@@ -34,9 +36,9 @@ modules are not part of the project.
 
 ## Baseline
 
-- Reference commit: `dd1dcd2` (M3a Diagnostic hardware acceptance merged to
+- Reference commit: `c9598d0` (M5b input hardware acceptance merged to
   `main`).
-- M0, M1, M2, M3a, and M3b CI Gates passed; M3a board acceptance is complete.
+- M0 through M5 CI Gates passed; M3a and M5 board acceptance are complete.
 - Before relocation, the verified Debug App image was Flash `64,340 / 524,288 B`
   and RAM `30,208 / 131,072 B`.
 - M3a pre-CDC Debug build: Bootloader was `6,564 B` Flash and `1,056 B` RAM;
@@ -58,8 +60,8 @@ modules are not part of the project.
 | M3a | Assertions, reset capsule, memory budgets, Diagnostic build | Complete; Diagnostic cold-start and HardFault injection accepted on hardware |
 | M3b | USB CDC logging and diagnostic transport | Complete locally; CubeMX CDC generation, software checks, OpenOCD programming, and COM6 host acceptance passed |
 | M4 | Pure-C core, input contracts, and host tests | Complete; F411 and host CTest passed |
-| M5 | Input hardware and normalized gesture/button events | M5a merged; M5b software loop complete, board acceptance pending |
-| M6 | LVGL 9.5 port, DMA flush, UI task, and 240x280 budget gate | Planned |
+| M5 | Input hardware and normalized gesture/button events | Complete; M5a/M5b CI Gates and board acceptance passed |
+| M6 | LVGL 9.5 port, DMA flush, UI task, and 240x280 budget gate | Software complete; focused board acceptance pending |
 | M7 | XML generation and PC simulator using generated C | Planned |
 | M8 | Page lifecycle and watch pages | Planned |
 | M9 | Time, service queues, task health, and initialization policy | Planned |
@@ -72,31 +74,27 @@ modules are not part of the project.
 
 ## Current round
 
-M5b adds the F411 board loop on top of the M5a `watch_input` normalizer. The
-board facts are now confirmed from the V2.1 reference project: CST816 address
-`0x15`, software I2C on `PA3=SDA` and `PA4=SCL`, reset on `PA2`, no `TP_INT`,
-BACK=`PB10` active-low, WAKE=`PB12` active-high, encoder key=`PB2`
-active-low, and TIM4 encoder `PB6=ENCODER_B/CH1`, `PB7=ENCODER_A/CH2`.
+M6 pins upstream LVGL `v9.5.0` at commit
+`85aa60d18b3d5e5588d7b247abf90198f07c8a63` under the F411 `third_party`
+boundary. A hand-written `lv_conf.h` enables RGB565 software rendering, the
+single label widget used by the representative page, a bounded 16 KiB LVGL
+pool, and no demos, decoders, or board-specific LVGL driver.
 
-The hand-written board adapter polls CST816 gestures, starts and filters TIM4
-counts, samples the three buttons through the normalized debounce contract, and
-keeps EXTI callbacks short by recording counters only. The board adapter now
-reverses the TIM4 sign to match the observed physical encoder direction;
-the pure-C input contract and host tests remain unchanged. One non-empty CST816
-gesture is held until a `gesture=0` sample so a single swipe cannot emit several
-directions, and `SLIDE_LEFT` remains explicitly ignored. USB CDC emits the
-input status/event lines plus raw touch gesture, finger count, coordinates,
-normalized mapping, and queue result. The LCD remains color-bar-only; text
-feedback is deferred to the LVGL round. No CubeMX-generated file, `.ioc`, LVGL,
-XML, or real page was added.
+The UI task is the only LVGL and `watch_core` owner. It creates the 240x280
+display, uses two 240x20 partial draw buffers, converts LVGL's native RGB565
+byte order into the ST7789 wire order, starts SPI1 DMA through the existing LCD
+adapter, and calls `lv_display_flush_ready()` only after the transfer has been
+observed complete or failed. The task also advances the LVGL tick and runs the
+timer handler. The first page shows `MAGIC WATCH`, the current core page, and a
+context hint; encoder/select events can move from the watchface to the launcher
+and its two representative pages. USB CDC remains the diagnostic command and
+log path, and no XML, simulator, or full page stack was added.
 
 ## Next round
 
-The next implementation round is M6: fix the LVGL 9.5 integration boundary,
-ST7789 DMA flush, tick ownership, and the first 240x280 representative page.
-M5b still requires a focused board acceptance before it can be marked complete;
-the separate M3a Diagnostic cold-start and deliberate fault-injection checks
-remain accepted manual items.
+The next implementation round is M7: add the LVGL Pro CLI/XML generation
+boundary and the PC simulator using committed generated C. M6 does not add
+XML, generated UI, or simulator code.
 
 ## Risks and blockers
 
@@ -107,22 +105,21 @@ remain accepted manual items.
   confirmed metadata until the later OTA rounds.
 - EEPROM type/address must be confirmed from the actual board before a driver
   is added; the old 24LC32 behavior is not evidence.
-- CST816 wiring, `0x15` address, and the absence of `TP_INT` are now confirmed
-  from the V2.1 reference project; M5b still needs the board transaction and
-  gesture check before this software fact becomes a hardware acceptance.
+- CST816 wiring, `0x15` address, the absence of `TP_INT`, encoder direction,
+  and the button polarity are confirmed by the V2.1 reference project and the
+  completed M5b board acceptance.
 - KT6368 SPP firmware behavior and enable polarity require a board test; no
   undocumented AT command is assumed.
 - There is no battery measurement baseline, so power acceptance is behavioral
   rather than a fabricated current target.
 - The reset capsule survives software reset but not a complete power loss; a
   power-cycle fault-recovery claim is deferred until backup storage exists.
-- M5b input status/event lines, button debounce, corrected encoder direction,
-  touch gesture mapping, and LCD color feedback still require a focused manual
-  host/board retest; CI has no input hardware job.
+- M6 SPI1 DMA timing, RGB565 byte order, LVGL flush completion, and page redraw
+  behavior require one focused OpenOCD board check; CI has no LCD hardware job.
 
 ## Latest verification
 
-For M5b, the following passed from the F411 project directory and repository
+For M6, the following passed from the F411 project directory and repository
 root:
 
 ```text
@@ -132,19 +129,19 @@ cmake --build --preset Debug --target format-check
 cmake --build --preset Debug --target cppcheck
 cmake --preset Diagnostic
 cmake --build --preset Diagnostic
-cmake -S tests -B build/host-tests-m5b -G Ninja
-cmake --build build/host-tests-m5b
-ctest --test-dir build/host-tests-m5b --output-on-failure
+cmake -S tests -B build/host-tests-m6 -G Ninja
+cmake --build build/host-tests-m6
+ctest --test-dir build/host-tests-m6 --output-on-failure
 ```
 
-M5b software validation passed `git diff --check`, format-check, Cppcheck, the
-Debug/Diagnostic link-time budget checks, the Debug/Diagnostic builds, and the
-host `watch_core_input` CTest. Board acceptance remains pending. After flashing
-the revised Debug image with OpenOCD, verify the USB line beginning `input hw`
-reports `dir=reverse`, then rotate the encoder in both directions and tap the
-panel. Each accepted normalized event must produce one USB `input event=...`
-line; each touch gesture must also produce an `input touch gesture=...` line
-with raw coordinates, `map=...`, and `queued=...`. A right-edge left swipe must
-show `map=none queued=0`, while a left-edge right swipe is the only gesture
-expected to show `map=back`. The status line must show no unexpected `drop` or
-`i2c_err` increments. BACK/WAKE and a final full M5b acceptance remain pending.
+M5b board acceptance is complete. M6 software validation passed `git diff
+--check`, format-check, Cppcheck, the Debug/Diagnostic link-time budget checks,
+the Debug/Diagnostic builds, and the host `watch_core_input` CTest. The linked
+Debug App is Flash `234,772 B` and RAM `82,720 B`; Diagnostic is Flash `243,716 B`
+and RAM `82,720 B`. The focused M6 board check is to flash the Debug image with
+OpenOCD, confirm the 240x280 representative page is rendered without color-bar
+fallback, then use encoder select/up/down to move between `WATCHFACE`,
+`LAUNCHER`, `STATUS`, and `SETTINGS`. The USB stream should continue to show
+the existing `input event=...` lines without unexpected `drop` or `i2c_err`
+increments. A successful check demonstrates the SPI1 DMA flush and the single
+UI task; it does not accept any XML or simulator behavior.
