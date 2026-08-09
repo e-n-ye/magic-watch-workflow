@@ -9,15 +9,17 @@ set(CMAKE_C_EXTENSIONS OFF)
 include(CTest)
 
 if(BUILD_TESTING)
-    add_executable(watch_core_tests
+    add_executable(watch_core_input_tests
         ${CMAKE_CURRENT_LIST_DIR}/watch_core_test.c
         ${CMAKE_CURRENT_LIST_DIR}/../products/f411_watch/core/watch_core.c
+        ${CMAKE_CURRENT_LIST_DIR}/../products/f411_watch/input/watch_input.c
     )
 
-    target_include_directories(watch_core_tests
+    target_include_directories(watch_core_input_tests
         PRIVATE
             ${CMAKE_CURRENT_LIST_DIR}/../products/f411_watch/core
+            ${CMAKE_CURRENT_LIST_DIR}/../products/f411_watch/input
     )
 
-    add_test(NAME watch_core COMMAND watch_core_tests)
+    add_test(NAME watch_core_input COMMAND watch_core_input_tests)
 endif()

@@ -40,6 +40,7 @@ execute_process(
         "--project=${COMPILE_COMMANDS}"
         "--file-filter=user/**"
         "--file-filter=products/f411_watch/core/**"
+        "--file-filter=products/f411_watch/input/**"
         "--file-filter=bootloader/**"
         "--cppcheck-build-dir=${CPPCHECK_BUILD_DIR}"
         "--platform=arm32-wchar_t4"
