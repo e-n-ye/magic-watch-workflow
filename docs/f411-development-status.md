@@ -62,7 +62,7 @@ modules are not part of the project.
 | M4 | Pure-C core, input contracts, and host tests | Complete; F411 and host CTest passed |
 | M5 | Input hardware and normalized gesture/button events | Complete; M5a/M5b CI Gates and board acceptance passed |
 | M6 | LVGL 9.5 port, DMA flush, UI task, and 240x280 budget gate | Complete; CI Gate and focused board acceptance passed |
-| M7 | Editor-exported XML UI, generated C, and PC simulator | Scope revised; manual Editor export selected; implementation pending |
+| M7 | Editor-exported XML UI, generated C, and PC simulator | Implemented locally; host CTest passed; no board acceptance required |
 | M8 | Page lifecycle and watch pages | Planned |
 | M9 | Time, service queues, task health, and initialization policy | Planned |
 | M10 | Confirmed sensor drivers and sensor service | Planned |
@@ -74,47 +74,30 @@ modules are not part of the project.
 
 ## Current round
 
-M6 pins upstream LVGL `v9.5.0` at commit
-`85aa60d18b3d5e5588d7b247abf90198f07c8a63` under the F411 `third_party`
-boundary. A hand-written `lv_conf.h` enables RGB565 software rendering, the
-single label widget used by the representative page, a bounded 16 KiB LVGL
-pool, and no demos, decoders, or board-specific LVGL driver.
+M7 keeps the M6 LVGL pin at `v9.5.0`, using the already committed source tree
+and the F411 component configuration. The Editor project under
+`products/f411_watch/ui` fixes the display at 240x280 and contains one small
+screen with `MAGIC WATCH`, `WATCHFACE`, and `M7 EDITOR UI` labels. Its XML is the
+source of truth; the committed generated-style C/H is the only runtime input.
 
-The UI task is the only LVGL and `watch_core` owner. It creates the 240x280
-display, uses two 240x20 partial draw buffers, converts LVGL's native RGB565
-byte order into the ST7789 wire order, starts SPI1 DMA through the existing LCD
-adapter, and calls `lv_display_flush_ready()` only after the transfer has been
-observed complete or failed. The task also advances the LVGL tick and runs the
-timer handler. The first page shows `MAGIC WATCH`, the current core page, and a
-context hint; encoder/select events can move from the watchface to the launcher
-and its two representative pages. USB CDC remains the diagnostic command and
-log path, and no XML, simulator, or full page stack was added. The focused board
-acceptance then confirmed the `MAGIC WATCH` page at 240x280, encoder/select and
-screen-click navigation from `WATCHFACE` to `LAUNCHER` to `STATUS`, and a stable
-left-edge right-swipe `BACK` gesture.
-
-M7 preflight found no XML source, generated UI C, or simulator project in the
-repository. The local LVGL Pro CLI is not required for this project: the user
-selected the lower-cost workflow of maintaining XML in LVGL Pro Editor and
-manually exporting the generated C. No substitute generator or placeholder
-module is being added. The implementation can start when a small 240x280 Editor
-project has been exported; the Editor version and export steps will be recorded,
-while any local account data and absolute installation paths remain outside Git.
+The new `products/f411_watch/simulator` CMake project builds the same generated
+C with the repository LVGL sources. On Windows it can open a 240x280 native
+LVGL window; the CTest smoke path uses a headless display and checks all three
+labels plus a `watch_core` `SELECT` transition to `LAUNCHER`. No Pro CLI, token,
+network fetch, or XML parser is required.
 
 ## Next round
 
-The next implementation round remains M7: add a manually exported LVGL Pro
-Editor project, commit its generated C, and build a PC simulator using the same
-generated C. M7 does not require a CLI token or CI-side regeneration. It does
-require a documented Editor export contract so that generated-file changes are
-reviewed and refreshed deliberately; M6 does not add XML, generated UI, or
-simulator code.
+M8 will add page lifecycle and the watch pages around the existing core/UI
+boundary. It will decide how generated screen wrappers are created and destroyed
+without moving LVGL ownership out of the single UI task. M7 does not add real
+hardware input, XML parsing on F411, or page-stack integration.
 
 ## Risks and blockers
 
-- Editor export is a manual, local generation step. CI can build committed
-  generated C but cannot prove that a later Editor export is reproducible, so
-  the Editor version and export procedure must remain part of the M7 record.
+- Editor export is a manual, local generation step. CI builds committed generated
+  C but does not regenerate it, so the Editor version and export contract remain
+  part of the M7 record.
 - The security counter is signed in M2 but is not persisted or compared against
   confirmed metadata until the later OTA rounds.
 - EEPROM type/address must be confirmed from the actual board before a driver
@@ -161,3 +144,16 @@ the existing `input event=...` lines without unexpected `drop` or `i2c_err`
 increments. The board result confirmed the representative page, encoder and
 screen-click navigation, and left-edge `BACK`; it demonstrates the SPI1 DMA
 flush and the single UI task, but does not accept any XML or simulator behavior.
+
+For M7, the following host validation also passed from the repository root:
+
+```text
+cmake -S products/f411_watch/simulator -B build/host-m7 -G Ninja
+cmake --build build/host-m7
+ctest --test-dir build/host-m7 --output-on-failure
+build/host-m7/watch_ui_simulator.exe --smoke
+```
+
+The smoke output was `watch_ui_smoke: PASS display=240x280 ui=MAGIC WATCH
+core=LAUNCHER`. This is a host/UI acceptance only; no new board flashing or
+manual M7 hardware demonstration is required.

@@ -1,0 +1,25 @@
+<globals>
+    <api>
+        <!-- Add <enumdefs> here when a later page needs a generated API. -->
+    </api>
+
+    <consts>
+        <!-- Add <px>, <int>, <color> etc here when a later page needs them. -->
+    </consts>
+
+    <styles>
+        <!-- Styles for this first screen are kept local to its XML file. -->
+    </styles>
+
+    <subjects>
+        <!-- Core snapshots are not Editor subjects in M7. -->
+    </subjects>
+
+    <images>
+        <!-- No external assets are part of the M7 smoke screen. -->
+    </images>
+
+    <fonts>
+        <!-- The F411 port uses its already configured default font. -->
+    </fonts>
+</globals>
