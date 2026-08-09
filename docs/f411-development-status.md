@@ -41,8 +41,8 @@ modules are not part of the project.
   and RAM `30,208 / 131,072 B`.
 - M3a pre-CDC Debug build: Bootloader was `6,564 B` Flash and `1,056 B` RAM;
   App was `65,280 B` Flash and `30,296 B` RAM.
-- Current M3b Debug App is `65,972 B` Flash and `36,936 B` RAM; the Diagnostic
-  App is `74,596 B` Flash and `36,936 B` RAM.
+- Current M5b Debug App is `72,324 B` Flash and `37,112 B` RAM; the Diagnostic
+  App is `81,188 B` Flash and `37,112 B` RAM.
 - M2 host packaging and OpenOCD programming remain the accepted upgrade path;
   CubeProgrammer is not part of the workflow.
 - Current hardware facts: STM32F411, 24 MHz HSE, ST-Link-compatible SWD,
@@ -80,10 +80,15 @@ active-low, and TIM4 encoder `PB6=ENCODER_B/CH1`, `PB7=ENCODER_A/CH2`.
 
 The hand-written board adapter polls CST816 gestures, starts and filters TIM4
 counts, samples the three buttons through the normalized debounce contract, and
-keeps EXTI callbacks short by recording counters only. `watch_core` consumes
-the resulting events in the existing USB diagnostic task; USB CDC emits the
-input status/event lines and the LCD shows the latest event as a top color bar.
-No CubeMX-generated file, `.ioc`, LVGL, XML, or real page was added.
+keeps EXTI callbacks short by recording counters only. The board adapter now
+reverses the TIM4 sign to match the observed physical encoder direction;
+the pure-C input contract and host tests remain unchanged. One non-empty CST816
+gesture is held until a `gesture=0` sample so a single swipe cannot emit several
+directions, and `SLIDE_LEFT` remains explicitly ignored. USB CDC emits the
+input status/event lines plus raw touch gesture, finger count, coordinates,
+normalized mapping, and queue result. The LCD remains color-bar-only; text
+feedback is deferred to the LVGL round. No CubeMX-generated file, `.ioc`, LVGL,
+XML, or real page was added.
 
 ## Next round
 
@@ -111,9 +116,9 @@ remain accepted manual items.
   rather than a fabricated current target.
 - The reset capsule survives software reset but not a complete power loss; a
   power-cycle fault-recovery claim is deferred until backup storage exists.
-- M5b input status/event lines, button debounce, encoder direction, touch
-  gestures, and LCD color feedback require a manual host/board check; CI has no
-  input hardware job.
+- M5b input status/event lines, button debounce, corrected encoder direction,
+  touch gesture mapping, and LCD color feedback still require a focused manual
+  host/board retest; CI has no input hardware job.
 
 ## Latest verification
 
@@ -135,9 +140,11 @@ ctest --test-dir build/host-tests-m5b --output-on-failure
 M5b software validation passed `git diff --check`, format-check, Cppcheck, the
 Debug/Diagnostic link-time budget checks, the Debug/Diagnostic builds, and the
 host `watch_core_input` CTest. Board acceptance remains pending. After flashing
-the Debug image with OpenOCD, verify the USB line beginning `input hw`, then
-press BACK, WAKE, and the encoder key once each, rotate in both directions,
-tap the panel, and perform a left-edge right swipe. Each accepted normalized
-event must produce one USB `input event=...` line and a matching LCD color bar;
-the status line must show increasing EXTI counters and no unexpected `drop` or
-`i2c_err` increments.
+the revised Debug image with OpenOCD, verify the USB line beginning `input hw`
+reports `dir=reverse`, then rotate the encoder in both directions and tap the
+panel. Each accepted normalized event must produce one USB `input event=...`
+line; each touch gesture must also produce an `input touch gesture=...` line
+with raw coordinates, `map=...`, and `queued=...`. A right-edge left swipe must
+show `map=none queued=0`, while a left-edge right swipe is the only gesture
+expected to show `map=back`. The status line must show no unexpected `drop` or
+`i2c_err` increments. BACK/WAKE and a final full M5b acceptance remain pending.

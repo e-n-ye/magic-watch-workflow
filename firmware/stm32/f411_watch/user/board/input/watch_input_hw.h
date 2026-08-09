@@ -7,6 +7,7 @@
 #include "watch_core.h"
 
 #define WATCH_INPUT_HW_BUTTON_COUNT 3U
+#define WATCH_INPUT_HW_ENCODER_REVERSE 1U
 
 typedef struct
 {
@@ -17,6 +18,13 @@ typedef struct
     uint32_t touch_errors;
     uint32_t exti_count[WATCH_INPUT_HW_BUTTON_COUNT];
     uint32_t event_dropped;
+    uint8_t touch_gesture;
+    uint8_t touch_finger_count;
+    uint16_t touch_x;
+    uint16_t touch_y;
+    watch_event_type_t touch_event;
+    bool touch_event_queued;
+    uint32_t touch_sequence;
 } watch_input_hw_status_t;
 
 bool watch_input_hw_init(void);

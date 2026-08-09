@@ -34,7 +34,13 @@ static int8_t s_encoder_last_direction;
 static uint8_t s_encoder_direction_confirmations;
 static uint32_t s_last_touch_poll_ms;
 static bool s_touch_gesture_active;
-static uint8_t s_touch_last_gesture;
+static uint8_t s_touch_gesture;
+static uint8_t s_touch_finger_count;
+static uint16_t s_touch_x;
+static uint16_t s_touch_y;
+static watch_event_type_t s_touch_event;
+static bool s_touch_event_queued;
+static uint32_t s_touch_sequence;
 static volatile uint32_t s_exti_count[WATCH_INPUT_HW_BUTTON_COUNT];
 static uint32_t s_event_dropped;
 
@@ -83,6 +89,9 @@ static bool input_encoder_step(uint32_t now_ms, int16_t *step)
     }
 
     direction = delta > 0 ? 1 : -1;
+#if WATCH_INPUT_HW_ENCODER_REVERSE
+    direction = (int8_t)-direction;
+#endif
     if (direction != s_encoder_last_direction) {
         s_encoder_last_direction = direction;
         s_encoder_direction_confirmations = 1U;
@@ -107,9 +116,11 @@ static bool input_encoder_step(uint32_t now_ms, int16_t *step)
 static bool input_submit_touch_sample(const watch_cst816_sample_t *sample)
 {
     watch_input_touch_t touch;
+    watch_event_type_t expected_event = WATCH_EVENT_NONE;
 
     switch (sample->gesture) {
     case WATCH_CST816_GESTURE_CLICK:
+        expected_event = WATCH_EVENT_SELECT;
         touch = (watch_input_touch_t) {
             .start_x = sample->x,
             .start_y = sample->y,
@@ -118,6 +129,7 @@ static bool input_submit_touch_sample(const watch_cst816_sample_t *sample)
         };
         break;
     case WATCH_CST816_GESTURE_SLIDE_RIGHT:
+        expected_event = WATCH_EVENT_BACK;
         /* CST816 polling exposes the gesture but not its initial coordinate. */
         touch = (watch_input_touch_t) {
             .start_x = 0U,
@@ -127,6 +139,7 @@ static bool input_submit_touch_sample(const watch_cst816_sample_t *sample)
         };
         break;
     case WATCH_CST816_GESTURE_SLIDE_UP:
+        expected_event = WATCH_EVENT_UP;
         touch = (watch_input_touch_t) {
             .start_x = sample->x,
             .start_y = WATCH_INPUT_TOUCH_SWIPE_MIN_PX,
@@ -135,6 +148,7 @@ static bool input_submit_touch_sample(const watch_cst816_sample_t *sample)
         };
         break;
     case WATCH_CST816_GESTURE_SLIDE_DOWN:
+        expected_event = WATCH_EVENT_DOWN;
         touch = (watch_input_touch_t) {
             .start_x = sample->x,
             .start_y = 0U,
@@ -143,13 +157,18 @@ static bool input_submit_touch_sample(const watch_cst816_sample_t *sample)
         };
         break;
     default:
+        s_touch_event = WATCH_EVENT_NONE;
+        s_touch_event_queued = false;
         return true;
     }
 
+    s_touch_event = expected_event;
     if (!watch_input_submit_touch(&s_input, &touch)) {
         ++s_event_dropped;
+        s_touch_event_queued = false;
         return false;
     }
+    s_touch_event_queued = true;
     return true;
 }
 
@@ -169,16 +188,21 @@ static void input_process_touch(uint32_t now_ms)
 
     if (sample.gesture == WATCH_CST816_GESTURE_NONE) {
         s_touch_gesture_active = false;
-        s_touch_last_gesture = WATCH_CST816_GESTURE_NONE;
         return;
     }
 
-    if (s_touch_gesture_active && (sample.gesture == s_touch_last_gesture)) {
+    if (s_touch_gesture_active) {
         return;
     }
 
     s_touch_gesture_active = true;
-    s_touch_last_gesture = sample.gesture;
+    s_touch_gesture = sample.gesture;
+    s_touch_finger_count = sample.finger_count;
+    s_touch_x = sample.x;
+    s_touch_y = sample.y;
+    s_touch_event = WATCH_EVENT_NONE;
+    s_touch_event_queued = false;
+    ++s_touch_sequence;
     (void)input_submit_touch_sample(&sample);
 }
 
@@ -195,7 +219,13 @@ bool watch_input_hw_init(void)
     s_encoder_direction_confirmations = 0U;
     s_last_touch_poll_ms = now_ms;
     s_touch_gesture_active = false;
-    s_touch_last_gesture = WATCH_CST816_GESTURE_NONE;
+    s_touch_gesture = WATCH_CST816_GESTURE_NONE;
+    s_touch_finger_count = 0U;
+    s_touch_x = 0U;
+    s_touch_y = 0U;
+    s_touch_event = WATCH_EVENT_NONE;
+    s_touch_event_queued = false;
+    s_touch_sequence = 0U;
     s_event_dropped = 0U;
     for (index = 0U; index < WATCH_INPUT_HW_BUTTON_COUNT; ++index) {
         s_exti_count[index] = 0U;
@@ -261,6 +291,13 @@ void watch_input_hw_read_status(watch_input_hw_status_t *status)
     status->encoder_count = s_encoder_ready ? (uint16_t)__HAL_TIM_GET_COUNTER(&htim4) : 0U;
     status->touch_errors = watch_cst816_error_count();
     status->event_dropped = s_event_dropped;
+    status->touch_gesture = s_touch_gesture;
+    status->touch_finger_count = s_touch_finger_count;
+    status->touch_x = s_touch_x;
+    status->touch_y = s_touch_y;
+    status->touch_event = s_touch_event;
+    status->touch_event_queued = s_touch_event_queued;
+    status->touch_sequence = s_touch_sequence;
 
     __disable_irq();
     for (index = 0U; index < WATCH_INPUT_HW_BUTTON_COUNT; ++index) {

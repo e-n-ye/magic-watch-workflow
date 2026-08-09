@@ -13,6 +13,7 @@
 static watch_core_t s_core;
 static bool s_app_ready;
 static bool s_status_reported;
+static uint32_t s_touch_reported_sequence;
 
 static const char *watch_app_event_name(watch_event_type_t type)
 {
@@ -66,11 +67,34 @@ static void watch_app_report_status(void)
     length =
         snprintf(response, sizeof(response),
                  "input hw encoder=%u touch=%u chip=0x%02x count=%u "
-                 "exti=%lu,%lu,%lu i2c_err=%lu drop=%lu\r\n",
+                 "dir=%s exti=%lu,%lu,%lu i2c_err=%lu drop=%lu\r\n",
                  status.encoder_ready ? 1U : 0U, status.touch_ready ? 1U : 0U, status.touch_chip_id,
-                 status.encoder_count, (unsigned long)status.exti_count[0],
-                 (unsigned long)status.exti_count[1], (unsigned long)status.exti_count[2],
-                 (unsigned long)status.touch_errors, (unsigned long)status.event_dropped);
+                 status.encoder_count, WATCH_INPUT_HW_ENCODER_REVERSE ? "reverse" : "normal",
+                 (unsigned long)status.exti_count[0], (unsigned long)status.exti_count[1],
+                 (unsigned long)status.exti_count[2], (unsigned long)status.touch_errors,
+                 (unsigned long)status.event_dropped);
+    if ((length > 0) && ((size_t)length < sizeof(response))) {
+        (void)watch_usb_cdc_write((const uint8_t *)response, (size_t)length);
+    }
+}
+
+static void watch_app_report_touch_if_new(void)
+{
+    char response[160];
+    watch_input_hw_status_t status;
+    int length;
+
+    watch_input_hw_read_status(&status);
+    if (status.touch_sequence == s_touch_reported_sequence) {
+        return;
+    }
+
+    s_touch_reported_sequence = status.touch_sequence;
+    length = snprintf(response, sizeof(response),
+                      "input touch gesture=0x%02x finger=%u x=%u y=%u map=%s queued=%u seq=%lu\r\n",
+                      status.touch_gesture, status.touch_finger_count, status.touch_x,
+                      status.touch_y, watch_app_event_name(status.touch_event),
+                      status.touch_event_queued ? 1U : 0U, (unsigned long)status.touch_sequence);
     if ((length > 0) && ((size_t)length < sizeof(response))) {
         (void)watch_usb_cdc_write((const uint8_t *)response, (size_t)length);
     }
@@ -112,6 +136,7 @@ void watch_app_init(void)
     (void)watch_core_init(&s_core);
     (void)watch_input_hw_init();
     s_status_reported = false;
+    s_touch_reported_sequence = 0U;
     s_app_ready = true;
     watch_lcd_show_bringup_pattern();
 }
@@ -125,6 +150,7 @@ void watch_app_process(void)
     }
 
     watch_input_hw_process(HAL_GetTick());
+    watch_app_report_touch_if_new();
     if (!s_status_reported) {
         watch_app_report_status();
         s_status_reported = true;
