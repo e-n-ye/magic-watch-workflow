@@ -20,7 +20,10 @@
 │   │   └── docs/                 # F411 原理图和架构图
 │   └── espressif/esp32s3_board/  # 独立的 ESP-IDF 工程
 ├── products/
-│   └── f411_watch/core/          # 纯 C 核心，与 F411 和主机测试共用
+│   └── f411_watch/
+│       ├── core/                 # 纯 C 核心，与 F411 和主机测试共用
+│       ├── ui/                   # LVGL Pro Editor XML 和生成 C
+│       └── simulator/            # 独立 PC CMake/CTest 消费者
 ├── docs/                         # 仓库级工作流和目录说明
 ├── tools/                        # 构建/烧录辅助脚本
 ├── .vscode/                      # 本仓库的构建和调试入口
@@ -53,14 +56,15 @@ CubeMX main USER CODE
 
 ## 按需扩展
 
-暂不创建空目录。出现真实实现需求后，再按产品边界建立：
+只在出现真实实现需求后按产品边界建立目录。当前 M7 已有 UI 和 simulator
+真实消费者；后续页面和服务仍按独立闭环增加：
 
 ```text
 products/f411_watch/
 ├── core/        # 纯 C 状态机和跨平台契约
 ├── input/       # 纯 C 输入归一化和消抖契约
-├── ui/          # LVGL 版本和 XML 兼容性验证完成后
-└── simulator/   # UI 技术路线确定后建立独立 PC CMake 工程
+├── ui/          # Editor XML 和提交的生成 C
+└── simulator/   # 独立 PC CMake 工程与 CTest smoke
 ```
 
 F411 的 `services/`、`drivers/`、`platform/` 同样按实际功能逐个建立。旧工程驱动只作为协议和硬件行为参考，不能整体复制旧的全局依赖和初始化架构。

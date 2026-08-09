@@ -10,7 +10,7 @@ A CMake-first embedded watch workflow for STM32F411 and ESP32-S3, with reproduci
 - F411 当前验收目标是通过 ST7789 SPI1 DMA 显示 240x280 LVGL 代表页面。
 - ESP32-S3 工程已经通过 ESP-IDF 点亮板载 RGB LED，并保留 UART 监视入口。
 - CubeMX 生成区与手写 `user/` 代码已经分开；CubeMX 强制保留的 `defaultTask` 不承载手表业务。
-- 纯 C `watch_core`、输入归一化模块、主机 CTest 和固定 LVGL 9.5 UI 端口已加入；XML UI 由 LVGL Pro Editor 手动导出 C，主机模拟器仍在后续轮次中加入。
+- 纯 C `watch_core`、输入归一化模块、主机 CTest、固定 LVGL 9.5 UI 端口和 M7 PC 模拟器已加入；XML UI 由 LVGL Pro Editor 手动维护并提交生成 C，不依赖 Pro CLI。
 - [F411 rolling development status](docs/f411-development-status.md)
 
 ## Documentation
@@ -30,6 +30,7 @@ A CMake-first embedded watch workflow for STM32F411 and ESP32-S3, with reproduci
 - [Layered architecture](firmware/stm32/f411_watch/docs/architecture/software-architecture-分层架构.png)
 - [Runtime tasks and events](firmware/stm32/f411_watch/docs/architecture/software-architecture-任务与事件.png)
 - [Project layout and dependency rules](docs/project-layout.md)
+- [M7 Editor export contract](docs/f411-m7-editor-export.md)
 
 ![Layered software architecture](firmware/stm32/f411_watch/docs/architecture/software-architecture-分层架构.png)
 
@@ -59,6 +60,18 @@ cmake -S tests -B build/host-tests -G Ninja
 cmake --build build/host-tests
 ctest --test-dir build/host-tests --output-on-failure
 ```
+
+### F411 Editor UI simulator
+
+```sh
+cmake -S products/f411_watch/simulator -B build/host-m7 -G Ninja
+cmake --build build/host-m7
+ctest --test-dir build/host-m7 --output-on-failure
+```
+
+On Windows, run `build/host-m7/watch_ui_simulator.exe` for the 240x280 LVGL
+window, or pass `--smoke` for the headless CTest path. The simulator builds the
+committed generated C and never regenerates XML in CI.
 
 Signed-package tasks read the external ECDSA private key and signed metadata from
 machine-local user environment variables, so no path or release value is stored
