@@ -6,6 +6,7 @@
 
 #include "board/usb/watch_usb_cdc.h"
 #include "board/sensors/watch_lsm6ds3_board.h"
+#include "board/power/watch_power.h"
 #include "main.h"
 #include "watch_app.h"
 #include "watch_diagnostic.h"
@@ -24,6 +25,10 @@ typedef enum {
     WATCH_USB_COMMAND_STATS,
     WATCH_USB_COMMAND_HEALTH,
     WATCH_USB_COMMAND_SENSOR,
+    WATCH_USB_COMMAND_POWER,
+    WATCH_USB_COMMAND_DISPLAY_OFF,
+    WATCH_USB_COMMAND_SLEEP,
+    WATCH_USB_COMMAND_SHUTDOWN,
     WATCH_USB_COMMAND_UNKNOWN,
     WATCH_USB_COMMAND_COUNT
 } watch_usb_command_t;
@@ -144,11 +149,74 @@ static void send_sensor(void)
     }
 }
 
+static const char *power_state_name(watch_power_state_id_t state)
+{
+    switch (state) {
+    case WATCH_POWER_STATE_ACTIVE:
+        return "active";
+    case WATCH_POWER_STATE_DISPLAY_OFF:
+        return "display-off";
+    case WATCH_POWER_STATE_STOPPED:
+        return "stopped";
+    case WATCH_POWER_STATE_OFF:
+        return "off";
+    case WATCH_POWER_STATE_COUNT:
+        return "invalid";
+    }
+
+    return "invalid";
+}
+
+static const char *power_wake_source_name(watch_power_wake_source_t source)
+{
+    switch (source) {
+    case WATCH_POWER_WAKE_NONE:
+        return "none";
+    case WATCH_POWER_WAKE_KEY:
+        return "key";
+    case WATCH_POWER_WAKE_RTC:
+        return "rtc";
+    case WATCH_POWER_WAKE_RESET:
+        return "reset";
+    case WATCH_POWER_WAKE_COUNT:
+        return "invalid";
+    }
+
+    return "invalid";
+}
+
+static void send_power(void)
+{
+    char response[256];
+    watch_power_board_status_t status;
+    int length;
+
+    if (!watch_power_board_read_status(&status)) {
+        send_text("power=unavailable\r\n");
+        return;
+    }
+
+    length = snprintf(response, sizeof(response),
+                      "power state=%s wake=%s transitions=%lu stops=%lu wakes=%lu "
+                      "watchdog=%u refresh=%lu blocked=%lu fail=%lu\r\n",
+                      power_state_name(status.power.state),
+                      power_wake_source_name(status.power.wake_source),
+                      (unsigned long)status.power.transition_count,
+                      (unsigned long)status.stop_count, (unsigned long)status.wake_count,
+                      status.watchdog_enabled ? 1U : 0U,
+                      (unsigned long)status.watchdog_refresh_count,
+                      (unsigned long)status.watchdog_blocked_count,
+                      (unsigned long)status.watchdog_refresh_failure_count);
+    if ((length > 0) && ((size_t)length < sizeof(response))) {
+        watch_usb_cdc_write((const uint8_t *)response, (size_t)length);
+    }
+}
+
 static void handle_command(watch_usb_command_t command)
 {
     switch (command) {
     case WATCH_USB_COMMAND_HELP:
-        send_text("commands: help ping info diag stats health sensor\r\n");
+        send_text("commands: help ping info diag stats health sensor power display-off sleep shutdown\r\n");
         break;
     case WATCH_USB_COMMAND_PING:
         send_text("pong\r\n");
@@ -167,6 +235,30 @@ static void handle_command(watch_usb_command_t command)
         break;
     case WATCH_USB_COMMAND_SENSOR:
         send_sensor();
+        break;
+    case WATCH_USB_COMMAND_POWER:
+        send_power();
+        break;
+    case WATCH_USB_COMMAND_DISPLAY_OFF:
+        if (!watch_power_board_request_display_off()) {
+            send_text("power error=display-off\r\n");
+        } else {
+            send_power();
+        }
+        break;
+    case WATCH_USB_COMMAND_SLEEP:
+        if (!watch_power_board_request_stop()) {
+            send_text("power error=stop\r\n");
+        } else {
+            send_power();
+        }
+        break;
+    case WATCH_USB_COMMAND_SHUTDOWN:
+        if (!watch_power_board_request_software_off()) {
+            send_text("power error=shutdown\r\n");
+        } else {
+            send_power();
+        }
         break;
     case WATCH_USB_COMMAND_UNKNOWN:
     case WATCH_USB_COMMAND_COUNT:
@@ -193,6 +285,14 @@ static watch_usb_command_t parse_command(void)
         return WATCH_USB_COMMAND_HEALTH;
     } else if (strcmp(s_command, "sensor") == 0) {
         return WATCH_USB_COMMAND_SENSOR;
+    } else if (strcmp(s_command, "power") == 0) {
+        return WATCH_USB_COMMAND_POWER;
+    } else if (strcmp(s_command, "display-off") == 0) {
+        return WATCH_USB_COMMAND_DISPLAY_OFF;
+    } else if (strcmp(s_command, "sleep") == 0) {
+        return WATCH_USB_COMMAND_SLEEP;
+    } else if (strcmp(s_command, "shutdown") == 0) {
+        return WATCH_USB_COMMAND_SHUTDOWN;
     }
 
     return WATCH_USB_COMMAND_UNKNOWN;
@@ -268,5 +368,6 @@ void watch_usb_diagnostic_process(void)
     }
 
     process_service_events();
+    watch_power_board_process(HAL_GetTick());
     watch_usb_cdc_process();
 }

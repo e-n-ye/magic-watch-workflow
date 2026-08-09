@@ -4,6 +4,7 @@
 #include "tim.h"
 #include "watch_cst816.h"
 #include "watch_input.h"
+#include "board/power/watch_power.h"
 
 #define WATCH_INPUT_HW_ENCODER_ORIGIN 32768U
 #define WATCH_INPUT_HW_ENCODER_SAMPLE_MS 30U
@@ -312,6 +313,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
         ++s_exti_count[0];
     } else if (GPIO_Pin == KEY_WAKE_Pin) {
         ++s_exti_count[1];
+        watch_power_board_note_wake_key();
     } else if (GPIO_Pin == ENCODER_KEY_Pin) {
         ++s_exti_count[2];
     }

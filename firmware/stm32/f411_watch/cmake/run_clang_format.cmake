@@ -70,6 +70,15 @@ if(DEFINED FORMAT_SENSOR_ROOT AND NOT FORMAT_SENSOR_ROOT STREQUAL "")
     )
 endif()
 
+if(DEFINED FORMAT_POWER_ROOT AND NOT FORMAT_POWER_ROOT STREQUAL "")
+    list(APPEND FORMAT_FILES
+        "${FORMAT_POWER_ROOT}/watch_power_state.c"
+        "${FORMAT_POWER_ROOT}/watch_power_state.h"
+        "${FORMAT_POWER_ROOT}/watch_watchdog.c"
+        "${FORMAT_POWER_ROOT}/watch_watchdog.h"
+    )
+endif()
+
 foreach(FORMAT_FILE IN LISTS FORMAT_FILES)
     if(NOT EXISTS "${FORMAT_FILE}")
         message(FATAL_ERROR "Formatting whitelist file does not exist: ${FORMAT_FILE}")

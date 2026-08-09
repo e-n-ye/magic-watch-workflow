@@ -4,6 +4,7 @@
 
 #include "board/display/watch_lcd.h"
 #include "board/input/watch_input_hw.h"
+#include "board/power/watch_power.h"
 #include "board/usb/watch_usb_cdc.h"
 #include "config/user_config.h"
 #include "main.h"
@@ -126,6 +127,10 @@ void watch_app_init(void)
     s_status_reported = false;
     s_touch_reported_sequence = 0U;
     s_app_ready = true;
+    if (!watch_power_board_init(now_ms)) {
+        s_app_ready = false;
+        watch_runtime_fail();
+    }
 }
 
 bool watch_app_is_ready(void)
@@ -155,7 +160,12 @@ void watch_app_process(void)
         watch_snapshot_t snapshot = { 0 };
         watch_command_t command;
         watch_command_type_t command_type = WATCH_COMMAND_NONE;
-        bool dispatched = watch_core_dispatch_event(&s_core, &event);
+        bool dispatched;
+
+        if (event.type == WATCH_EVENT_WAKE) {
+            watch_power_board_notify_wake(WATCH_POWER_WAKE_KEY);
+        }
+        dispatched = watch_core_dispatch_event(&s_core, &event);
 
         while (watch_core_take_command(&s_core, &command)) {
             command_type = command.type;

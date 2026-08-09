@@ -46,4 +46,17 @@ if(BUILD_TESTING)
     )
 
     add_test(NAME watch_lsm6ds3 COMMAND watch_lsm6ds3_tests)
+
+    add_executable(watch_power_tests
+        ${CMAKE_CURRENT_LIST_DIR}/watch_power_test.c
+        ${CMAKE_CURRENT_LIST_DIR}/../products/f411_watch/power/watch_power_state.c
+        ${CMAKE_CURRENT_LIST_DIR}/../products/f411_watch/power/watch_watchdog.c
+    )
+
+    target_include_directories(watch_power_tests
+        PRIVATE
+            ${CMAKE_CURRENT_LIST_DIR}/../products/f411_watch/power
+    )
+
+    add_test(NAME watch_power COMMAND watch_power_tests)
 endif()

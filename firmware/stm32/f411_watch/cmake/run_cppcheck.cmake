@@ -43,6 +43,7 @@ execute_process(
         "--file-filter=products/f411_watch/input/**"
         "--file-filter=products/f411_watch/runtime/**"
         "--file-filter=products/f411_watch/sensors/**"
+        "--file-filter=products/f411_watch/power/**"
         "--file-filter=bootloader/**"
         "--cppcheck-build-dir=${CPPCHECK_BUILD_DIR}"
         "--platform=arm32-wchar_t4"

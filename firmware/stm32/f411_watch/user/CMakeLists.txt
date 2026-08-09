@@ -2,6 +2,7 @@ set(WATCH_CORE_SOURCE_DIR "${CMAKE_SOURCE_DIR}/../../../products/f411_watch/core
 set(WATCH_INPUT_SOURCE_DIR "${CMAKE_SOURCE_DIR}/../../../products/f411_watch/input")
 set(WATCH_RUNTIME_SOURCE_DIR "${CMAKE_SOURCE_DIR}/../../../products/f411_watch/runtime")
 set(WATCH_SENSOR_SOURCE_DIR "${CMAKE_SOURCE_DIR}/../../../products/f411_watch/sensors")
+set(WATCH_POWER_SOURCE_DIR "${CMAKE_SOURCE_DIR}/../../../products/f411_watch/power")
 set(WATCH_LVGL_SOURCE_DIR "${CMAKE_SOURCE_DIR}/third_party/lvgl")
 
 file(GLOB_RECURSE WATCH_LVGL_SOURCES CONFIGURE_DEPENDS
@@ -43,6 +44,8 @@ add_library(f411_watch_user OBJECT
     ${WATCH_INPUT_SOURCE_DIR}/watch_input.c
     ${WATCH_RUNTIME_SOURCE_DIR}/watch_runtime.c
     ${WATCH_SENSOR_SOURCE_DIR}/watch_lsm6ds3.c
+    ${WATCH_POWER_SOURCE_DIR}/watch_power_state.c
+    ${WATCH_POWER_SOURCE_DIR}/watch_watchdog.c
 )
 
 target_include_directories(f411_watch_user
@@ -52,6 +55,7 @@ target_include_directories(f411_watch_user
         ${WATCH_INPUT_SOURCE_DIR}
         ${WATCH_RUNTIME_SOURCE_DIR}
         ${WATCH_SENSOR_SOURCE_DIR}
+        ${WATCH_POWER_SOURCE_DIR}
         ${CMAKE_SOURCE_DIR}/../../../products/f411_watch/ui
 )
 
@@ -83,6 +87,7 @@ add_custom_target(format
         -DFORMAT_INPUT_ROOT=${WATCH_INPUT_SOURCE_DIR}
         -DFORMAT_RUNTIME_ROOT=${WATCH_RUNTIME_SOURCE_DIR}
         -DFORMAT_SENSOR_ROOT=${WATCH_SENSOR_SOURCE_DIR}
+        -DFORMAT_POWER_ROOT=${WATCH_POWER_SOURCE_DIR}
         -DFORMAT_MODE=fix
         -DCLANG_FORMAT_EXECUTABLE=${WATCH_CLANG_FORMAT_EXECUTABLE}
         -P ${CMAKE_SOURCE_DIR}/cmake/run_clang_format.cmake
@@ -98,6 +103,7 @@ add_custom_target(format-check
         -DFORMAT_INPUT_ROOT=${WATCH_INPUT_SOURCE_DIR}
         -DFORMAT_RUNTIME_ROOT=${WATCH_RUNTIME_SOURCE_DIR}
         -DFORMAT_SENSOR_ROOT=${WATCH_SENSOR_SOURCE_DIR}
+        -DFORMAT_POWER_ROOT=${WATCH_POWER_SOURCE_DIR}
         -DFORMAT_MODE=check
         -DCLANG_FORMAT_EXECUTABLE=${WATCH_CLANG_FORMAT_EXECUTABLE}
         -P ${CMAKE_SOURCE_DIR}/cmake/run_clang_format.cmake
