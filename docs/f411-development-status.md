@@ -75,10 +75,12 @@ modules are not part of the project.
 ## Current round
 
 M11 adds a pure-C power state contract and watchdog contract, then connects the
-F411 adapter to the existing LSE-backed RTC, KEY_WAKE EXTI, and PWR Stop entry.
-The USB diagnostic consumer can request display-off, Stop, or a software-off
-state. Stop suspends the HAL/RTOS tick and temporarily masks the USB IRQ;
-the RTC wake timer and KEY_WAKE restore the PLL clock and resume the scheduler.
+F411 adapter to the existing LSE-backed RTC and PWR Stop entry. The USB
+diagnostic consumer can request display-off, Stop, or a software-off state.
+Stop suspends the HAL/RTOS tick and temporarily masks the USB IRQ; the RTC wake
+timer restores the PLL clock and resumes the scheduler. The firmware retains
+the KEY_WAKE EXTI path for a future battery-backed hardware acceptance, but the
+current board has no battery, so M11 board acceptance uses RTC wake only.
 The independent watchdog uses the STM32 IWDG with a board adapter and is
 refreshed only while APP, UI, USB, and sensor health records are all current.
 
@@ -109,10 +111,12 @@ expand the sensor set or OTA/storage behavior.
 - LSM6DS3 wiring and `0x6A` address are taken from the V2.1 reference project:
   I2C1 is PB8/PB9, INT1 is PA8, and INT2 is PB15. M10 polls the device and does
   not claim the interrupt paths are validated.
-- Stop acceptance depends on the board's LSE, RTC wake IRQ, KEY_WAKE EXTI, and
-  USB re-enumeration behavior; the code does not claim a measured current
-  reduction. The IWDG timeout uses the internal LSI's nominal frequency and is
-  a reset-safety value, not a precision timebase.
+- Stop acceptance on the current no-battery board depends on the LSE, RTC wake
+  IRQ, and USB re-enumeration behavior. KEY_WAKE EXTI remains a future,
+  battery-dependent path and is not electrically testable in this round. The
+  code does not claim a measured current reduction. The IWDG timeout uses the
+  internal LSI's nominal frequency and is a reset-safety value, not a precision
+  timebase.
 - `POWER_EN` polarity and the external WDI/WDOG_EN circuit remain unverified;
   M11's software-off path therefore leaves the power latch asserted.
 - KT6368 SPP firmware behavior and enable polarity require a board test; no
@@ -278,12 +282,12 @@ with OpenOCD, send `help\r\n` and confirm that `power`, `display-off`, `sleep`,
 and `shutdown` are listed. Send `power\r\n` and confirm `state=active`,
 `watchdog=1`, an increasing `refresh` count, and `blocked=0 fail=0`. Send
 `display-off\r\n`; the backlight should turn off and `power` should report
-`state=display-off`. Press KEY_WAKE and confirm the backlight returns and the
-state becomes `active wake=key`. Send `sleep\r\n`; the display should remain
-off while the MCU enters Stop, then the board should wake after roughly three
-seconds through RTC (`wake=rtc`) or immediately through KEY_WAKE (`wake=key`).
-After USB re-enumeration if necessary, `power` should report `stops=1 wakes=1`
-and the existing UI should remain usable. Finally, `shutdown\r\n` should report
-`state=off` with the backlight off; KEY_WAKE should return to `active`. This is
-a software-off check only and must not be treated as proof of physical power
+`state=display-off`. Do not use KEY_WAKE on the current no-battery board. To
+restore the display, send `sleep\r\n` and let the RTC wake the board, or reset
+the board. After the roughly three-second RTC wake and USB re-enumeration if
+necessary, `power` should report `state=active wake=rtc` and
+`stops=1 wakes=1`; the existing UI should remain usable. Finally, send
+`shutdown\r\n` and confirm `state=off` with the backlight off. Since KEY_WAKE is
+not available, use a board reset to recover from this software-off state. This
+is a software-off check only and must not be treated as proof of physical power
 cutoff.
