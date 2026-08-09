@@ -50,6 +50,19 @@ bool watch_input_init(watch_input_t *input)
     return true;
 }
 
+bool watch_input_seed_button(watch_input_t *input, watch_input_button_t button, bool pressed,
+                             uint32_t now_ms)
+{
+    if (input == NULL || button >= WATCH_INPUT_BUTTON_COUNT) {
+        return false;
+    }
+
+    input->raw_pressed[button] = pressed;
+    input->stable_pressed[button] = pressed;
+    input->raw_since_ms[button] = now_ms;
+    return true;
+}
+
 bool watch_input_submit_button(watch_input_t *input, watch_input_button_t button, bool pressed,
                                uint32_t now_ms)
 {

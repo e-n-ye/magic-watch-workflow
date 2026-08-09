@@ -38,6 +38,8 @@ typedef struct
 } watch_input_t;
 
 bool watch_input_init(watch_input_t *input);
+bool watch_input_seed_button(watch_input_t *input, watch_input_button_t button, bool pressed,
+                             uint32_t now_ms);
 bool watch_input_submit_button(watch_input_t *input, watch_input_button_t button, bool pressed,
                                uint32_t now_ms);
 bool watch_input_submit_encoder(watch_input_t *input, int16_t delta);
