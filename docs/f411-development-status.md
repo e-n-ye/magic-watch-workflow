@@ -63,8 +63,8 @@ modules are not part of the project.
 | M5 | Input hardware and normalized gesture/button events | Complete; M5a/M5b CI Gates and board acceptance passed |
 | M6 | LVGL 9.5 port, DMA flush, UI task, and 240x280 budget gate | Complete; CI Gate and focused board acceptance passed |
 | M7 | Editor-exported XML UI, generated C, and PC simulator | Implemented locally; host CTest passed; no board acceptance required |
-| M8 | Page lifecycle and watch pages | Functional board acceptance passed; this PR corrects exported screen opacity; fixed-image visual check pending |
-| M9 | Time, service queues, task health, and initialization policy | USB health board acceptance passed; fixed-image visual check pending |
+| M8 | Page lifecycle and watch pages | Functional board acceptance passed; exported screen opacity corrected and fixed-image board check passed |
+| M9 | Time, service queues, task health, and initialization policy | USB health and fixed-image board acceptance passed |
 | M10 | Confirmed sensor drivers and sensor service | Planned |
 | M11 | Power states, wake sources, Stop recovery, and watchdog | Planned |
 | M12 | W25Q128 raw driver, littlefs, and resource streaming | Planned |
@@ -196,12 +196,11 @@ cmake --build --preset Debug --target cppcheck
 The linked Debug App is Flash `242,356 B` and RAM `82,808 B`, under the 400 KiB
 App and 128 KiB RAM limits. The Editor preview runtime remains local and is
 ignored as `preview-bin`; only the exported C/H and build lists are candidates
-for Git. M8 board acceptance is still pending: flash the
-Debug image with OpenOCD, confirm `MAGIC WATCH` and the four page labels on the
-240x280 display, use select/down to reach `LAUNCHER` then `STATUS` or `SETTINGS`,
-and use the existing left-edge `BACK` gesture or encoder/button back path to
-return. Confirm the USB log has the expected normalized events and no unexpected
-`drop` or `i2c_err` increments. This is the only remaining M8 acceptance step.
+for Git. M8 board acceptance passed: the Debug image showed `MAGIC WATCH` and
+the four page labels on the 240x280 display, select/down reached `LAUNCHER`,
+`STATUS`, and `SETTINGS`, and the existing left-edge `BACK` gesture returned to
+the previous page. The USB log had the expected normalized events without
+unexpected `drop` or `i2c_err` increments.
 
 For M9, the following validation passed from the repository root and F411
 project directory:
@@ -224,9 +223,9 @@ queue, FIFO, and heartbeat timeout checks. The existing core/input suite and
 the LVGL page lifecycle smoke also passed. The linked Debug App is Flash
 `244,384 B` and RAM `82,968 B`, under the 400 KiB and 128 KiB limits.
 
-M9 USB CDC health acceptance passed on the pre-fix Debug image: `health\r\n`
-reported `stage=3`, `app=ok`, `ui=ok`, `usb=ok`, and `queue=0`; `help\r\n`
-listed `health`. No new sensor, RTC, watchdog, or power behavior is part of
-that demonstration. The only remaining human check for this corrective change
-is to flash the new Debug image with OpenOCD and confirm the 240x280 pages now
-show the XML dark background (`0x101820`) with the expected text colors.
+M9 USB CDC health acceptance passed: `health\r\n` reported `stage=3`, `app=ok`,
+`ui=ok`, `usb=ok`, and `queue=0`; `help\r\n` listed `health`. The corrected
+Debug App was then flashed with OpenOCD and verified on the board; the 240x280
+pages showed the XML dark background (`0x101820`) with the expected text
+colors. No new sensor, RTC, watchdog, or power behavior is part of this
+demonstration.
