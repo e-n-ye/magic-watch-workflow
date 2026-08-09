@@ -58,6 +58,7 @@ CubeMX main USER CODE
 ```text
 products/f411_watch/
 ├── core/        # 纯 C 状态机和跨平台契约
+├── input/       # 纯 C 输入归一化和消抖契约
 ├── ui/          # LVGL 版本和 XML 兼容性验证完成后
 └── simulator/   # UI 技术路线确定后建立独立 PC CMake 工程
 ```

@@ -58,7 +58,7 @@ modules are not part of the project.
 | M3a | Assertions, reset capsule, memory budgets, Diagnostic build | Complete; Diagnostic cold-start and HardFault injection accepted on hardware |
 | M3b | USB CDC logging and diagnostic transport | Complete locally; CubeMX CDC generation, software checks, OpenOCD programming, and COM6 host acceptance passed |
 | M4 | Pure-C core, input contracts, and host tests | Complete; F411 and host CTest passed |
-| M5 | Input hardware and normalized gesture/button events | Planned |
+| M5 | Input hardware and normalized gesture/button events | In progress; M5a pure-C normalization complete, M5b board loop pending |
 | M6 | LVGL 9.5 port, DMA flush, UI task, and 240x280 budget gate | Planned |
 | M7 | XML generation and PC simulator using generated C | Planned |
 | M8 | Page lifecycle and watch pages | Planned |
@@ -72,25 +72,25 @@ modules are not part of the project.
 
 ## Current round
 
-M4 adds the first real product core under `products/f411_watch/core`. The pure C
-`watch_core` module has no HAL, FreeRTOS, or LVGL dependency and is compiled by
-both the F411 user target and a standalone host CTest target.
+M5a adds the pure C `watch_input` normalizer under `products/f411_watch/input`.
+It debounces BACK, WAKE, and encoder-button samples; maps encoder deltas to
+single-step UP/DOWN events; maps taps and vertical swipes; and accepts a right
+swipe only when it starts within the frozen 240-pixel display edge. Output is a
+bounded `watch_event_t` queue that can be consumed by `watch_core` without any
+HAL, FreeRTOS, or LVGL dependency.
 
-The contract defines normalized `watch_event_t` values for wake, back, select,
-up, and down input; `watch_snapshot_t` for the current page, bounded stack
-depth, launcher selection, and revision; and a bounded `watch_command_t` queue
-for page and selection changes. The navigation state machine covers the
-watchface, launcher, status, and settings pages. `WAKE` is accepted as a
-normalized event but remains a no-op until the later power-state round.
-
-The F411 build only compiles the core. No UI, real input hardware, LVGL/XML,
-FreeRTOS task, or board acceptance is included in M4.
+The F411 target compiles the shared input module and host CTest covers debounce,
+queue-full atomicity, touch gesture mapping, and core dispatch. M5a does not
+claim a board loop: CST816 software I2C, GPIO/EXTI callback ownership, TIM4
+encoder startup, LCD/USB feedback, and hardware polarity remain in M5b.
 
 ## Next round
 
-The next implementation round is M5: the CST816, encoder, and button hardware
-loop with normalized gesture and button events. The separate M3a Diagnostic
-cold-start and deliberate fault-injection checks remain accepted manual items.
+The next implementation sub-round is M5b: confirm the CST816 bus/address and
+touch wiring, start/consume TIM4 encoder counts, route GPIO EXTI callbacks, and
+exercise the normalized events through USB/LCD diagnostics on hardware. The
+separate M3a Diagnostic cold-start and deliberate fault-injection checks remain
+accepted manual items.
 
 ## Risks and blockers
 
@@ -101,6 +101,9 @@ cold-start and deliberate fault-injection checks remain accepted manual items.
   confirmed metadata until the later OTA rounds.
 - EEPROM type/address must be confirmed from the actual board before a driver
   is added; the old 24LC32 behavior is not evidence.
+- CST816 has TP_RST/TP_SDA/TP_SCL evidence but no confirmed TP_INT or I2C
+  address in the current project; M5b must not inherit the old driver's
+  software-I2C assumptions without board verification.
 - KT6368 SPP firmware behavior and enable polarity require a board test; no
   undocumented AT command is assumed.
 - There is no battery measurement baseline, so power acceptance is behavioral
@@ -113,7 +116,7 @@ cold-start and deliberate fault-injection checks remain accepted manual items.
 
 ## Latest verification
 
-For M4, the following passed from the F411 project directory and repository
+For M5a, the following passed from the F411 project directory and repository
 root:
 
 ```text
@@ -128,8 +131,7 @@ cmake --build build/host-tests
 ctest --test-dir build/host-tests --output-on-failure
 ```
 
-M4 software validation passed `git diff --check`, format-check, Cppcheck, the
+M5a software validation passed `git diff --check`, format-check, Cppcheck, the
 Debug/Diagnostic link-time budget checks, the Debug/Diagnostic builds, and the
-host `watch_core` CTest. No new board acceptance was required; the M3a
-Diagnostic cold-start and deliberate HardFault injection remain the recorded
-hardware result.
+host `watch_core_input` CTest. No board acceptance was performed; M5b is the
+next manual hardware boundary.
