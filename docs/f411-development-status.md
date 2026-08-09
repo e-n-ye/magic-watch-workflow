@@ -36,15 +36,15 @@ modules are not part of the project.
 
 ## Baseline
 
-- Reference commit: `c9598d0` (M5b input hardware acceptance merged to
+- Reference commit: `d38e169` (M6 LVGL port and board acceptance merged to
   `main`).
-- M0 through M5 CI Gates passed; M3a and M5 board acceptance are complete.
+- M0 through M6 CI Gates passed; M3a, M5, and M6 board acceptance are complete.
 - Before relocation, the verified Debug App image was Flash `64,340 / 524,288 B`
   and RAM `30,208 / 131,072 B`.
 - M3a pre-CDC Debug build: Bootloader was `6,564 B` Flash and `1,056 B` RAM;
   App was `65,280 B` Flash and `30,296 B` RAM.
-- Current M5b Debug App is `72,324 B` Flash and `37,112 B` RAM; the Diagnostic
-  App is `81,188 B` Flash and `37,112 B` RAM.
+- Current M6 Debug App is `234,772 B` Flash and `82,720 B` RAM; the Diagnostic
+  App is `243,716 B` Flash and `82,720 B` RAM.
 - M2 host packaging and OpenOCD programming remain the accepted upgrade path;
   CubeProgrammer is not part of the workflow.
 - Current hardware facts: STM32F411, 24 MHz HSE, ST-Link-compatible SWD,
@@ -61,8 +61,8 @@ modules are not part of the project.
 | M3b | USB CDC logging and diagnostic transport | Complete locally; CubeMX CDC generation, software checks, OpenOCD programming, and COM6 host acceptance passed |
 | M4 | Pure-C core, input contracts, and host tests | Complete; F411 and host CTest passed |
 | M5 | Input hardware and normalized gesture/button events | Complete; M5a/M5b CI Gates and board acceptance passed |
-| M6 | LVGL 9.5 port, DMA flush, UI task, and 240x280 budget gate | Software complete; focused board acceptance pending |
-| M7 | XML generation and PC simulator using generated C | Planned |
+| M6 | LVGL 9.5 port, DMA flush, UI task, and 240x280 budget gate | Complete; CI Gate and focused board acceptance passed |
+| M7 | XML generation and PC simulator using generated C | Preflight blocked; local licensed LVGL Pro CLI is required |
 | M8 | Page lifecycle and watch pages | Planned |
 | M9 | Time, service queues, task health, and initialization policy | Planned |
 | M10 | Confirmed sensor drivers and sensor service | Planned |
@@ -88,12 +88,22 @@ observed complete or failed. The task also advances the LVGL tick and runs the
 timer handler. The first page shows `MAGIC WATCH`, the current core page, and a
 context hint; encoder/select events can move from the watchface to the launcher
 and its two representative pages. USB CDC remains the diagnostic command and
-log path, and no XML, simulator, or full page stack was added.
+log path, and no XML, simulator, or full page stack was added. The focused board
+acceptance then confirmed the `MAGIC WATCH` page at 240x280, encoder/select and
+screen-click navigation from `WATCHFACE` to `LAUNCHER` to `STATUS`, and a stable
+left-edge right-swipe `BACK` gesture.
+
+M7 preflight found no LVGL Pro CLI, XML source, generated UI C, simulator
+project, or local license configuration in the repository or current environment.
+No substitute generator or placeholder module is being added. The implementation
+can start when the licensed CLI is made available through local environment
+configuration; its token and absolute installation path must remain outside Git.
 
 ## Next round
 
-The next implementation round is M7: add the LVGL Pro CLI/XML generation
-boundary and the PC simulator using committed generated C. M6 does not add
+The next implementation round remains M7: add the LVGL Pro CLI/XML generation
+boundary and the PC simulator using committed generated C. M7 is blocked until
+the local licensed CLI and its generation schema are available; M6 does not add
 XML, generated UI, or simulator code.
 
 ## Risks and blockers
@@ -114,8 +124,8 @@ XML, generated UI, or simulator code.
   rather than a fabricated current target.
 - The reset capsule survives software reset but not a complete power loss; a
   power-cycle fault-recovery claim is deferred until backup storage exists.
-- M6 SPI1 DMA timing, RGB565 byte order, LVGL flush completion, and page redraw
-  behavior require one focused OpenOCD board check; CI has no LCD hardware job.
+- M7 XML regeneration requires a local LVGL Pro CLI license and a documented
+  project schema; CI must build committed generated C without a Pro token.
 
 ## Latest verification
 
@@ -134,7 +144,7 @@ cmake --build build/host-tests-m6
 ctest --test-dir build/host-tests-m6 --output-on-failure
 ```
 
-M5b board acceptance is complete. M6 software validation passed `git diff
+M5b and M6 board acceptance are complete. M6 software validation passed `git diff
 --check`, format-check, Cppcheck, the Debug/Diagnostic link-time budget checks,
 the Debug/Diagnostic builds, and the host `watch_core_input` CTest. The linked
 Debug App is Flash `234,772 B` and RAM `82,720 B`; Diagnostic is Flash `243,716 B`
@@ -143,5 +153,6 @@ OpenOCD, confirm the 240x280 representative page is rendered without color-bar
 fallback, then use encoder select/up/down to move between `WATCHFACE`,
 `LAUNCHER`, `STATUS`, and `SETTINGS`. The USB stream should continue to show
 the existing `input event=...` lines without unexpected `drop` or `i2c_err`
-increments. A successful check demonstrates the SPI1 DMA flush and the single
-UI task; it does not accept any XML or simulator behavior.
+increments. The board result confirmed the representative page, encoder and
+screen-click navigation, and left-edge `BACK`; it demonstrates the SPI1 DMA
+flush and the single UI task, but does not accept any XML or simulator behavior.
