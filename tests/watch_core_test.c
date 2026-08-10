@@ -79,6 +79,30 @@ static void test_navigation_and_commands(void)
     assert(snapshot.revision == 5U);
 }
 
+static void test_resource_navigation(void)
+{
+    watch_core_t core;
+    watch_snapshot_t snapshot;
+
+    assert(watch_core_init(&core));
+    assert(watch_test_dispatch(&core, WATCH_EVENT_SELECT));
+    assert(watch_test_dispatch(&core, WATCH_EVENT_DOWN));
+    assert(watch_test_dispatch(&core, WATCH_EVENT_DOWN));
+    assert(watch_core_read_snapshot(&core, &snapshot));
+    assert(snapshot.page == WATCH_PAGE_LAUNCHER);
+    assert(snapshot.launcher_index == 2U);
+
+    assert(watch_test_dispatch(&core, WATCH_EVENT_SELECT));
+    assert(watch_core_read_snapshot(&core, &snapshot));
+    assert(snapshot.page == WATCH_PAGE_RESOURCES);
+    assert(snapshot.page_depth == 2U);
+
+    assert(watch_test_dispatch(&core, WATCH_EVENT_BACK));
+    assert(watch_test_dispatch(&core, WATCH_EVENT_BACK));
+    assert(watch_core_read_snapshot(&core, &snapshot));
+    assert(snapshot.page == WATCH_PAGE_WATCHFACE);
+}
+
 static void test_ignored_events_and_validation(void)
 {
     watch_core_t core;
@@ -223,6 +247,7 @@ int main(void)
 {
     test_initial_state();
     test_navigation_and_commands();
+    test_resource_navigation();
     test_ignored_events_and_validation();
     test_command_queue_is_bounded();
     test_button_debounce();

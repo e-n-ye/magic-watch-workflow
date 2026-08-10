@@ -8,6 +8,8 @@
 #include <stddef.h>
 
 #include "screens/launcher/screen_launcher_gen.h"
+#include "screens/diagnostics/screen_diagnostics_gen.h"
+#include "screens/resources/screen_resources_gen.h"
 #include "screens/settings/screen_settings_gen.h"
 #include "screens/status/screen_status_gen.h"
 #include "screens/watchface/screen_watchface_gen.h"
@@ -23,6 +25,10 @@ static lv_obj_t *watch_page_create(watch_page_t page)
         return screen_status_create();
     case WATCH_PAGE_SETTINGS:
         return screen_settings_create();
+    case WATCH_PAGE_RESOURCES:
+        return screen_resources_create();
+    case WATCH_PAGE_DIAGNOSTICS:
+        return screen_diagnostics_create();
     case WATCH_PAGE_COUNT:
         return NULL;
     }
@@ -37,6 +43,8 @@ static const char *watch_page_name(watch_page_t page)
         "LAUNCHER",
         "STATUS",
         "SETTINGS",
+        "RESOURCES",
+        "DIAGNOSTICS",
     };
 
     if (page >= WATCH_PAGE_COUNT) {
@@ -53,7 +61,13 @@ static const char *watch_page_hint(const watch_snapshot_t *snapshot)
     }
 
     if (snapshot->page == WATCH_PAGE_LAUNCHER) {
-        return snapshot->launcher_index == 0U ? "SELECT: STATUS" : "SELECT: SETTINGS";
+        if (snapshot->launcher_index == 0U) {
+            return "SELECT: STATUS";
+        }
+        if (snapshot->launcher_index == 1U) {
+            return "SELECT: SETTINGS";
+        }
+        return "SELECT: RESOURCES";
     }
 
     return "BACK: RETURN";
@@ -92,6 +106,64 @@ bool watch_page_lifecycle_init(watch_page_lifecycle_t *lifecycle, lv_display_t *
     return true;
 }
 
+bool watch_page_lifecycle_show_popup(watch_page_lifecycle_t *lifecycle, const char *title,
+                                     const char *message)
+{
+    lv_obj_t *popup;
+    lv_obj_t *title_label;
+    lv_obj_t *message_label;
+
+    if (lifecycle == NULL || lifecycle->active_screen == NULL || title == NULL || message == NULL) {
+        return false;
+    }
+
+    watch_page_lifecycle_close_popup(lifecycle);
+    popup = lv_obj_create(lifecycle->active_screen);
+    if (popup == NULL) {
+        return false;
+    }
+
+    lv_obj_set_size(popup, 208, 104);
+    lv_obj_center(popup);
+    lv_obj_set_style_bg_opa(popup, LV_OPA_COVER, LV_PART_MAIN);
+    lv_obj_set_style_bg_color(popup, lv_color_hex(0xF4F7FA), LV_PART_MAIN);
+    lv_obj_set_style_border_width(popup, 2, LV_PART_MAIN);
+    lv_obj_set_style_border_color(popup, lv_color_hex(0x64D2FF), LV_PART_MAIN);
+
+    title_label = lv_label_create(popup);
+    message_label = lv_label_create(popup);
+    if (title_label == NULL || message_label == NULL) {
+        lv_obj_del(popup);
+        return false;
+    }
+
+    lv_obj_set_width(title_label, 184);
+    lv_obj_set_width(message_label, 184);
+    lv_label_set_text(title_label, title);
+    lv_label_set_text(message_label, message);
+    lv_obj_set_align(title_label, LV_ALIGN_TOP_MID);
+    lv_obj_set_y(title_label, 8);
+    lv_obj_set_align(message_label, LV_ALIGN_TOP_MID);
+    lv_obj_set_y(message_label, 36);
+    lv_obj_set_style_text_color(title_label, lv_color_hex(0x101820), LV_PART_MAIN);
+    lv_obj_set_style_text_color(message_label, lv_color_hex(0x334455), LV_PART_MAIN);
+
+    lifecycle->active_popup = popup;
+    lifecycle->popup_created_count++;
+    return true;
+}
+
+void watch_page_lifecycle_close_popup(watch_page_lifecycle_t *lifecycle)
+{
+    if (lifecycle == NULL || lifecycle->active_popup == NULL) {
+        return;
+    }
+
+    lv_obj_del(lifecycle->active_popup);
+    lifecycle->active_popup = NULL;
+    lifecycle->popup_destroyed_count++;
+}
+
 bool watch_page_lifecycle_apply(watch_page_lifecycle_t *lifecycle, const watch_snapshot_t *snapshot)
 {
     lv_obj_t *next_screen;
@@ -119,6 +191,7 @@ bool watch_page_lifecycle_apply(watch_page_lifecycle_t *lifecycle, const watch_s
         return false;
     }
 
+    watch_page_lifecycle_close_popup(lifecycle);
     lv_display_set_default(lifecycle->display);
     lv_screen_load(next_screen);
     if (lifecycle->active_screen != NULL) {
@@ -140,6 +213,7 @@ void watch_page_lifecycle_deinit(watch_page_lifecycle_t *lifecycle)
         return;
     }
 
+    watch_page_lifecycle_close_popup(lifecycle);
     if (lifecycle->active_screen != NULL) {
         lv_obj_del(lifecycle->active_screen);
         lifecycle->active_screen = NULL;
@@ -159,6 +233,15 @@ lv_obj_t *watch_page_lifecycle_active_screen(const watch_page_lifecycle_t *lifec
     return lifecycle->active_screen;
 }
 
+lv_obj_t *watch_page_lifecycle_active_popup(const watch_page_lifecycle_t *lifecycle)
+{
+    if (lifecycle == NULL) {
+        return NULL;
+    }
+
+    return lifecycle->active_popup;
+}
+
 void watch_page_lifecycle_read_stats(const watch_page_lifecycle_t *lifecycle,
                                      watch_page_lifecycle_stats_t *stats)
 {
@@ -168,4 +251,6 @@ void watch_page_lifecycle_read_stats(const watch_page_lifecycle_t *lifecycle,
 
     stats->created_count = lifecycle->created_count;
     stats->destroyed_count = lifecycle->destroyed_count;
+    stats->popup_created_count = lifecycle->popup_created_count;
+    stats->popup_destroyed_count = lifecycle->popup_destroyed_count;
 }
