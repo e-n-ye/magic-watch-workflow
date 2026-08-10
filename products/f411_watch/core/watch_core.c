@@ -100,7 +100,14 @@ bool watch_core_init(watch_core_t *core)
     }
 
     *core = (watch_core_t) { 0 };
+#if defined(WATCH_DIAGNOSTIC)
+    core->page_stack[0] = WATCH_PAGE_WATCHFACE;
+    core->page = WATCH_PAGE_DIAGNOSTICS;
+    core->page_depth = 1U;
+    core->revision = 1U;
+#else
     core->page = WATCH_PAGE_WATCHFACE;
+#endif
     return true;
 }
 

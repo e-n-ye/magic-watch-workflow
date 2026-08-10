@@ -23,6 +23,19 @@ if(BUILD_TESTING)
 
     add_test(NAME watch_core_input COMMAND watch_core_input_tests)
 
+    add_executable(watch_core_diagnostic_tests
+        ${CMAKE_CURRENT_LIST_DIR}/watch_core_diagnostic_test.c
+        ${CMAKE_CURRENT_LIST_DIR}/../products/f411_watch/core/watch_core.c
+    )
+
+    target_compile_definitions(watch_core_diagnostic_tests PRIVATE WATCH_DIAGNOSTIC=1)
+    target_include_directories(watch_core_diagnostic_tests
+        PRIVATE
+            ${CMAKE_CURRENT_LIST_DIR}/../products/f411_watch/core
+    )
+
+    add_test(NAME watch_core_diagnostic_preset COMMAND watch_core_diagnostic_tests)
+
     add_executable(watch_runtime_tests
         ${CMAKE_CURRENT_LIST_DIR}/watch_runtime_test.c
         ${CMAKE_CURRENT_LIST_DIR}/../products/f411_watch/runtime/watch_runtime.c
