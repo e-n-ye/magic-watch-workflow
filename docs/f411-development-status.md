@@ -34,8 +34,8 @@ UI/resources, power, then secure OTA. No empty placeholder modules are added.
 
 ## Baseline
 
-- Reconfirmed baseline: `a97a13e` (`origin/main` and local `main` agree before
-  this CI round). The last functional firmware evidence remains `afd7d0f`.
+- Reconfirmed baseline: `ce3162c` (`origin/main` and local `main` agree before
+  this lifecycle round). The last functional firmware evidence remains `afd7d0f`.
 - PRs #5 through #28 are merged with Rebase and merge, and each required CI Gate
   passed. The worktree was clean before this CI change.
 - The original pre-relocation Debug App reference was Flash `64,340 B` and RAM
@@ -66,7 +66,7 @@ numbered plan. W25Q128 storage through final OTA acceptance has not started.
 | M5 | CST816, encoder, button, normalized input | Complete; click, swipe-back, debounce, and board input acceptance passed. |
 | M6 | LVGL 9.5, DMA flush, UI task, 240x280 budget | Complete; Debug/Diagnostic budgets and focused board page acceptance passed. |
 | M7 | Editor XML, generated C, PC simulator | Complete for the approved manual Editor export workflow; host simulator smoke passed. F411 does not parse XML at runtime. |
-| M8 | Six page categories, lifecycle, interaction, leak pressure | Partial; basic four-page navigation exists, but resource viewer, hidden diagnostics, popup coverage, and repeated lifecycle pressure tests are missing. |
+| M8 | Six page categories, lifecycle, interaction, leak pressure | Partial; four-page navigation and a 32-cycle lifecycle pressure smoke now pass, but resource viewer, hidden diagnostics, popup coverage, and the complete six-category page set remain. |
 | M9 | RTC/time service, queues, heartbeats, init policy | Partial; runtime health and bounded queues exist, but there is no complete RTC/time service contract and `defaultTask` still remains a permanent loop. |
 | M10 | Five sensor drivers and aggregation | Partial; only LSM6DS3 has a driver/service path. LIS2MDL, AHT20, MAX30102, CW2015, and aggregation remain. |
 | M11 | EEPROM part/address facts | Not started; the part and address are unconfirmed. Do not migrate the old 24LC32 driver. |
@@ -80,20 +80,22 @@ numbered plan. W25Q128 storage through final OTA acceptance has not started.
 | M19 | Trial confirmation and rollback | Not started. |
 | M20 | Final configurations, simulator, fault injection, budgets, regression report | Not started. |
 
-## Current round: host CI gate and path classification
+## Current round: M8a lifecycle pressure
 
-This round closes the process gap identified by the review. The change-path job
-now emits separate F411, host, and manifest signals. Changes under
-`products/f411_watch/**` run the F411 and host gates; changes under `tests/**`
-run the host gate; and a workflow change runs all three. The host job builds and
-runs all host CTest cases plus the 240x280 simulator smoke test. No firmware,
+This round extends the 240x280 simulator smoke path across the currently
+implemented WATCHFACE, LAUNCHER, STATUS, and SETTINGS pages. It repeats entry
+and exit through the page stack 32 times and checks exact page creation and
+destruction counts (199 created, 198 destroyed before final deinit). The
+simulator consumes each core command as the UI task would; no firmware,
 storage, sensor, or OTA behavior is added.
 
 ## Next round
 
-Rebase from the latest `origin/main` after this CI round and resume the numbered
-gaps with a focused M8/M9/M10 closure decision. Do not begin W25Q128 or OTA
-modules until those contracts and their test gates are visible in CI.
+Complete M8b by adding the resource viewer, hidden diagnostics page, popup
+lifecycle, and the remaining interaction coverage. Keep the M8 page set and
+leak checks visible in the simulator before starting the separate M9 runtime
+contract round. Do not begin W25Q128 or OTA modules until the M8-M10 contracts
+and their test gates are visible in CI.
 
 ## Risks and blockers
 
@@ -105,7 +107,8 @@ modules until those contracts and their test gates are visible in CI.
   confirmed metadata until the later OTA rounds.
 - The EEPROM model, address, and electrical behavior must be confirmed from the
   actual board. Legacy 24LC32 code is not evidence.
-- M8 lacks the full page set, popup lifecycle, and pressure/leak acceptance.
+- M8 still lacks the full page set, popup lifecycle, and interaction coverage;
+  the current four-page pressure/leak smoke is now recorded above.
 - M9's runtime health checks do not yet constitute the planned RTC/time service;
   application code still has direct tick-time dependencies and `defaultTask`
   ownership needs correction.
@@ -134,9 +137,13 @@ The last merged functional evidence is recorded at `afd7d0f`:
   roughly three seconds, USB re-enumerated, and the UI remained usable. Software
   off blanked the display and required reset for recovery. KEY_WAKE was not
   electrically tested.
-- This CI round passed locally with four host CTest cases and one simulator
-  smoke test. The required F411 Debug configure/build, format-check, and
-  Cppcheck also passed; no board flashing was needed for a CI-only change.
+- The M8a simulator pressure smoke passed locally: `display=240x280`,
+  `pages=4`, `lifecycle_cycles=32`, `creates=199`, `destroys=198`, and
+  `active=WATCHFACE`. The final deinit check also returned creation and
+  destruction counts to equality.
+- The preceding CI round passed locally with four host CTest cases and one
+  simulator smoke test. The required F411 Debug configure/build, format-check,
+  and Cppcheck also passed; no board flashing was needed for a CI-only change.
 - Earlier M7-M10 host and board evidence remains valid where listed in Git
   history, but it does not promote the partial milestones above to complete.
 

@@ -15,6 +15,7 @@
 #define WATCH_SIMULATOR_WIDTH 240
 #define WATCH_SIMULATOR_HEIGHT 280
 #define WATCH_SIMULATOR_BUFFER_LINES 20
+#define WATCH_SIMULATOR_LIFECYCLE_CYCLES 32U
 
 static uint16_t s_draw_buffer[WATCH_SIMULATOR_WIDTH * WATCH_SIMULATOR_BUFFER_LINES];
 
@@ -85,13 +86,37 @@ static bool watch_simulator_show_page(watch_page_lifecycle_t *lifecycle,
     return result;
 }
 
+static bool watch_simulator_dispatch_page(watch_core_t *core,
+                                           watch_page_lifecycle_t *lifecycle,
+                                           watch_event_type_t event_type, const char *page_name,
+                                           const char *hint)
+{
+    watch_event_t event = (watch_event_t) { .type = event_type };
+    watch_command_t command;
+    watch_snapshot_t snapshot;
+
+    if (!watch_core_dispatch_event(core, &event)) {
+        return false;
+    }
+
+    while (watch_core_take_command(core, &command)) {
+        /* The simulator models the UI task consuming each core command. */
+    }
+
+    if (!watch_core_read_snapshot(core, &snapshot)) {
+        return false;
+    }
+
+    return watch_simulator_show_page(lifecycle, &snapshot, page_name, hint);
+}
+
 static bool watch_simulator_check_lifecycle(lv_display_t *display,
                                             watch_page_lifecycle_t *lifecycle)
 {
     watch_core_t core;
     watch_snapshot_t snapshot;
-    watch_event_t event;
     watch_page_lifecycle_stats_t stats;
+    uint32_t cycle;
 
     if (!watch_core_init(&core)) {
         return false;
@@ -105,38 +130,47 @@ static bool watch_simulator_check_lifecycle(lv_display_t *display,
         return false;
     }
 
-    event = (watch_event_t) { .type = WATCH_EVENT_SELECT };
-    if (!watch_core_dispatch_event(&core, &event) || !watch_core_read_snapshot(&core, &snapshot)
-        || !watch_simulator_show_page(lifecycle, &snapshot, "LAUNCHER", "SELECT: STATUS")) {
+    if (!watch_simulator_dispatch_page(&core, lifecycle, WATCH_EVENT_SELECT, "LAUNCHER",
+                                       "SELECT: STATUS")
+        || !watch_simulator_dispatch_page(&core, lifecycle, WATCH_EVENT_SELECT, "STATUS",
+                                          "BACK: RETURN")
+        || !watch_simulator_dispatch_page(&core, lifecycle, WATCH_EVENT_BACK, "LAUNCHER",
+                                          "SELECT: STATUS")
+        || !watch_simulator_dispatch_page(&core, lifecycle, WATCH_EVENT_DOWN, "LAUNCHER",
+                                          "SELECT: SETTINGS")
+        || !watch_simulator_dispatch_page(&core, lifecycle, WATCH_EVENT_SELECT, "SETTINGS",
+                                          "BACK: RETURN")
+        || !watch_simulator_dispatch_page(&core, lifecycle, WATCH_EVENT_BACK, "LAUNCHER",
+                                          "SELECT: SETTINGS")
+        || !watch_simulator_dispatch_page(&core, lifecycle, WATCH_EVENT_BACK, "WATCHFACE",
+                                          "SELECT: LAUNCHER")) {
         return false;
     }
 
-    event.type = WATCH_EVENT_DOWN;
-    if (!watch_core_dispatch_event(&core, &event) || !watch_core_read_snapshot(&core, &snapshot)
-        || !watch_simulator_show_page(lifecycle, &snapshot, "LAUNCHER", "SELECT: SETTINGS")) {
-        return false;
-    }
-
-    event.type = WATCH_EVENT_SELECT;
-    if (!watch_core_dispatch_event(&core, &event) || !watch_core_read_snapshot(&core, &snapshot)
-        || !watch_simulator_show_page(lifecycle, &snapshot, "SETTINGS", "BACK: RETURN")) {
-        return false;
-    }
-
-    event.type = WATCH_EVENT_BACK;
-    if (!watch_core_dispatch_event(&core, &event) || !watch_core_read_snapshot(&core, &snapshot)
-        || !watch_simulator_show_page(lifecycle, &snapshot, "LAUNCHER", "SELECT: SETTINGS")) {
-        return false;
-    }
-
-    event.type = WATCH_EVENT_BACK;
-    if (!watch_core_dispatch_event(&core, &event) || !watch_core_read_snapshot(&core, &snapshot)
-        || !watch_simulator_show_page(lifecycle, &snapshot, "WATCHFACE", "SELECT: LAUNCHER")) {
-        return false;
+    for (cycle = 0U; cycle < WATCH_SIMULATOR_LIFECYCLE_CYCLES; ++cycle) {
+        if (!watch_simulator_dispatch_page(&core, lifecycle, WATCH_EVENT_SELECT, "LAUNCHER",
+                                           "SELECT: SETTINGS")
+            || !watch_simulator_dispatch_page(&core, lifecycle, WATCH_EVENT_UP, "LAUNCHER",
+                                              "SELECT: STATUS")
+            || !watch_simulator_dispatch_page(&core, lifecycle, WATCH_EVENT_SELECT, "STATUS",
+                                              "BACK: RETURN")
+            || !watch_simulator_dispatch_page(&core, lifecycle, WATCH_EVENT_BACK, "LAUNCHER",
+                                              "SELECT: STATUS")
+            || !watch_simulator_dispatch_page(&core, lifecycle, WATCH_EVENT_DOWN, "LAUNCHER",
+                                              "SELECT: SETTINGS")
+            || !watch_simulator_dispatch_page(&core, lifecycle, WATCH_EVENT_SELECT, "SETTINGS",
+                                              "BACK: RETURN")
+            || !watch_simulator_dispatch_page(&core, lifecycle, WATCH_EVENT_BACK, "LAUNCHER",
+                                              "SELECT: SETTINGS")
+            || !watch_simulator_dispatch_page(&core, lifecycle, WATCH_EVENT_BACK, "WATCHFACE",
+                                              "SELECT: LAUNCHER")) {
+            return false;
+        }
     }
 
     watch_page_lifecycle_read_stats(lifecycle, &stats);
-    return stats.created_count == 5U && stats.destroyed_count == 4U;
+    return stats.created_count == (7U + (WATCH_SIMULATOR_LIFECYCLE_CYCLES * 6U))
+        && stats.destroyed_count == (stats.created_count - 1U);
 }
 
 int main(int argc, char **argv)
@@ -180,8 +214,10 @@ int main(int argc, char **argv)
 
     watch_page_lifecycle_read_stats(&lifecycle, &stats);
     printf(
-        "watch_ui_smoke: PASS display=240x280 pages=5 creates=%lu destroys=%lu active=WATCHFACE\n",
-        (unsigned long)stats.created_count, (unsigned long)stats.destroyed_count);
+        "watch_ui_smoke: PASS display=240x280 pages=4 lifecycle_cycles=%u creates=%lu "
+        "destroys=%lu active=WATCHFACE\n",
+        WATCH_SIMULATOR_LIFECYCLE_CYCLES, (unsigned long)stats.created_count,
+        (unsigned long)stats.destroyed_count);
     fflush(stdout);
 
 #if defined(_WIN32)
