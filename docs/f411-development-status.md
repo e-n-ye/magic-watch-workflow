@@ -1,290 +1,142 @@
 # F411 Development Status
 
 This is the rolling status page for the STM32F411 reference firmware. It is
-kept short on purpose: Git commits and pull requests contain the historical
-record, while this page describes the current project state and next closed
-loop.
+intentionally current-state only; Git commits and pull requests contain the
+historical process record. The numbered scope is defined in
+[f411-development-plan.md](f411-development-plan.md).
 
 ## End state
 
-The project will provide a real F411 watch reference firmware with a simple
-240x280 UI, diagnostics, power-state handling, external resource storage, and
-signed OTA with trial boot and rollback. It is a workflow and architecture
-reference, not a production dual-chip watch product.
-
-The implementation order is hardware facts, pure-C contracts and host tests,
-board integration, UI/resources, power, and secure OTA. Empty placeholder
-modules are not part of the project.
+The target is a real, runnable, diagnosable, upgradable, and rollbackable F411
+watch reference firmware with a 240x280 UI, external resources, and signed OTA.
+It is a reference implementation, not a production-product claim. The fixed
+order is hardware facts, pure-C contracts and host tests, board integration,
+UI/resources, power, then secure OTA. No empty placeholder modules are added.
 
 ## Frozen decisions
 
 | Area | Decision |
 | --- | --- |
-| F411 display | ST7789, 240x280; 240x240 is a future independent LilyGo profile |
-| Core | Pure C `watch_core`; no HAL, FreeRTOS, or LVGL dependency |
-| LVGL | Pinned v9.5.0; only the UI task calls LVGL, with a 240x20 double partial buffer |
-| Display flush | ST7789 SPI1 DMA; RGB565 byte order is converted before the transfer and completion is acknowledged in the UI task |
-| UI ownership | One LVGL UI task owns LVGL and the core; services use bounded queues |
-| XML | XML is maintained in LVGL Pro Editor; generated C is produced only by Editor Code/export and committed; generated files are never hand-edited; F411 does not parse XML at runtime |
-| Boot layout | Bootloader `0x08000000-0x0800FFFF`; application `0x08010000-0x0807FFFF` |
-| App budget | 448 KiB slot with a 4 KiB signed trailer; linked image budget is 400 KiB |
-| External flash | W25Q128 metadata, candidate, rollback, and littlefs partitions are separate |
-| OTA security | SHA-256 plus ECDSA P-256 signature, board/version checks, trial confirmation, rollback |
-| Bluetooth | KT6368 is a transparent SPP/UART transport; protocol and validation stay on F411/host |
-| USB | CDC for diagnostics, logs, and controlled resource transfer; no online MSC |
-| Security boundary | No claim of protection from SWD/RDP-disabled physical modification |
+| F411 display | ST7789, 240x280; LilyGo 240x240 is an independent future profile |
+| Core | Pure-C `watch_core`; no HAL, FreeRTOS, or LVGL dependency |
+| UI ownership | One UI task owns LVGL and the core; services use bounded queues |
+| Page lifetime | Maximum depth four; one page tree and one popup; page controls are destroyed on exit |
+| Input | Touch click/left-edge swipe-back plus normalized encoder, button, `BACK`, and `WAKE` events |
+| LVGL | Pinned 9.5.0; ST7789 SPI1 DMA; F411 uses `LV_USE_XML=0` |
+| XML | LVGL Pro Editor is the formal source; manual Editor Code/export produces committed C; generated files are never hand-edited; no Pro CLI is required |
+| Boot layout | Bootloader `0x08000000-0x0800FFFF`; App slot `0x08010000-0x0807FFFF` |
+| App budget | 448 KiB slot, final 4 KiB signed trailer, practical CI budget 400 KiB |
+| OTA security | SHA-256 plus ECDSA P-256, board/version checks, security counter, trial confirmation, rollback |
+| External flash | W25Q128 metadata, candidate, rollback, and littlefs partitions remain separate |
+| Bluetooth | KT6368 is only a transparent USART1 `115200 8N1` SPP transport |
+| USB | CDC diagnostics, logs, and resource transfer; no online MSC |
+| Security boundary | Integrity and replay protection only; no claim against SWD, unlocked RDP, or physical flash tampering |
 
 ## Baseline
 
-- Reference commit: `3b2dad8` (M7 Editor-exported UI and XML development skill
-  merged to `main`).
-- M0 through M6 CI Gates passed; M3a, M5, and M6 board acceptance are complete.
-- Before relocation, the verified Debug App image was Flash `64,340 / 524,288 B`
-  and RAM `30,208 / 131,072 B`.
-- M3a pre-CDC Debug build: Bootloader was `6,564 B` Flash and `1,056 B` RAM;
-  App was `65,280 B` Flash and `30,296 B` RAM.
-- Current M6 Debug App was `234,772 B` Flash and `82,720 B` RAM; the Diagnostic
-  App was `243,716 B` Flash and `82,720 B` RAM.
-- M2 host packaging and OpenOCD programming remain the accepted upgrade path;
-  CubeProgrammer is not part of the workflow.
-- Current hardware facts: STM32F411, 24 MHz HSE, ST-Link-compatible SWD,
-  ST7789 display, CST816 touch, W25Q128, and KT6368 UART wiring.
+- Reconfirmed baseline: `afd7d0f` (`origin/main` and local `main` agree).
+- PRs #5 through #27 are merged with Rebase and merge, and the latest CI Gate
+  passed. The worktree was clean before this documentation correction.
+- The original pre-relocation Debug App reference was Flash `64,340 B` and RAM
+  `30,208 B`. Later rounds increased the image while remaining below the current
+  400 KiB App and 128 KiB RAM limits.
+- Current board facts include STM32F411, 24 MHz HSE, ST-Link-compatible SWD,
+  ST7789, CST816, W25Q128, and KT6368 UART wiring. EEPROM part and address are
+  not yet established from board evidence.
+
+## Completion assessment
+
+The earlier page incorrectly compressed M0-M20 into M0-M15 and treated partial
+sensor, runtime, and page work as complete. Against the numbered plan, the
+project is approximately 40-45% complete by closed-loop scope, not by lines of
+code. M0-M7 have usable evidence, M8-M10 are partial, M11 is an open hardware
+fact, and the power behavior from the historical M11 work belongs to M12 in the
+numbered plan. W25Q128 storage through final OTA acceptance has not started.
 
 ## Milestones
 
-| ID | Scope | Status |
+| ID | Scope | Current status and evidence |
 | --- | --- | --- |
-| M0 | Rolling status page and project baseline | Merged; CI Gate passed |
-| M1 | Bootloader target, App relocation, VTOR, and flash/debug flow | Complete; combined and App-only OpenOCD programming accepted on hardware |
-| M2 | Signed image manifest, trailer, and host packaging | Software complete; key rotation requires Bootloader reflash; negative-path board acceptance pending |
-| M3a | Assertions, reset capsule, memory budgets, Diagnostic build | Complete; Diagnostic cold-start and HardFault injection accepted on hardware |
-| M3b | USB CDC logging and diagnostic transport | Complete locally; CubeMX CDC generation, software checks, OpenOCD programming, and COM6 host acceptance passed |
-| M4 | Pure-C core, input contracts, and host tests | Complete; F411 and host CTest passed |
-| M5 | Input hardware and normalized gesture/button events | Complete; M5a/M5b CI Gates and board acceptance passed |
-| M6 | LVGL 9.5 port, DMA flush, UI task, and 240x280 budget gate | Complete; CI Gate and focused board acceptance passed |
-| M7 | Editor-exported XML UI, generated C, and PC simulator | Implemented locally; host CTest passed; no board acceptance required |
-| M8 | Page lifecycle and watch pages | Functional board acceptance passed; exported screen opacity corrected and fixed-image board check passed |
-| M9 | Time, service queues, task health, and initialization policy | USB health and fixed-image board acceptance passed |
-| M10 | Confirmed sensor drivers and sensor service | Complete; LSM6DS3 host model, F411 polling service, and board USB acceptance passed |
-| M11 | Power states, wake sources, Stop recovery, and watchdog | Complete; host/F411 checks and RTC-only board acceptance passed |
-| M12 | W25Q128 raw driver, littlefs, and resource streaming | Planned |
-| M13 | USB CDC resource protocol and KT6368 SPP transport | Planned |
-| M14 | Candidate download, install recovery, trial boot, and rollback | Planned |
-| M15 | Full Debug/Release/Diagnostic, simulator, fault injection, and final report | Planned |
+| M0 | Rolling status page and baseline | Complete; this page and the plan are linked from README; CI Gate history is present. |
+| M1 | Bootloader, App relocation, VTOR, flash/debug flow | Complete; combined and App-only OpenOCD programming and cold-start behavior were accepted. |
+| M2 | Manifest, trailer, host packaging, rejection paths | Software path is implemented; negative-path board acceptance and key-rotation evidence remain open. |
+| M3 | Budgets, assertions, reset capsule, CDC logs, Diagnostic | Complete for the recorded Debug/Diagnostic checks and board diagnostic acceptance. |
+| M4 | Pure-C core and host tests | Complete; core contracts and host CTest are present. |
+| M5 | CST816, encoder, button, normalized input | Complete; click, swipe-back, debounce, and board input acceptance passed. |
+| M6 | LVGL 9.5, DMA flush, UI task, 240x280 budget | Complete; Debug/Diagnostic budgets and focused board page acceptance passed. |
+| M7 | Editor XML, generated C, PC simulator | Complete for the approved manual Editor export workflow; host simulator smoke passed. F411 does not parse XML at runtime. |
+| M8 | Six page categories, lifecycle, interaction, leak pressure | Partial; basic four-page navigation exists, but resource viewer, hidden diagnostics, popup coverage, and repeated lifecycle pressure tests are missing. |
+| M9 | RTC/time service, queues, heartbeats, init policy | Partial; runtime health and bounded queues exist, but there is no complete RTC/time service contract and `defaultTask` still remains a permanent loop. |
+| M10 | Five sensor drivers and aggregation | Partial; only LSM6DS3 has a driver/service path. LIS2MDL, AHT20, MAX30102, CW2015, and aggregation remain. |
+| M11 | EEPROM part/address facts | Not started; the part and address are unconfirmed. Do not migrate the old 24LC32 driver. |
+| M12 | Power and watchdog | Behavior implemented ahead of its numbered round in the historical M11 work: RTC-only Stop/wake, display-off, software-off, and IWDG passed current-board acceptance. KEY_WAKE and physical power cutoff remain unverified because the board has no battery; no current target is claimed. |
+| M13 | W25Q128 raw driver | Not started. |
+| M14 | littlefs and resource streaming | Not started. |
+| M15 | USB diagnostic/log/resource protocol | Not started as the planned atomic resource protocol; existing CDC diagnostics are not this milestone. |
+| M16 | KT6368 SPP transport | Not started; enable polarity, pairing, sustained DMA+IDLE transfer, and recovery need board evidence. |
+| M17 | YModem candidate download and package verification | Not started. |
+| M18 | Backup, install, and power-loss recovery | Not started. |
+| M19 | Trial confirmation and rollback | Not started. |
+| M20 | Final configurations, simulator, fault injection, budgets, regression report | Not started. |
 
-## Current round
+## Current round: plan and status calibration
 
-M11 adds a pure-C power state contract and watchdog contract, then connects the
-F411 adapter to the existing LSE-backed RTC and PWR Stop entry. The USB
-diagnostic consumer can request display-off, Stop, or a software-off state.
-Stop suspends the HAL/RTOS tick and temporarily masks the USB IRQ; the RTC wake
-timer restores the PLL clock and resumes the scheduler. The firmware retains
-the KEY_WAKE EXTI path for a future battery-backed hardware acceptance, but the
-current board has no battery, so M11 board acceptance uses RTC wake only.
-The independent watchdog uses the STM32 IWDG with a board adapter and is
-refreshed only while APP, UI, USB, and sensor health records are all current.
-
-The software-off command only blanks the display and enters the power contract's
-`off` state; it intentionally keeps `POWER_EN` asserted until the board-level
-power-latch polarity is separately confirmed. M11 does not add automatic idle
-timeouts, sensor interrupts, new UI pages, battery current targets, or a claim
-that the external WDI/WDOG_EN circuit has been validated.
+This documentation round corrects the numbered plan and the rolling evidence
+after the M11 power acceptance. It does not add firmware, CI, storage, sensor,
+or OTA behavior. The branch is based on `afd7d0f`; the allowed files are this
+page, `f411-development-plan.md`, and the README entry.
 
 ## Next round
 
-M12 will add the W25Q128 raw driver, littlefs partitioning, and resource
-streaming. M11 remains limited to behavioral power transitions and does not
-expand the sensor set or OTA/storage behavior.
+First make host CTest and the 240x280 simulator part of the CI gate, and fix the
+path classification so changes under `products/f411_watch/**` and `tests/**`
+cannot receive a false documentation-only result. Then resume the numbered gaps
+with a focused M8/M9/M10 closure decision, starting from the new `origin/main`.
+Do not begin W25Q128 or OTA modules until those contracts and their test gates
+are visible in CI.
 
 ## Risks and blockers
 
-- Editor export is a manual, local generation step. CI builds committed generated
-  C but does not regenerate it, so the Editor version and export contract remain
-  part of the M7 record.
-- The security counter is signed in M2 but is not persisted or compared against
+- M7 regeneration is manual and depends on a local LVGL Pro Editor project. CI
+  builds committed generated C but does not regenerate it or require a Pro
+  token. Editor export failure blocks regeneration and must not trigger a
+  second generator.
+- M2's security counter is signed but is not persisted and compared with
   confirmed metadata until the later OTA rounds.
-- EEPROM type/address must be confirmed from the actual board before a driver
-  is added; the old 24LC32 behavior is not evidence.
-- CST816 wiring, `0x15` address, the absence of `TP_INT`, encoder direction,
-  and the button polarity are confirmed by the V2.1 reference project and the
-  completed M5b board acceptance.
-- LSM6DS3 wiring and `0x6A` address are taken from the V2.1 reference project:
-  I2C1 is PB8/PB9, INT1 is PA8, and INT2 is PB15. M10 polls the device and does
-  not claim the interrupt paths are validated.
-- The current no-battery board accepted Stop behavior through the LSE, RTC wake
-  IRQ, and USB re-enumeration path. KEY_WAKE EXTI remains a future,
-  battery-dependent path and was intentionally not electrically tested. The
-  code does not claim a measured current reduction. The IWDG timeout uses the
-  internal LSI's nominal frequency and is a reset-safety value, not a precision
-  timebase.
-- `POWER_EN` polarity and the external WDI/WDOG_EN circuit remain unverified;
-  M11's software-off path therefore leaves the power latch asserted.
-- KT6368 SPP firmware behavior and enable polarity require a board test; no
-  undocumented AT command is assumed.
-- There is no battery measurement baseline, so power acceptance is behavioral
-  rather than a fabricated current target.
-- The reset capsule survives software reset but not a complete power loss; a
-  power-cycle fault-recovery claim is deferred until backup storage exists.
-- M7 regeneration requires a local LVGL Pro Editor project and a documented
-  export procedure; CI only builds the committed generated C and does not need
-  a Pro token.
+- The EEPROM model, address, and electrical behavior must be confirmed from the
+  actual board. Legacy 24LC32 code is not evidence.
+- M8 lacks the full page set, popup lifecycle, and pressure/leak acceptance.
+- M9's runtime health checks do not yet constitute the planned RTC/time service;
+  application code still has direct tick-time dependencies and `defaultTask`
+  ownership needs correction.
+- M10 has only LSM6DS3. Its wiring/address are from the V2.1 reference project;
+  interrupt paths are not validated, and a missing sensor remains a diagnostic
+  degraded state rather than a passing sensor acceptance.
+- The no-battery board proves RTC Stop/wake behavior only. KEY_WAKE, physical
+  power-latch polarity, the external WDI/WDOG_EN circuit, and measured current
+  reduction remain unverified.
+- The reset capsule does not survive a complete power loss; backup metadata is
+  deferred to the storage/OTA rounds.
+- CI currently builds F411, formatting, and Cppcheck, but does not run host CTest
+  or simulator tests and its changed-path coverage needs review. This is the
+  immediate process blocker for trustworthy future gates.
 
 ## Latest verification
 
-For M6, the following passed from the F411 project directory and repository
-root:
+The last merged functional evidence is recorded at `afd7d0f`:
 
-```text
-cmake --preset Debug
-cmake --build --preset Debug
-cmake --build --preset Debug --target format-check
-cmake --build --preset Debug --target cppcheck
-cmake --preset Diagnostic
-cmake --build --preset Diagnostic
-cmake -S tests -B build/host-tests-m6 -G Ninja
-cmake --build build/host-tests-m6
-ctest --test-dir build/host-tests-m6 --output-on-failure
-```
+- M11 host tests passed the power-state transition and health-gated watchdog
+  checks together with the existing core, runtime, and LSM6DS3 suites.
+- The Debug F411 build, format-check, and Cppcheck passed; the linked Debug App
+  was reported as Flash `254,304 B` and RAM `83,096 B`.
+- Board acceptance used OpenOCD on the current no-battery board. USB CDC showed
+  `power`, `display-off`, `sleep`, and `shutdown`; RTC Stop/wake returned after
+  roughly three seconds, USB re-enumerated, and the UI remained usable. Software
+  off blanked the display and required reset for recovery. KEY_WAKE was not
+  electrically tested.
+- Earlier M7-M10 host and board evidence remains valid where listed in Git
+  history, but it does not promote the partial milestones above to complete.
 
-M5b and M6 board acceptance are complete. M6 software validation passed `git diff
---check`, format-check, Cppcheck, the Debug/Diagnostic link-time budget checks,
-the Debug/Diagnostic builds, and the host `watch_core_input` CTest. The linked
-Debug App is Flash `234,772 B` and RAM `82,720 B`; Diagnostic is Flash `243,716 B`
-and RAM `82,720 B`. The focused M6 board check is to flash the Debug image with
-OpenOCD, confirm the 240x280 representative page is rendered without color-bar
-fallback, then use encoder select/up/down to move between `WATCHFACE`,
-`LAUNCHER`, `STATUS`, and `SETTINGS`. The USB stream should continue to show
-the existing `input event=...` lines without unexpected `drop` or `i2c_err`
-increments. The board result confirmed the representative page, encoder and
-screen-click navigation, and left-edge `BACK`; it demonstrates the SPI1 DMA
-flush and the single UI task, but does not accept any XML or simulator behavior.
-
-For M7, the following host validation also passed from the repository root:
-
-```text
-cmake -S products/f411_watch/simulator -B build/host-m7 -G Ninja
-cmake --build build/host-m7
-ctest --test-dir build/host-m7 --output-on-failure
-build/host-m7/watch_ui_simulator.exe --smoke
-```
-
-The M7 smoke output was `watch_ui_smoke: PASS display=240x280 ui=MAGIC WATCH
-core=LAUNCHER`. This is a host/UI acceptance only; no new board flashing or
-manual M7 hardware demonstration is required. The follow-up preview check also
-validated the Editor-compatible `<style name="..." />` view syntax, the XML
-documents parse successfully, and the Windows native path waits for its delayed
-framebuffer allocation before forcing the first visible frame.
-
-For the current M8 Editor export integration, the following passed from the
-repository root:
-
-```text
-cmake -S products/f411_watch/simulator -B build/host-m8-editor -G Ninja
-cmake --build build/host-m8-editor
-ctest --test-dir build/host-m8-editor --output-on-failure
-build/host-m8-editor/watch_ui_simulator.exe --smoke
-cmake -S tests -B build/host-tests-m8-editor -G Ninja
-cmake --build build/host-tests-m8-editor
-ctest --test-dir build/host-tests-m8-editor --output-on-failure
-```
-
-The lifecycle smoke output was `watch_ui_smoke: PASS display=240x280 pages=5
-creates=5 destroys=4 active=WATCHFACE`. The four screen XML files, globals,
-translations, and project metadata parse as XML. The F411 Debug checks also
-passed:
-
-```text
-cmake --preset Debug
-cmake --build --preset Debug
-cmake --build --preset Debug --target format-check
-cmake --build --preset Debug --target cppcheck
-```
-
-The linked Debug App is Flash `242,356 B` and RAM `82,808 B`, under the 400 KiB
-App and 128 KiB RAM limits. The Editor preview runtime remains local and is
-ignored as `preview-bin`; only the exported C/H and build lists are candidates
-for Git. M8 board acceptance passed: the Debug image showed `MAGIC WATCH` and
-the four page labels on the 240x280 display, select/down reached `LAUNCHER`,
-`STATUS`, and `SETTINGS`, and the existing left-edge `BACK` gesture returned to
-the previous page. The USB log had the expected normalized events without
-unexpected `drop` or `i2c_err` increments.
-
-For M9, the following validation passed from the repository root and F411
-project directory:
-
-```text
-cmake --preset Debug
-cmake --build --preset Debug
-cmake --build --preset Debug --target format-check
-cmake --build --preset Debug --target cppcheck
-cmake -S tests -B build/host-tests-m9 -G Ninja
-cmake --build build/host-tests-m9
-ctest --test-dir build/host-tests-m9 --output-on-failure
-cmake -S products/f411_watch/simulator -B build/host-m9 -G Ninja
-cmake --build build/host-m9
-ctest --test-dir build/host-m9 --output-on-failure
-```
-
-The host runtime suite passed the wrap-safe time, initialization order, bounded
-queue, FIFO, and heartbeat timeout checks. The existing core/input suite and
-the LVGL page lifecycle smoke also passed. The linked Debug App is Flash
-`244,384 B` and RAM `82,968 B`, under the 400 KiB and 128 KiB limits.
-
-M9 USB CDC health acceptance passed: `health\r\n` reported `stage=3`, `app=ok`,
-`ui=ok`, `usb=ok`, and `queue=0`; `help\r\n` listed `health`. The corrected
-Debug App was then flashed with OpenOCD and verified on the board; the 240x280
-pages showed the XML dark background (`0x101820`) with the expected text
-colors. No new sensor, RTC, watchdog, or power behavior is part of this
-demonstration.
-
-For M10, the following host and F411 checks passed on the LSM6DS3 branch:
-
-```text
-cmake -S tests -B build/host-tests-m10 -G Ninja
-cmake --build build/host-tests-m10
-ctest --test-dir build/host-tests-m10 --output-on-failure
-cmake --preset Debug
-cmake --build --preset Debug
-cmake --build --preset Debug --target format-check
-cmake --build --preset Debug --target cppcheck
-```
-
-The new host suite passed the LSM6DS3 WHO_AM_I/configuration, raw sample
-decoding, periodic service, and bounded event-drop checks. The linked Debug App
-is Flash `250,220 B` and RAM `83,048 B`, under the 400 KiB and 128 KiB limits.
-The signed Debug App was flashed with OpenOCD and the board USB CDC acceptance
-passed: `health\r\n` reported the sensor service, and `sensor\r\n` reported
-`lsm6ds3=1`, `id=0x6a`, a nonzero sample count, and zero read/event drops. The
-existing UI remained usable; no interrupt-path or sensor-widget behavior is
-claimed. A missing device still reports `lsm6ds3=0` without preventing the UI
-from starting, but that is a diagnostic result rather than a passing sensor
-acceptance.
-
-For M11, the following host and F411 checks passed on the power branch:
-
-```text
-cmake -S tests -B build/host-tests-m11 -G Ninja
-cmake --build build/host-tests-m11
-ctest --test-dir build/host-tests-m11 --output-on-failure
-cmake --preset Debug
-cmake --build --preset Debug
-cmake --build --preset Debug --target format-check
-cmake --build --preset Debug --target cppcheck
-```
-
-The host suite passed the power-state transition and health-gated watchdog
-tests (`watch_power`), together with the existing core, runtime, and LSM6DS3
-tests. The linked Debug App is Flash `254,304 B` and RAM `83,096 B`, under the
-400 KiB and 128 KiB limits.
-
-M11 board acceptance passed on the current no-battery board. The signed Debug
-App was flashed with OpenOCD; USB CDC listed `power`, `display-off`, `sleep`,
-and `shutdown`, and the `power` response showed an active state with the IWDG
-enabled and no blocked or failed refreshes. `display-off` turned the backlight
-off. `sleep` entered Stop and the board returned through RTC after roughly
-three seconds; after USB re-enumeration the active state reported the RTC wake
-source and one Stop/wake pair, and the existing UI remained usable. The
-software-off command entered `state=off` with the backlight off and the board
-was recovered by reset. KEY_WAKE was intentionally not used because this board
-has no battery. This acceptance is behavioral only and does not prove physical
-power cutoff or a measured current reduction.
+This documentation branch itself must pass `git diff --check`, the targeted
+UTF-8/garbled-text check, and the repository `CI / CI Gate`. No F411 build is
+required for this documentation-only correction.
