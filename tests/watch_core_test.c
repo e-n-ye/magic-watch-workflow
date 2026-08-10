@@ -1,6 +1,7 @@
 #include "watch_core.h"
 
 #include <assert.h>
+#include <stddef.h>
 
 #include "watch_input.h"
 
