@@ -96,7 +96,13 @@ Set `IDF_TOOLS_PATH` when ESP-IDF is not installed in the default local location
 
 ## CI
 
-The initial GitHub Actions workflow protects only the F411 project. Pull requests, pushes to `main`, and manual runs classify changed paths first. F411 firmware, its Dockerfile, the formatting policy, or the workflow runs a pinned-image format-check, Debug build, and Cppcheck target; documentation-only changes skip the board job but still finish with `CI / CI Gate`.
+The GitHub Actions workflow classifies changed paths before running checks.
+F411 firmware, its Dockerfile, the formatting policy, or the workflow runs a
+pinned-image format-check, Debug build, and Cppcheck target. Changes under
+`products/f411_watch/` or `tests/` run the host CTest suite and the 240x280 UI
+simulator smoke test; a workflow change runs all three check groups.
+Documentation-only changes can skip those jobs, but every pull request still
+finishes with `CI / CI Gate`.
 
 The repository variable `F411_CI_IMAGE` must contain the Docker Hub image reference with its immutable digest, for example `docker.io/enen001/magic-watch-f411-ci@sha256:<digest>`. The workflow intentionally rejects `latest` and tag-only references.
 

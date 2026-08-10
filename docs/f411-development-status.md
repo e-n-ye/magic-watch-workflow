@@ -34,9 +34,10 @@ UI/resources, power, then secure OTA. No empty placeholder modules are added.
 
 ## Baseline
 
-- Reconfirmed baseline: `afd7d0f` (`origin/main` and local `main` agree).
-- PRs #5 through #27 are merged with Rebase and merge, and the latest CI Gate
-  passed. The worktree was clean before this documentation correction.
+- Reconfirmed baseline: `a97a13e` (`origin/main` and local `main` agree before
+  this CI round). The last functional firmware evidence remains `afd7d0f`.
+- PRs #5 through #28 are merged with Rebase and merge, and each required CI Gate
+  passed. The worktree was clean before this CI change.
 - The original pre-relocation Debug App reference was Flash `64,340 B` and RAM
   `30,208 B`. Later rounds increased the image while remaining below the current
   400 KiB App and 128 KiB RAM limits.
@@ -79,21 +80,20 @@ numbered plan. W25Q128 storage through final OTA acceptance has not started.
 | M19 | Trial confirmation and rollback | Not started. |
 | M20 | Final configurations, simulator, fault injection, budgets, regression report | Not started. |
 
-## Current round: plan and status calibration
+## Current round: host CI gate and path classification
 
-This documentation round corrects the numbered plan and the rolling evidence
-after the M11 power acceptance. It does not add firmware, CI, storage, sensor,
-or OTA behavior. The branch is based on `afd7d0f`; the allowed files are this
-page, `f411-development-plan.md`, and the README entry.
+This round closes the process gap identified by the review. The change-path job
+now emits separate F411, host, and manifest signals. Changes under
+`products/f411_watch/**` run the F411 and host gates; changes under `tests/**`
+run the host gate; and a workflow change runs all three. The host job builds and
+runs all host CTest cases plus the 240x280 simulator smoke test. No firmware,
+storage, sensor, or OTA behavior is added.
 
 ## Next round
 
-First make host CTest and the 240x280 simulator part of the CI gate, and fix the
-path classification so changes under `products/f411_watch/**` and `tests/**`
-cannot receive a false documentation-only result. Then resume the numbered gaps
-with a focused M8/M9/M10 closure decision, starting from the new `origin/main`.
-Do not begin W25Q128 or OTA modules until those contracts and their test gates
-are visible in CI.
+Rebase from the latest `origin/main` after this CI round and resume the numbered
+gaps with a focused M8/M9/M10 closure decision. Do not begin W25Q128 or OTA
+modules until those contracts and their test gates are visible in CI.
 
 ## Risks and blockers
 
@@ -117,9 +117,9 @@ are visible in CI.
   reduction remain unverified.
 - The reset capsule does not survive a complete power loss; backup metadata is
   deferred to the storage/OTA rounds.
-- CI currently builds F411, formatting, and Cppcheck, but does not run host CTest
-  or simulator tests and its changed-path coverage needs review. This is the
-  immediate process blocker for trustworthy future gates.
+- CI now runs host CTest and the 240x280 simulator for product/test changes. Any
+  future source tree or test-root addition must update the path classifier and
+  preserve the explicit host result check in `CI / CI Gate`.
 
 ## Latest verification
 
@@ -134,9 +134,12 @@ The last merged functional evidence is recorded at `afd7d0f`:
   roughly three seconds, USB re-enumerated, and the UI remained usable. Software
   off blanked the display and required reset for recovery. KEY_WAKE was not
   electrically tested.
+- This CI round passed locally with four host CTest cases and one simulator
+  smoke test. The required F411 Debug configure/build, format-check, and
+  Cppcheck also passed; no board flashing was needed for a CI-only change.
 - Earlier M7-M10 host and board evidence remains valid where listed in Git
   history, but it does not promote the partial milestones above to complete.
 
-This documentation branch itself must pass `git diff --check`, the targeted
-UTF-8/garbled-text check, and the repository `CI / CI Gate`. No F411 build is
-required for this documentation-only correction.
+This CI branch must pass `git diff --check`, the targeted UTF-8/garbled-text
+check, the F411 validation commands, both host CTest suites, and the repository
+`CI / CI Gate`.
