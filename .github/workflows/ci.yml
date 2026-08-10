@@ -18,6 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       f411: ${{ steps.paths.outputs.f411 }}
+      host: ${{ steps.paths.outputs.host }}
       manifest: ${{ steps.paths.outputs.manifest }}
     steps:
       - name: Check out repository
@@ -48,11 +49,28 @@ jobs:
           fi
 
           f411=false
+          host=false
           manifest=false
           while IFS= read -r path; do
             case "${path}" in
-              firmware/stm32/f411_watch/*|tools/docker/f411-ci/*|.github/workflows/ci.yml|.clang-format|docs/coding-guidelines.md)
+              "<manual>"|"<initial-push>"|.github/workflows/ci.yml)
                 f411=true
+                host=true
+                manifest=true
+                ;;
+              firmware/stm32/f411_watch/third_party/lvgl/*)
+                f411=true
+                host=true
+                ;;
+              firmware/stm32/f411_watch/*|tools/docker/f411-ci/*|.clang-format|docs/coding-guidelines.md)
+                f411=true
+                ;;
+              products/f411_watch/*)
+                f411=true
+                host=true
+                ;;
+              tests/*)
+                host=true
                 ;;
               tools/manifest/*)
                 manifest=true
@@ -61,6 +79,7 @@ jobs:
           done <<< "${changed_paths}"
 
           printf 'f411=%s\n' "${f411}" >> "${GITHUB_OUTPUT}"
+          printf 'host=%s\n' "${host}" >> "${GITHUB_OUTPUT}"
           printf 'manifest=%s\n' "${manifest}" >> "${GITHUB_OUTPUT}"
 
   f411_config:
@@ -136,6 +155,39 @@ jobs:
       - name: Run signed manifest tests
         run: python3 tools/manifest/test_manifest.py
 
+  host:
+    name: Host CTest and UI Simulator
+    needs: changes
+    if: needs.changes.outputs.host == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Verify host tools
+        run: |
+          cmake --version
+          ninja --version
+          cc --version | head -n 1
+
+      - name: Configure host core tests
+        run: cmake -S tests -B build/host-tests-ci -G Ninja
+
+      - name: Build host core tests
+        run: cmake --build build/host-tests-ci
+
+      - name: Run host core tests
+        run: ctest --test-dir build/host-tests-ci --output-on-failure
+
+      - name: Configure 240x280 UI simulator
+        run: cmake -S products/f411_watch/simulator -B build/host-m7-ci -G Ninja
+
+      - name: Build 240x280 UI simulator
+        run: cmake --build build/host-m7-ci
+
+      - name: Run UI simulator smoke test
+        run: ctest --test-dir build/host-m7-ci --output-on-failure
+
   ci-gate:
     name: CI Gate
     if: always()
@@ -144,6 +196,7 @@ jobs:
       - f411_config
       - f411
       - manifest_host
+      - host
     runs-on: ubuntu-latest
     steps:
       - name: Evaluate required checks
@@ -152,6 +205,8 @@ jobs:
           F411_CHANGED: ${{ needs.changes.outputs.f411 }}
           F411_CONFIG_RESULT: ${{ needs.f411_config.result }}
           F411_RESULT: ${{ needs.f411.result }}
+          HOST_CHANGED: ${{ needs.changes.outputs.host }}
+          HOST_RESULT: ${{ needs.host.result }}
           MANIFEST_CHANGED: ${{ needs.changes.outputs.manifest }}
           MANIFEST_RESULT: ${{ needs.manifest_host.result }}
         shell: bash
@@ -162,6 +217,10 @@ jobs:
           if [[ "${F411_CHANGED}" == "true" ]]; then
             test "${F411_CONFIG_RESULT}" = success
             test "${F411_RESULT}" = success
+          fi
+
+          if [[ "${HOST_CHANGED}" == "true" ]]; then
+            test "${HOST_RESULT}" = success
           fi
 
           if [[ "${MANIFEST_CHANGED}" == "true" ]]; then
