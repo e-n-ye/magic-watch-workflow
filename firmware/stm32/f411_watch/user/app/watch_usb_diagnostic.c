@@ -42,6 +42,25 @@ static void send_text(const char *text)
     watch_usb_cdc_write((const uint8_t *)text, strlen(text));
 }
 
+static void send_info(void)
+{
+    char response[128];
+    watch_snapshot_t snapshot;
+    int length;
+
+    if (!watch_app_read_snapshot(&snapshot)) {
+        send_text("watch=f411 usb=cdc protocol=1 display=240x280 page=unavailable\r\n");
+        return;
+    }
+
+    length = snprintf(response, sizeof(response),
+                      "watch=f411 usb=cdc protocol=1 display=240x280 page=%u depth=%u\r\n",
+                      (unsigned int)snapshot.page, (unsigned int)snapshot.page_depth);
+    if ((length > 0) && ((size_t)length < sizeof(response))) {
+        watch_usb_cdc_write((const uint8_t *)response, (size_t)length);
+    }
+}
+
 static void send_diag(void)
 {
     char response[192];
@@ -222,7 +241,7 @@ static void handle_command(watch_usb_command_t command)
         send_text("pong\r\n");
         break;
     case WATCH_USB_COMMAND_INFO:
-        send_text("watch=f411 usb=cdc protocol=1 display=240x280\r\n");
+        send_info();
         break;
     case WATCH_USB_COMMAND_DIAG:
         send_diag();

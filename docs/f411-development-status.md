@@ -34,10 +34,11 @@ UI/resources, power, then secure OTA. No empty placeholder modules are added.
 
 ## Baseline
 
-- Reconfirmed baseline: `dbf9c0f` (`origin/main` and local `main` agree before
-  this page-coverage round). The last board functional evidence remains `afd7d0f`.
+- M8c starts from merged M8b commit `f386227` on `origin/main`; the last merged
+  board functional evidence is recorded below and the worktree was clean before
+  this round.
 - The prior process PRs are merged with Rebase and merge, and each required CI
-  Gate passed. The worktree was clean before this page-coverage round.
+  Gate passed.
 - The original pre-relocation Debug App reference was Flash `64,340 B` and RAM
   `30,208 B`. Later rounds increased the image while remaining below the current
   400 KiB App and 128 KiB RAM limits.
@@ -66,7 +67,7 @@ numbered plan. W25Q128 storage through final OTA acceptance has not started.
 | M5 | CST816, encoder, button, normalized input | Complete; click, swipe-back, debounce, and board input acceptance passed. |
 | M6 | LVGL 9.5, DMA flush, UI task, 240x280 budget | Complete; Debug/Diagnostic budgets and focused board page acceptance passed. |
 | M7 | Editor XML, generated C, PC simulator | Complete for the approved manual Editor export workflow; host simulator smoke passed. F411 does not parse XML at runtime. |
-| M8 | Six page categories, lifecycle, interaction, leak pressure | Partial; all six page objects, resource navigation, hidden-diagnostic preset rendering, popup replacement/cleanup, and a 32-cycle simulator pressure smoke now pass. Runtime diagnostic entry and board interaction remain unverified. |
+| M8 | Six page categories, lifecycle, interaction, leak pressure | Partial; all six page objects, resource navigation, hidden-diagnostic preset rendering, popup replacement/cleanup, a 32-cycle simulator pressure smoke, and Diagnostic runtime entry now pass. Physical page interaction remains unverified. |
 | M9 | RTC/time service, queues, heartbeats, init policy | Partial; runtime health and bounded queues exist, but there is no complete RTC/time service contract and `defaultTask` still remains a permanent loop. |
 | M10 | Five sensor drivers and aggregation | Partial; only LSM6DS3 has a driver/service path. LIS2MDL, AHT20, MAX30102, CW2015, and aggregation remain. |
 | M11 | EEPROM part/address facts | Not started; the part and address are unconfirmed. Do not migrate the old 24LC32 driver. |
@@ -80,22 +81,22 @@ numbered plan. W25Q128 storage through final OTA acceptance has not started.
 | M19 | Trial confirmation and rollback | Not started. |
 | M20 | Final configurations, simulator, fault injection, budgets, regression report | Not started. |
 
-## Current round: M8b page and popup coverage
+## Current round: M8c diagnostic runtime entry
 
-This round adds the RESOURCES launcher item and the hidden DIAGNOSTICS page in
-the Editor XML and committed generated C, and registers both pages in the
-F411-specific source list. The lifecycle adapter now owns one popup at a time,
-including replacement, page-transition cleanup, explicit close, and counters.
-The 240x280 simulator covers all six page objects, repeats the three-item
-launcher flow for 32 cycles, and consumes each core command as the UI task
-would. No storage, sensor, or OTA behavior is added.
+This round keeps the M8b page and popup implementation and wires the hidden
+Diagnostic preset into the real core/UI path. A Diagnostic build starts with
+the `DIAGNOSTICS` page at stack depth one so `BACK` returns to the watch face;
+the normal Debug build still starts at `WATCHFACE`. Host CTest covers both
+initial states, and the CDC `info` response exposes the live page and depth for
+board acceptance. No storage, sensor, or OTA behavior is added.
 
 ## Next round
 
-Close the remaining M8 evidence by wiring the hidden diagnostic preset into the
-runtime path and performing the corresponding board interaction check. Then
-start the separate M9 runtime contract round. Do not begin W25Q128 or OTA
-modules until the M8-M10 contracts and their test gates are visible in CI.
+Close the remaining M8 evidence by physically exercising the CST816, encoder,
+or button to leave the Diagnostic page and return to the watch face, then run
+the corresponding Debug page interaction check. Only after that acceptance
+should the separate M9 runtime contract round start. Do not begin W25Q128 or
+OTA modules until the M8-M10 contracts and their test gates are visible in CI.
 
 ## Risks and blockers
 
@@ -107,9 +108,9 @@ modules until the M8-M10 contracts and their test gates are visible in CI.
   confirmed metadata until the later OTA rounds.
 - The EEPROM model, address, and electrical behavior must be confirmed from the
   actual board. Legacy 24LC32 code is not evidence.
-- M8 page objects and simulator pressure now pass, but the hidden diagnostic
-  page is only reached by a simulator preset snapshot and has no board evidence
-  in this round.
+- M8 page objects and simulator pressure pass, and the Diagnostic build reaches
+  `DIAGNOSTICS` on the board, but physical page transitions and popup interaction
+  still need board evidence.
 - M9's runtime health checks do not yet constitute the planned RTC/time service;
   application code still has direct tick-time dependencies and `defaultTask`
   ownership needs correction.
@@ -127,9 +128,8 @@ modules until the M8-M10 contracts and their test gates are visible in CI.
 
 ## Latest verification
 
-The latest merged change is `dbf9c0f`; the last merged board functional
-evidence remains recorded at `afd7d0f`. The current unmerged M8b branch now
-has the following additional board evidence:
+The latest merged change is `f386227`; the current unmerged M8c branch has the
+following verification:
 
 - M11 host tests passed the power-state transition and health-gated watchdog
   checks together with the existing core, runtime, and LSM6DS3 suites.
@@ -147,7 +147,7 @@ has the following additional board evidence:
 - The required F411 Debug build, format-check, and Cppcheck passed. The linked
   Debug App was reported as Flash `255,308 B` and RAM `83,144 B`, below the
   current budgets.
-- The current M8b Debug App was packaged with the external signing key, verified
+- The M8b Debug App was packaged with the external signing key, verified
   against the Bootloader public key (`version=1`, `counter=1`, image length
   `255,348 B`), and written to App slot `0x08010000` with OpenOCD. ST-Link V2
   examination succeeded at approximately `3.297 V`; OpenOCD wrote and verified
@@ -157,11 +157,23 @@ has the following additional board evidence:
   LSM6DS3 reported ID `0x6A`, valid samples, zero read errors and zero drops;
   power reported active state with the watchdog enabled and no blocked or failed
   refreshes. `diag` returned no stored fault capsule.
-- This session did not physically actuate the CST816, encoder, or button to
-  drive page transitions, and no board-side path reaches the hidden diagnostic
-  preset yet. M8b therefore has real boot/runtime evidence but still does not
-  claim board page or popup interaction acceptance. The previous no-battery
-  power evidence remains the M12 acceptance listed above.
+- M8c Host CTest passed all five tests, including the Diagnostic core preset;
+  the 240x280 simulator smoke remains green. Debug linked at Flash `255,500 B`
+  and RAM `83,144 B`; Diagnostic linked at Flash `264,900 B` and RAM `83,144 B`,
+  both below the current budgets.
+- The Diagnostic App package was signed with the external key and verified with
+  a public key derived from that key; its 64-byte P-256 point matches the
+  Bootloader's embedded public key (`version=1`, `counter=1`, image length
+  `264,940 B`). The complete `458,752 B` package was written to App slot
+  `0x08010000` and verified by OpenOCD at approximately `3.297 V`.
+- After reset, USB CDC `info` reported `page=5 depth=1`, which is the
+  `DIAGNOSTICS` page at its one-level return stack. Health reported init stage 3
+  with App, UI, USB, and sensor services healthy; power was active with the
+  watchdog enabled and no blocked or failed refreshes; `diag` returned none.
+- This session still did not physically actuate the CST816, encoder, or button
+  to leave the Diagnostic page, so M8 remains Partial and does not claim full
+  board page or popup interaction acceptance. The previous no-battery power
+  evidence remains the M12 acceptance listed above.
 - Earlier M7-M10 host and board evidence remains valid where listed in Git
   history, but it does not promote the partial milestones above to complete.
 
