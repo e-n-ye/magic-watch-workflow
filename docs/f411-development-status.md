@@ -34,10 +34,10 @@ UI/resources, power, then secure OTA. No empty placeholder modules are added.
 
 ## Baseline
 
-- Reconfirmed baseline: `ce3162c` (`origin/main` and local `main` agree before
-  this lifecycle round). The last functional firmware evidence remains `afd7d0f`.
-- PRs #5 through #28 are merged with Rebase and merge, and each required CI Gate
-  passed. The worktree was clean before this CI change.
+- Reconfirmed baseline: `dbf9c0f` (`origin/main` and local `main` agree before
+  this page-coverage round). The last board functional evidence remains `afd7d0f`.
+- The prior process PRs are merged with Rebase and merge, and each required CI
+  Gate passed. The worktree was clean before this page-coverage round.
 - The original pre-relocation Debug App reference was Flash `64,340 B` and RAM
   `30,208 B`. Later rounds increased the image while remaining below the current
   400 KiB App and 128 KiB RAM limits.
@@ -66,7 +66,7 @@ numbered plan. W25Q128 storage through final OTA acceptance has not started.
 | M5 | CST816, encoder, button, normalized input | Complete; click, swipe-back, debounce, and board input acceptance passed. |
 | M6 | LVGL 9.5, DMA flush, UI task, 240x280 budget | Complete; Debug/Diagnostic budgets and focused board page acceptance passed. |
 | M7 | Editor XML, generated C, PC simulator | Complete for the approved manual Editor export workflow; host simulator smoke passed. F411 does not parse XML at runtime. |
-| M8 | Six page categories, lifecycle, interaction, leak pressure | Partial; four-page navigation and a 32-cycle lifecycle pressure smoke now pass, but resource viewer, hidden diagnostics, popup coverage, and the complete six-category page set remain. |
+| M8 | Six page categories, lifecycle, interaction, leak pressure | Partial; all six page objects, resource navigation, hidden-diagnostic preset rendering, popup replacement/cleanup, and a 32-cycle simulator pressure smoke now pass. Runtime diagnostic entry and board interaction remain unverified. |
 | M9 | RTC/time service, queues, heartbeats, init policy | Partial; runtime health and bounded queues exist, but there is no complete RTC/time service contract and `defaultTask` still remains a permanent loop. |
 | M10 | Five sensor drivers and aggregation | Partial; only LSM6DS3 has a driver/service path. LIS2MDL, AHT20, MAX30102, CW2015, and aggregation remain. |
 | M11 | EEPROM part/address facts | Not started; the part and address are unconfirmed. Do not migrate the old 24LC32 driver. |
@@ -80,22 +80,22 @@ numbered plan. W25Q128 storage through final OTA acceptance has not started.
 | M19 | Trial confirmation and rollback | Not started. |
 | M20 | Final configurations, simulator, fault injection, budgets, regression report | Not started. |
 
-## Current round: M8a lifecycle pressure
+## Current round: M8b page and popup coverage
 
-This round extends the 240x280 simulator smoke path across the currently
-implemented WATCHFACE, LAUNCHER, STATUS, and SETTINGS pages. It repeats entry
-and exit through the page stack 32 times and checks exact page creation and
-destruction counts (199 created, 198 destroyed before final deinit). The
-simulator consumes each core command as the UI task would; no firmware,
-storage, sensor, or OTA behavior is added.
+This round adds the RESOURCES launcher item and the hidden DIAGNOSTICS page in
+the Editor XML and committed generated C, and registers both pages in the
+F411-specific source list. The lifecycle adapter now owns one popup at a time,
+including replacement, page-transition cleanup, explicit close, and counters.
+The 240x280 simulator covers all six page objects, repeats the three-item
+launcher flow for 32 cycles, and consumes each core command as the UI task
+would. No storage, sensor, or OTA behavior is added.
 
 ## Next round
 
-Complete M8b by adding the resource viewer, hidden diagnostics page, popup
-lifecycle, and the remaining interaction coverage. Keep the M8 page set and
-leak checks visible in the simulator before starting the separate M9 runtime
-contract round. Do not begin W25Q128 or OTA modules until the M8-M10 contracts
-and their test gates are visible in CI.
+Close the remaining M8 evidence by wiring the hidden diagnostic preset into the
+runtime path and performing the corresponding board interaction check. Then
+start the separate M9 runtime contract round. Do not begin W25Q128 or OTA
+modules until the M8-M10 contracts and their test gates are visible in CI.
 
 ## Risks and blockers
 
@@ -107,8 +107,9 @@ and their test gates are visible in CI.
   confirmed metadata until the later OTA rounds.
 - The EEPROM model, address, and electrical behavior must be confirmed from the
   actual board. Legacy 24LC32 code is not evidence.
-- M8 still lacks the full page set, popup lifecycle, and interaction coverage;
-  the current four-page pressure/leak smoke is now recorded above.
+- M8 page objects and simulator pressure now pass, but the hidden diagnostic
+  page is only reached by a simulator preset snapshot and has no board evidence
+  in this round.
 - M9's runtime health checks do not yet constitute the planned RTC/time service;
   application code still has direct tick-time dependencies and `defaultTask`
   ownership needs correction.
@@ -126,7 +127,9 @@ and their test gates are visible in CI.
 
 ## Latest verification
 
-The last merged functional evidence is recorded at `afd7d0f`:
+The latest merged change is `dbf9c0f`; the last merged board functional
+evidence remains recorded at `afd7d0f`. The current unmerged M8b branch now
+has the following additional board evidence:
 
 - M11 host tests passed the power-state transition and health-gated watchdog
   checks together with the existing core, runtime, and LSM6DS3 suites.
@@ -137,13 +140,28 @@ The last merged functional evidence is recorded at `afd7d0f`:
   roughly three seconds, USB re-enumerated, and the UI remained usable. Software
   off blanked the display and required reset for recovery. KEY_WAKE was not
   electrically tested.
-- The M8a simulator pressure smoke passed locally: `display=240x280`,
-  `pages=4`, `lifecycle_cycles=32`, `creates=199`, `destroys=198`, and
-  `active=WATCHFACE`. The final deinit check also returned creation and
-  destruction counts to equality.
-- The preceding CI round passed locally with four host CTest cases and one
-  simulator smoke test. The required F411 Debug configure/build, format-check,
-  and Cppcheck also passed; no board flashing was needed for a CI-only change.
+- M8b host CTest passed all four tests. The 240x280 simulator smoke passed with
+  `pages=6`, `lifecycle_cycles=32`, `creates=267`, `destroys=266`,
+  `popups=3/3`, and `active=WATCHFACE`; final deinit returned page counts to
+  equality.
+- The required F411 Debug build, format-check, and Cppcheck passed. The linked
+  Debug App was reported as Flash `255,308 B` and RAM `83,144 B`, below the
+  current budgets.
+- The current M8b Debug App was packaged with the external signing key, verified
+  against the Bootloader public key (`version=1`, `counter=1`, image length
+  `255,348 B`), and written to App slot `0x08010000` with OpenOCD. ST-Link V2
+  examination succeeded at approximately `3.297 V`; OpenOCD wrote and verified
+  the complete `458,752 B` slot image before reset.
+- After reset, USB CDC on `COM6` returned the F411/`240x280` identity. Health
+  reported init stage 3 with App, UI, USB, and sensor services healthy; the
+  LSM6DS3 reported ID `0x6A`, valid samples, zero read errors and zero drops;
+  power reported active state with the watchdog enabled and no blocked or failed
+  refreshes. `diag` returned no stored fault capsule.
+- This session did not physically actuate the CST816, encoder, or button to
+  drive page transitions, and no board-side path reaches the hidden diagnostic
+  preset yet. M8b therefore has real boot/runtime evidence but still does not
+  claim board page or popup interaction acceptance. The previous no-battery
+  power evidence remains the M12 acceptance listed above.
 - Earlier M7-M10 host and board evidence remains valid where listed in Git
   history, but it does not promote the partial milestones above to complete.
 

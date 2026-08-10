@@ -4,6 +4,8 @@ list(
   ${CMAKE_CURRENT_LIST_DIR}/f411_watch_ui_gen.c
   ${CMAKE_CURRENT_LIST_DIR}/f411_watch_ui.c
   ${CMAKE_CURRENT_LIST_DIR}/screens/launcher/screen_launcher_gen.c
+  ${CMAKE_CURRENT_LIST_DIR}/screens/diagnostics/screen_diagnostics_gen.c
+  ${CMAKE_CURRENT_LIST_DIR}/screens/resources/screen_resources_gen.c
   ${CMAKE_CURRENT_LIST_DIR}/screens/settings/screen_settings_gen.c
   ${CMAKE_CURRENT_LIST_DIR}/screens/status/screen_status_gen.c
   ${CMAKE_CURRENT_LIST_DIR}/screens/watchface/screen_watchface_gen.c)

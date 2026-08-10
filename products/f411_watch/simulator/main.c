@@ -16,6 +16,8 @@
 #define WATCH_SIMULATOR_HEIGHT 280
 #define WATCH_SIMULATOR_BUFFER_LINES 20
 #define WATCH_SIMULATOR_LIFECYCLE_CYCLES 32U
+#define WATCH_SIMULATOR_EXPECTED_INITIAL_PAGES 9U
+#define WATCH_SIMULATOR_EXPECTED_CYCLE_PAGES 8U
 
 static uint16_t s_draw_buffer[WATCH_SIMULATOR_WIDTH * WATCH_SIMULATOR_BUFFER_LINES];
 
@@ -66,6 +68,26 @@ static bool watch_simulator_background_is_opaque(lv_obj_t *screen)
         && lv_obj_get_style_bg_opa(screen, LV_PART_MAIN) == LV_OPA_COVER;
 }
 
+static bool watch_simulator_popup_is(watch_page_lifecycle_t *lifecycle, const char *title,
+                                     const char *message)
+{
+    lv_obj_t *popup = watch_page_lifecycle_active_popup(lifecycle);
+    lv_obj_t *title_label;
+    lv_obj_t *message_label;
+
+    if (popup == NULL) {
+        return false;
+    }
+
+    title_label = lv_obj_get_child(popup, 0);
+    message_label = lv_obj_get_child(popup, 1);
+    return title_label != NULL && message_label != NULL
+        && lv_obj_check_type(title_label, &lv_label_class)
+        && lv_obj_check_type(message_label, &lv_label_class)
+        && strcmp(lv_label_get_text(title_label), title) == 0
+        && strcmp(lv_label_get_text(message_label), message) == 0;
+}
+
 static bool watch_simulator_show_page(watch_page_lifecycle_t *lifecycle,
                                       const watch_snapshot_t *snapshot, const char *page_name,
                                       const char *hint)
@@ -110,12 +132,33 @@ static bool watch_simulator_dispatch_page(watch_core_t *core,
     return watch_simulator_show_page(lifecycle, &snapshot, page_name, hint);
 }
 
+static bool watch_simulator_show_popup(watch_page_lifecycle_t *lifecycle, const char *title,
+                                       const char *message)
+{
+    bool result;
+
+    lv_lock();
+    result = watch_page_lifecycle_show_popup(lifecycle, title, message)
+        && watch_simulator_popup_is(lifecycle, title, message);
+    lv_unlock();
+    return result;
+}
+
+static void watch_simulator_close_popup(watch_page_lifecycle_t *lifecycle)
+{
+    lv_lock();
+    watch_page_lifecycle_close_popup(lifecycle);
+    lv_unlock();
+}
+
 static bool watch_simulator_check_lifecycle(lv_display_t *display,
                                             watch_page_lifecycle_t *lifecycle)
 {
     watch_core_t core;
     watch_snapshot_t snapshot;
+    watch_snapshot_t diagnostics_snapshot;
     watch_page_lifecycle_stats_t stats;
+    uint32_t expected_pages;
     uint32_t cycle;
 
     if (!watch_core_init(&core)) {
@@ -142,6 +185,12 @@ static bool watch_simulator_check_lifecycle(lv_display_t *display,
                                           "BACK: RETURN")
         || !watch_simulator_dispatch_page(&core, lifecycle, WATCH_EVENT_BACK, "LAUNCHER",
                                           "SELECT: SETTINGS")
+        || !watch_simulator_dispatch_page(&core, lifecycle, WATCH_EVENT_DOWN, "LAUNCHER",
+                                          "SELECT: RESOURCES")
+        || !watch_simulator_dispatch_page(&core, lifecycle, WATCH_EVENT_SELECT, "RESOURCES",
+                                          "BACK: RETURN")
+        || !watch_simulator_dispatch_page(&core, lifecycle, WATCH_EVENT_BACK, "LAUNCHER",
+                                          "SELECT: RESOURCES")
         || !watch_simulator_dispatch_page(&core, lifecycle, WATCH_EVENT_BACK, "WATCHFACE",
                                           "SELECT: LAUNCHER")) {
         return false;
@@ -149,7 +198,9 @@ static bool watch_simulator_check_lifecycle(lv_display_t *display,
 
     for (cycle = 0U; cycle < WATCH_SIMULATOR_LIFECYCLE_CYCLES; ++cycle) {
         if (!watch_simulator_dispatch_page(&core, lifecycle, WATCH_EVENT_SELECT, "LAUNCHER",
-                                           "SELECT: SETTINGS")
+                                           "SELECT: RESOURCES")
+            || !watch_simulator_dispatch_page(&core, lifecycle, WATCH_EVENT_UP, "LAUNCHER",
+                                              "SELECT: SETTINGS")
             || !watch_simulator_dispatch_page(&core, lifecycle, WATCH_EVENT_UP, "LAUNCHER",
                                               "SELECT: STATUS")
             || !watch_simulator_dispatch_page(&core, lifecycle, WATCH_EVENT_SELECT, "STATUS",
@@ -162,15 +213,47 @@ static bool watch_simulator_check_lifecycle(lv_display_t *display,
                                               "BACK: RETURN")
             || !watch_simulator_dispatch_page(&core, lifecycle, WATCH_EVENT_BACK, "LAUNCHER",
                                               "SELECT: SETTINGS")
+            || !watch_simulator_dispatch_page(&core, lifecycle, WATCH_EVENT_DOWN, "LAUNCHER",
+                                              "SELECT: RESOURCES")
+            || !watch_simulator_dispatch_page(&core, lifecycle, WATCH_EVENT_SELECT, "RESOURCES",
+                                              "BACK: RETURN")
+            || !watch_simulator_dispatch_page(&core, lifecycle, WATCH_EVENT_BACK, "LAUNCHER",
+                                              "SELECT: RESOURCES")
             || !watch_simulator_dispatch_page(&core, lifecycle, WATCH_EVENT_BACK, "WATCHFACE",
                                               "SELECT: LAUNCHER")) {
             return false;
         }
     }
 
+    if (!watch_core_read_snapshot(&core, &snapshot)) {
+        return false;
+    }
+
+    if (!watch_simulator_show_popup(lifecycle, "CORE", "READY")
+        || !watch_simulator_show_popup(lifecycle, "CORE", "UPDATED")) {
+        return false;
+    }
+
+    diagnostics_snapshot = snapshot;
+    diagnostics_snapshot.page = WATCH_PAGE_DIAGNOSTICS;
+    if (!watch_simulator_show_page(lifecycle, &diagnostics_snapshot, "DIAGNOSTICS",
+                                   "BACK: RETURN")
+        || watch_page_lifecycle_active_popup(lifecycle) != NULL
+        || !watch_simulator_show_popup(lifecycle, "DIAG", "VISIBLE")) {
+        return false;
+    }
+
+    watch_simulator_close_popup(lifecycle);
+    if (watch_page_lifecycle_active_popup(lifecycle) != NULL
+        || !watch_simulator_show_page(lifecycle, &snapshot, "WATCHFACE", "SELECT: LAUNCHER")) {
+        return false;
+    }
+
     watch_page_lifecycle_read_stats(lifecycle, &stats);
-    return stats.created_count == (7U + (WATCH_SIMULATOR_LIFECYCLE_CYCLES * 6U))
-        && stats.destroyed_count == (stats.created_count - 1U);
+    expected_pages = WATCH_SIMULATOR_EXPECTED_INITIAL_PAGES
+        + (WATCH_SIMULATOR_LIFECYCLE_CYCLES * WATCH_SIMULATOR_EXPECTED_CYCLE_PAGES) + 2U;
+    return stats.created_count == expected_pages && stats.destroyed_count == (stats.created_count - 1U)
+        && stats.popup_created_count == 3U && stats.popup_destroyed_count == 3U;
 }
 
 int main(int argc, char **argv)
@@ -214,10 +297,11 @@ int main(int argc, char **argv)
 
     watch_page_lifecycle_read_stats(&lifecycle, &stats);
     printf(
-        "watch_ui_smoke: PASS display=240x280 pages=4 lifecycle_cycles=%u creates=%lu "
-        "destroys=%lu active=WATCHFACE\n",
+        "watch_ui_smoke: PASS display=240x280 pages=6 lifecycle_cycles=%u creates=%lu "
+        "destroys=%lu popups=%lu/%lu active=WATCHFACE\n",
         WATCH_SIMULATOR_LIFECYCLE_CYCLES, (unsigned long)stats.created_count,
-        (unsigned long)stats.destroyed_count);
+        (unsigned long)stats.destroyed_count, (unsigned long)stats.popup_created_count,
+        (unsigned long)stats.popup_destroyed_count);
     fflush(stdout);
 
 #if defined(_WIN32)

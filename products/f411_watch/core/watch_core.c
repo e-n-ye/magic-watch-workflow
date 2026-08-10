@@ -5,6 +5,7 @@
 static const watch_page_t s_launcher_pages[WATCH_CORE_LAUNCHER_ITEM_COUNT] = {
     WATCH_PAGE_STATUS,
     WATCH_PAGE_SETTINGS,
+    WATCH_PAGE_RESOURCES,
 };
 
 static bool watch_core_has_command_space(const watch_core_t *core)

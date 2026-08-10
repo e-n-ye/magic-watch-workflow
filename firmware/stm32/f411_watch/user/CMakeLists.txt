@@ -38,6 +38,8 @@ add_library(f411_watch_user OBJECT
     ${CMAKE_SOURCE_DIR}/../../../products/f411_watch/ui/watch_page_lifecycle.c
     ${CMAKE_SOURCE_DIR}/../../../products/f411_watch/ui/screens/watchface/screen_watchface_gen.c
     ${CMAKE_SOURCE_DIR}/../../../products/f411_watch/ui/screens/launcher/screen_launcher_gen.c
+    ${CMAKE_SOURCE_DIR}/../../../products/f411_watch/ui/screens/diagnostics/screen_diagnostics_gen.c
+    ${CMAKE_SOURCE_DIR}/../../../products/f411_watch/ui/screens/resources/screen_resources_gen.c
     ${CMAKE_SOURCE_DIR}/../../../products/f411_watch/ui/screens/status/screen_status_gen.c
     ${CMAKE_SOURCE_DIR}/../../../products/f411_watch/ui/screens/settings/screen_settings_gen.c
     ${WATCH_CORE_SOURCE_DIR}/watch_core.c
