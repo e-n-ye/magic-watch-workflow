@@ -66,7 +66,7 @@ modules are not part of the project.
 | M8 | Page lifecycle and watch pages | Functional board acceptance passed; exported screen opacity corrected and fixed-image board check passed |
 | M9 | Time, service queues, task health, and initialization policy | USB health and fixed-image board acceptance passed |
 | M10 | Confirmed sensor drivers and sensor service | Complete; LSM6DS3 host model, F411 polling service, and board USB acceptance passed |
-| M11 | Power states, wake sources, Stop recovery, and watchdog | Implemented locally; host/F411 checks passed; board acceptance pending |
+| M11 | Power states, wake sources, Stop recovery, and watchdog | Complete; host/F411 checks and RTC-only board acceptance passed |
 | M12 | W25Q128 raw driver, littlefs, and resource streaming | Planned |
 | M13 | USB CDC resource protocol and KT6368 SPP transport | Planned |
 | M14 | Candidate download, install recovery, trial boot, and rollback | Planned |
@@ -111,9 +111,9 @@ expand the sensor set or OTA/storage behavior.
 - LSM6DS3 wiring and `0x6A` address are taken from the V2.1 reference project:
   I2C1 is PB8/PB9, INT1 is PA8, and INT2 is PB15. M10 polls the device and does
   not claim the interrupt paths are validated.
-- Stop acceptance on the current no-battery board depends on the LSE, RTC wake
-  IRQ, and USB re-enumeration behavior. KEY_WAKE EXTI remains a future,
-  battery-dependent path and is not electrically testable in this round. The
+- The current no-battery board accepted Stop behavior through the LSE, RTC wake
+  IRQ, and USB re-enumeration path. KEY_WAKE EXTI remains a future,
+  battery-dependent path and was intentionally not electrically tested. The
   code does not claim a measured current reduction. The IWDG timeout uses the
   internal LSI's nominal frequency and is a reset-safety value, not a precision
   timebase.
@@ -277,17 +277,14 @@ tests (`watch_power`), together with the existing core, runtime, and LSM6DS3
 tests. The linked Debug App is Flash `254,304 B` and RAM `83,096 B`, under the
 400 KiB and 128 KiB limits.
 
-M11 board acceptance is still required. After flashing the signed Debug App
-with OpenOCD, send `help\r\n` and confirm that `power`, `display-off`, `sleep`,
-and `shutdown` are listed. Send `power\r\n` and confirm `state=active`,
-`watchdog=1`, an increasing `refresh` count, and `blocked=0 fail=0`. Send
-`display-off\r\n`; the backlight should turn off and `power` should report
-`state=display-off`. Do not use KEY_WAKE on the current no-battery board. To
-restore the display, send `sleep\r\n` and let the RTC wake the board, or reset
-the board. After the roughly three-second RTC wake and USB re-enumeration if
-necessary, `power` should report `state=active wake=rtc` and
-`stops=1 wakes=1`; the existing UI should remain usable. Finally, send
-`shutdown\r\n` and confirm `state=off` with the backlight off. Since KEY_WAKE is
-not available, use a board reset to recover from this software-off state. This
-is a software-off check only and must not be treated as proof of physical power
-cutoff.
+M11 board acceptance passed on the current no-battery board. The signed Debug
+App was flashed with OpenOCD; USB CDC listed `power`, `display-off`, `sleep`,
+and `shutdown`, and the `power` response showed an active state with the IWDG
+enabled and no blocked or failed refreshes. `display-off` turned the backlight
+off. `sleep` entered Stop and the board returned through RTC after roughly
+three seconds; after USB re-enumeration the active state reported the RTC wake
+source and one Stop/wake pair, and the existing UI remained usable. The
+software-off command entered `state=off` with the backlight off and the board
+was recovered by reset. KEY_WAKE was intentionally not used because this board
+has no battery. This acceptance is behavioral only and does not prove physical
+power cutoff or a measured current reduction.
