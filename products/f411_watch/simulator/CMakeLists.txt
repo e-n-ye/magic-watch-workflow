@@ -12,6 +12,7 @@ include(CTest)
 set(WATCH_LVGL_SOURCE_DIR "${CMAKE_CURRENT_LIST_DIR}/../../../firmware/stm32/f411_watch/third_party/lvgl")
 set(WATCH_UI_SOURCE_DIR "${CMAKE_CURRENT_LIST_DIR}/../ui")
 set(WATCH_CORE_SOURCE_DIR "${CMAKE_CURRENT_LIST_DIR}/../core")
+set(WATCH_TIME_SOURCE_DIR "${CMAKE_CURRENT_LIST_DIR}/../time")
 
 file(GLOB_RECURSE WATCH_LVGL_SOURCES CONFIGURE_DEPENDS
     "${WATCH_LVGL_SOURCE_DIR}/src/*.c"
@@ -44,6 +45,7 @@ if(TARGET ${WATCH_UI_GENERATED_USER_TARGET})
             ${WATCH_LVGL_SOURCE_DIR}
             ${WATCH_LVGL_SOURCE_DIR}/src
             ${CMAKE_CURRENT_LIST_DIR}
+            ${WATCH_TIME_SOURCE_DIR}
     )
     target_compile_definitions(${WATCH_UI_GENERATED_USER_TARGET} PRIVATE
         LV_CONF_INCLUDE_SIMPLE
@@ -54,10 +56,12 @@ endif()
 add_executable(watch_ui_simulator
     main.c
     ${WATCH_CORE_SOURCE_DIR}/watch_core.c
+    ${WATCH_TIME_SOURCE_DIR}/watch_time.c
 )
 target_include_directories(watch_ui_simulator
     PRIVATE
         ${WATCH_CORE_SOURCE_DIR}
+        ${WATCH_TIME_SOURCE_DIR}
         ${WATCH_UI_SOURCE_DIR}
 )
 target_compile_definitions(watch_ui_simulator PRIVATE

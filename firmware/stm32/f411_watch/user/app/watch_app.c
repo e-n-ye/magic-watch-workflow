@@ -5,6 +5,7 @@
 #include "board/display/watch_lcd.h"
 #include "board/input/watch_input_hw.h"
 #include "board/power/watch_power.h"
+#include "board/time/watch_rtc_board.h"
 #include "board/usb/watch_usb_cdc.h"
 #include "config/user_config.h"
 #include "main.h"
@@ -30,6 +31,8 @@ static const char *watch_app_event_name(watch_event_type_t type)
         return "up";
     case WATCH_EVENT_DOWN:
         return "down";
+    case WATCH_EVENT_TIME_UPDATED:
+        return "time";
     case WATCH_EVENT_NONE:
     case WATCH_EVENT_COUNT:
         return "none";
@@ -98,9 +101,52 @@ static void watch_app_report_event(const watch_event_t *event, bool dispatched,
     }
 }
 
+static watch_command_type_t watch_app_take_commands(void)
+{
+    watch_command_t command;
+    watch_command_type_t command_type = WATCH_COMMAND_NONE;
+
+    while (watch_core_take_command(&s_core, &command)) {
+        command_type = command.type;
+    }
+
+    return command_type;
+}
+
+static bool watch_app_dispatch_event(const watch_event_t *event, bool report_event)
+{
+    watch_snapshot_t snapshot = { 0 };
+    watch_command_type_t command_type;
+    bool dispatched = watch_core_dispatch_event(&s_core, event);
+
+    command_type = watch_app_take_commands();
+    if (report_event && watch_core_read_snapshot(&s_core, &snapshot)) {
+        watch_app_report_event(event, dispatched, command_type, &snapshot);
+    }
+
+    return dispatched;
+}
+
+static void watch_app_process_time(uint32_t now_ms)
+{
+    watch_time_value_t time;
+    watch_event_t event;
+
+    if (!watch_rtc_board_process(now_ms, &time)) {
+        return;
+    }
+
+    event = (watch_event_t) {
+        .type = WATCH_EVENT_TIME_UPDATED,
+        .time = time,
+    };
+    (void)watch_app_dispatch_event(&event, false);
+}
+
 void watch_app_init(void)
 {
     watch_diagnostic_capsule_t capsule;
+    watch_time_value_t time;
     uint32_t now_ms = HAL_GetTick();
 
     s_app_ready = false;
@@ -122,6 +168,15 @@ void watch_app_init(void)
         || !watch_runtime_start_service(WATCH_RUNTIME_SERVICE_APP, now_ms)) {
         watch_runtime_fail();
         return;
+    }
+
+    if (watch_rtc_board_init(now_ms, &time)) {
+        watch_event_t event = {
+            .type = WATCH_EVENT_TIME_UPDATED,
+            .time = time,
+        };
+
+        (void)watch_app_dispatch_event(&event, false);
     }
 
     s_status_reported = false;
@@ -149,6 +204,7 @@ void watch_app_process(void)
 
     now_ms = HAL_GetTick();
     (void)watch_runtime_heartbeat(WATCH_RUNTIME_SERVICE_APP, now_ms);
+    watch_app_process_time(now_ms);
     watch_input_hw_process(now_ms);
     watch_app_report_touch_if_new();
     if (!s_status_reported) {
@@ -157,21 +213,10 @@ void watch_app_process(void)
     }
 
     while (watch_input_hw_take_event(&event)) {
-        watch_snapshot_t snapshot = { 0 };
-        watch_command_t command;
-        watch_command_type_t command_type = WATCH_COMMAND_NONE;
-        bool dispatched;
-
         if (event.type == WATCH_EVENT_WAKE) {
             watch_power_board_notify_wake(WATCH_POWER_WAKE_KEY);
         }
-        dispatched = watch_core_dispatch_event(&s_core, &event);
-
-        while (watch_core_take_command(&s_core, &command)) {
-            command_type = command.type;
-        }
-        (void)watch_core_read_snapshot(&s_core, &snapshot);
-        watch_app_report_event(&event, dispatched, command_type, &snapshot);
+        (void)watch_app_dispatch_event(&event, true);
     }
 }
 

@@ -21,6 +21,8 @@ static void watch_core_enqueue_command(watch_core_t *core, watch_command_type_t 
     command->page = core->page;
     command->launcher_index = core->launcher_index;
     command->popup_visible = core->popup_visible;
+    command->time_valid = core->time_valid;
+    command->time = core->time;
     command->revision = core->revision;
     core->command_head = (uint8_t)((core->command_head + 1U) % WATCH_CORE_COMMAND_CAPACITY);
     core->command_count++;
@@ -44,6 +46,26 @@ static bool watch_core_set_popup_visible(watch_core_t *core, bool popup_visible)
 
     core->popup_visible = popup_visible;
     watch_core_commit_change(core, WATCH_COMMAND_POPUP_CHANGED);
+    return true;
+}
+
+static bool watch_core_set_time(watch_core_t *core, const watch_time_value_t *time)
+{
+    if (!watch_time_is_valid(time)) {
+        return false;
+    }
+
+    if (core->time_valid && watch_time_equal(&core->time, time)) {
+        return true;
+    }
+
+    if (!watch_core_has_command_space(core)) {
+        return false;
+    }
+
+    core->time = *time;
+    core->time_valid = true;
+    watch_core_commit_change(core, WATCH_COMMAND_TIME_CHANGED);
     return true;
 }
 
@@ -166,6 +188,8 @@ bool watch_core_dispatch_event(watch_core_t *core, const watch_event_t *event)
             return true;
         }
         return watch_core_move_selection(core, 1);
+    case WATCH_EVENT_TIME_UPDATED:
+        return watch_core_set_time(core, &event->time);
     case WATCH_EVENT_NONE:
     case WATCH_EVENT_COUNT:
         return false;
@@ -184,6 +208,8 @@ bool watch_core_read_snapshot(const watch_core_t *core, watch_snapshot_t *snapsh
     snapshot->page_depth = core->page_depth;
     snapshot->launcher_index = core->launcher_index;
     snapshot->popup_visible = core->popup_visible;
+    snapshot->time_valid = core->time_valid;
+    snapshot->time = core->time;
     snapshot->revision = core->revision;
     return true;
 }

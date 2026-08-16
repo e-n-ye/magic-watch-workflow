@@ -87,9 +87,27 @@ static bool watch_page_set_label(lv_obj_t *screen, int32_t index, const char *te
 
 static bool watch_page_render(lv_obj_t *screen, const watch_snapshot_t *snapshot)
 {
+    char watchface_time[WATCH_TIME_HMS_TEXT_SIZE];
+    const char *title = watch_page_name(snapshot->page);
+
+    if (snapshot->page == WATCH_PAGE_WATCHFACE) {
+        title = "--:--:--";
+        if (snapshot->time_valid
+            && watch_time_format_hms(&snapshot->time, watchface_time, sizeof(watchface_time))) {
+            title = watchface_time;
+        }
+    }
+
     return watch_page_set_label(screen, 0, "MAGIC WATCH")
-        && watch_page_set_label(screen, 1, watch_page_name(snapshot->page))
+        && watch_page_set_label(screen, 1, title)
         && watch_page_set_label(screen, 2, watch_page_hint(snapshot));
+}
+
+static bool watch_page_time_changed(const watch_page_lifecycle_t *lifecycle,
+                                    const watch_snapshot_t *snapshot)
+{
+    return lifecycle->time_valid != snapshot->time_valid
+        || (snapshot->time_valid && !watch_time_equal(&lifecycle->time, &snapshot->time));
 }
 
 static bool watch_page_sync_popup(watch_page_lifecycle_t *lifecycle,
@@ -190,11 +208,22 @@ bool watch_page_lifecycle_apply(watch_page_lifecycle_t *lifecycle, const watch_s
 
     if (lifecycle->active && lifecycle->active_page == snapshot->page
         && lifecycle->launcher_index == snapshot->launcher_index) {
+        if (snapshot->page == WATCH_PAGE_WATCHFACE && watch_page_time_changed(lifecycle, snapshot)) {
+            lifecycle->time_valid = snapshot->time_valid;
+            lifecycle->time = snapshot->time;
+            return watch_page_render(lifecycle->active_screen, snapshot)
+                && watch_page_sync_popup(lifecycle, snapshot);
+        }
+
+        lifecycle->time_valid = snapshot->time_valid;
+        lifecycle->time = snapshot->time;
         return watch_page_sync_popup(lifecycle, snapshot);
     }
 
     if (lifecycle->active && lifecycle->active_page == snapshot->page) {
         lifecycle->launcher_index = snapshot->launcher_index;
+        lifecycle->time_valid = snapshot->time_valid;
+        lifecycle->time = snapshot->time;
         return watch_page_render(lifecycle->active_screen, snapshot)
             && watch_page_sync_popup(lifecycle, snapshot);
     }
@@ -218,6 +247,8 @@ bool watch_page_lifecycle_apply(watch_page_lifecycle_t *lifecycle, const watch_s
     lifecycle->active_screen = next_screen;
     lifecycle->active_page = snapshot->page;
     lifecycle->launcher_index = snapshot->launcher_index;
+    lifecycle->time_valid = snapshot->time_valid;
+    lifecycle->time = snapshot->time;
     lifecycle->active = true;
     lifecycle->created_count++;
     return watch_page_sync_popup(lifecycle, snapshot);

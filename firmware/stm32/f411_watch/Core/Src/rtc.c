@@ -21,6 +21,7 @@
 #include "rtc.h"
 
 /* USER CODE BEGIN 0 */
+#include "board/time/watch_rtc_board.h"
 
 /* USER CODE END 0 */
 
@@ -56,6 +57,7 @@ void MX_RTC_Init(void)
   }
 
   /* USER CODE BEGIN Check_RTC_BKUP */
+  watch_rtc_board_capture_boot();
 
   /* USER CODE END Check_RTC_BKUP */
 
@@ -80,6 +82,7 @@ void MX_RTC_Init(void)
     Error_Handler();
   }
   /* USER CODE BEGIN RTC_Init 2 */
+  watch_rtc_board_restore_boot();
 
   /* USER CODE END RTC_Init 2 */
 

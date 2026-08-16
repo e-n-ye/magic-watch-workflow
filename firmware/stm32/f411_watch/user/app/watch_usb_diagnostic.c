@@ -42,19 +42,25 @@ static void send_text(const char *text)
 
 static void send_info(void)
 {
-    char response[128];
+    char response[160];
+    char time[WATCH_TIME_LOCAL_TEXT_SIZE];
     watch_snapshot_t snapshot;
+    const char *time_text = "unavailable";
     int length;
 
     if (!watch_app_read_snapshot(&snapshot)) {
-        send_text("watch=f411 usb=cdc protocol=1 display=240x280 page=unavailable\r\n");
+        send_text("watch=f411 usb=cdc protocol=1 display=240x280 page=unavailable time=unavailable\r\n");
         return;
     }
 
+    if (snapshot.time_valid && watch_time_format_local(&snapshot.time, time, sizeof(time))) {
+        time_text = time;
+    }
+
     length = snprintf(response, sizeof(response),
-                      "watch=f411 usb=cdc protocol=1 display=240x280 page=%u depth=%u popup=%u\r\n",
+                      "watch=f411 usb=cdc protocol=1 display=240x280 page=%u depth=%u popup=%u time=%s\r\n",
                       (unsigned int)snapshot.page, (unsigned int)snapshot.page_depth,
-                      snapshot.popup_visible ? 1U : 0U);
+                      snapshot.popup_visible ? 1U : 0U, time_text);
     if ((length > 0) && ((size_t)length < sizeof(response))) {
         watch_usb_cdc_write((const uint8_t *)response, (size_t)length);
     }

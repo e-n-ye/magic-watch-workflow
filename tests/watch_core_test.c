@@ -17,6 +17,16 @@ static bool watch_test_dispatch(watch_core_t *core, watch_event_type_t type)
     return watch_core_dispatch_event(core, &event);
 }
 
+static bool watch_test_dispatch_time(watch_core_t *core, watch_time_value_t time)
+{
+    watch_event_t event = {
+        .type = WATCH_EVENT_TIME_UPDATED,
+        .time = time,
+    };
+
+    return watch_core_dispatch_event(core, &event);
+}
+
 static void watch_test_expect_input_event(watch_input_t *input, watch_event_type_t type)
 {
     watch_event_t event;
@@ -123,6 +133,39 @@ static void test_ignored_events_and_validation(void)
     assert(!watch_core_dispatch_event(&core, &invalid_event));
     assert(!watch_core_read_snapshot(NULL, &after));
     assert(!watch_core_read_snapshot(&core, NULL));
+}
+
+static void test_time_event_updates_snapshot_and_command(void)
+{
+    watch_core_t core;
+    watch_command_t command;
+    watch_snapshot_t snapshot;
+    watch_time_value_t time = {
+        .year = 2026U,
+        .month = 8U,
+        .day = 16U,
+        .weekday = WATCH_TIME_WEEKDAY_SUNDAY,
+        .hour = 9U,
+        .minute = 30U,
+        .second = 45U,
+    };
+
+    assert(watch_core_init(&core));
+    assert(watch_test_dispatch_time(&core, time));
+    assert(watch_core_read_snapshot(&core, &snapshot));
+    assert(snapshot.time_valid);
+    assert(watch_time_equal(&snapshot.time, &time));
+    assert(snapshot.revision == 1U);
+    assert(watch_core_take_command(&core, &command));
+    assert(command.type == WATCH_COMMAND_TIME_CHANGED);
+    assert(command.time_valid);
+    assert(watch_time_equal(&command.time, &time));
+    assert(watch_test_dispatch_time(&core, time));
+    assert(!watch_core_take_command(&core, &command));
+    assert(watch_core_read_snapshot(&core, &snapshot));
+    assert(snapshot.revision == 1U);
+    time.year = 1999U;
+    assert(!watch_test_dispatch_time(&core, time));
 }
 
 static void test_command_queue_is_bounded(void)
@@ -251,6 +294,7 @@ int main(void)
     test_navigation_and_commands();
     test_resource_navigation();
     test_ignored_events_and_validation();
+    test_time_event_updates_snapshot_and_command();
     test_command_queue_is_bounded();
     test_button_debounce();
     test_encoder_and_touch_mapping();

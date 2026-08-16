@@ -132,6 +132,29 @@ static bool watch_simulator_dispatch_page(watch_core_t *core,
     return watch_simulator_show_page(lifecycle, &snapshot, page_name, hint);
 }
 
+static bool watch_simulator_dispatch_time(watch_core_t *core,
+                                          watch_page_lifecycle_t *lifecycle,
+                                          const watch_time_value_t *time, const char *text)
+{
+    watch_event_t event = {
+        .type = WATCH_EVENT_TIME_UPDATED,
+        .time = *time,
+    };
+    watch_command_t command;
+    watch_snapshot_t snapshot;
+
+    if (!watch_core_dispatch_event(core, &event)) {
+        return false;
+    }
+
+    while (watch_core_take_command(core, &command)) {
+        /* The simulator models the UI task consuming each core command. */
+    }
+
+    return watch_core_read_snapshot(core, &snapshot)
+        && watch_simulator_show_page(lifecycle, &snapshot, text, "SELECT: LAUNCHER");
+}
+
 static bool watch_simulator_show_popup(watch_page_lifecycle_t *lifecycle, const char *title,
                                        const char *message)
 {
@@ -151,6 +174,15 @@ static bool watch_simulator_check_lifecycle(lv_display_t *display,
     watch_snapshot_t snapshot;
     watch_snapshot_t diagnostics_snapshot;
     watch_page_lifecycle_stats_t stats;
+    const watch_time_value_t time = {
+        .year = 2026U,
+        .month = 8U,
+        .day = 16U,
+        .weekday = WATCH_TIME_WEEKDAY_SUNDAY,
+        .hour = 12U,
+        .minute = 34U,
+        .second = 56U,
+    };
     uint32_t expected_pages;
     uint32_t cycle;
 
@@ -162,7 +194,8 @@ static bool watch_simulator_check_lifecycle(lv_display_t *display,
     const bool initialized = watch_page_lifecycle_init(lifecycle, display);
     lv_unlock();
     if (!initialized || !watch_core_read_snapshot(&core, &snapshot)
-        || !watch_simulator_show_page(lifecycle, &snapshot, "WATCHFACE", "SELECT: LAUNCHER")) {
+        || !watch_simulator_show_page(lifecycle, &snapshot, "--:--:--", "SELECT: LAUNCHER")
+        || !watch_simulator_dispatch_time(&core, lifecycle, &time, "12:34:56")) {
         return false;
     }
 
@@ -183,9 +216,9 @@ static bool watch_simulator_check_lifecycle(lv_display_t *display,
         || !watch_simulator_dispatch_page(&core, lifecycle, WATCH_EVENT_SELECT, "RESOURCES",
                                           "BACK: RETURN")
         || !watch_simulator_dispatch_page(&core, lifecycle, WATCH_EVENT_BACK, "LAUNCHER",
-                                          "SELECT: RESOURCES")
-        || !watch_simulator_dispatch_page(&core, lifecycle, WATCH_EVENT_BACK, "WATCHFACE",
-                                          "SELECT: LAUNCHER")) {
+                                           "SELECT: RESOURCES")
+        || !watch_simulator_dispatch_page(&core, lifecycle, WATCH_EVENT_BACK, "12:34:56",
+                                           "SELECT: LAUNCHER")) {
         return false;
     }
 
@@ -211,9 +244,9 @@ static bool watch_simulator_check_lifecycle(lv_display_t *display,
             || !watch_simulator_dispatch_page(&core, lifecycle, WATCH_EVENT_SELECT, "RESOURCES",
                                               "BACK: RETURN")
             || !watch_simulator_dispatch_page(&core, lifecycle, WATCH_EVENT_BACK, "LAUNCHER",
-                                              "SELECT: RESOURCES")
-            || !watch_simulator_dispatch_page(&core, lifecycle, WATCH_EVENT_BACK, "WATCHFACE",
-                                              "SELECT: LAUNCHER")) {
+                                               "SELECT: RESOURCES")
+            || !watch_simulator_dispatch_page(&core, lifecycle, WATCH_EVENT_BACK, "12:34:56",
+                                               "SELECT: LAUNCHER")) {
             return false;
         }
     }
@@ -251,7 +284,7 @@ static bool watch_simulator_check_lifecycle(lv_display_t *display,
     if (!watch_simulator_show_page(lifecycle, &diagnostics_snapshot, "DIAGNOSTICS",
                                    "BACK: RETURN")
         || watch_page_lifecycle_active_popup(lifecycle) != NULL
-        || !watch_simulator_show_page(lifecycle, &snapshot, "WATCHFACE", "SELECT: LAUNCHER")) {
+        || !watch_simulator_show_page(lifecycle, &snapshot, "12:34:56", "SELECT: LAUNCHER")) {
         return false;
     }
 

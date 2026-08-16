@@ -28,6 +28,8 @@ typedef struct
     lv_obj_t *active_popup;
     watch_page_t active_page;
     uint8_t launcher_index;
+    bool time_valid;
+    watch_time_value_t time;
     uint32_t created_count;
     uint32_t destroyed_count;
     uint32_t popup_created_count;

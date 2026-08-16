@@ -4,6 +4,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include "watch_time.h"
+
 #define WATCH_CORE_COMMAND_CAPACITY 8U
 #define WATCH_CORE_PAGE_STACK_CAPACITY 4U
 #define WATCH_CORE_LAUNCHER_ITEM_COUNT 3U
@@ -25,12 +27,14 @@ typedef enum {
     WATCH_EVENT_SELECT,
     WATCH_EVENT_UP,
     WATCH_EVENT_DOWN,
+    WATCH_EVENT_TIME_UPDATED,
     WATCH_EVENT_COUNT
 } watch_event_type_t;
 
 typedef struct
 {
     watch_event_type_t type;
+    watch_time_value_t time;
 } watch_event_t;
 
 typedef enum {
@@ -38,6 +42,7 @@ typedef enum {
     WATCH_COMMAND_PAGE_CHANGED,
     WATCH_COMMAND_SELECTION_CHANGED,
     WATCH_COMMAND_POPUP_CHANGED,
+    WATCH_COMMAND_TIME_CHANGED,
     WATCH_COMMAND_COUNT
 } watch_command_type_t;
 
@@ -47,6 +52,8 @@ typedef struct
     watch_page_t page;
     uint8_t launcher_index;
     bool popup_visible;
+    bool time_valid;
+    watch_time_value_t time;
     uint32_t revision;
 } watch_command_t;
 
@@ -56,6 +63,8 @@ typedef struct
     uint8_t page_depth;
     uint8_t launcher_index;
     bool popup_visible;
+    bool time_valid;
+    watch_time_value_t time;
     uint32_t revision;
 } watch_snapshot_t;
 
@@ -67,6 +76,8 @@ typedef struct
     uint8_t page_depth;
     uint8_t launcher_index;
     bool popup_visible;
+    bool time_valid;
+    watch_time_value_t time;
     uint8_t command_head;
     uint8_t command_tail;
     uint8_t command_count;

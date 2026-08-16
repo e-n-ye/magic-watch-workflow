@@ -32,6 +32,8 @@ set(FORMAT_FILES
     "${FORMAT_ROOT}/board/power/watch_power.h"
     "${FORMAT_ROOT}/board/sensors/watch_lsm6ds3_board.c"
     "${FORMAT_ROOT}/board/sensors/watch_lsm6ds3_board.h"
+    "${FORMAT_ROOT}/board/time/watch_rtc_board.c"
+    "${FORMAT_ROOT}/board/time/watch_rtc_board.h"
     "${FORMAT_ROOT}/config/user_config.h"
 )
 
@@ -76,6 +78,13 @@ if(DEFINED FORMAT_POWER_ROOT AND NOT FORMAT_POWER_ROOT STREQUAL "")
         "${FORMAT_POWER_ROOT}/watch_power_state.h"
         "${FORMAT_POWER_ROOT}/watch_watchdog.c"
         "${FORMAT_POWER_ROOT}/watch_watchdog.h"
+    )
+endif()
+
+if(DEFINED FORMAT_TIME_ROOT AND NOT FORMAT_TIME_ROOT STREQUAL "")
+    list(APPEND FORMAT_FILES
+        "${FORMAT_TIME_ROOT}/watch_time.c"
+        "${FORMAT_TIME_ROOT}/watch_time.h"
     )
 endif()
 
