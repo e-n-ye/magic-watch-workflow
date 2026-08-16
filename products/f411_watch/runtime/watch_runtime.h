@@ -4,7 +4,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#define WATCH_RUNTIME_SERVICE_QUEUE_CAPACITY 8U
+#define WATCH_RUNTIME_UI_EVENT_QUEUE_CAPACITY 8U
 #define WATCH_RUNTIME_HEARTBEAT_TIMEOUT_MS 2000U
 
 typedef enum {
@@ -36,7 +36,7 @@ typedef struct
     uint16_t type;
     uint32_t value;
     uint32_t timestamp_ms;
-} watch_service_event_t;
+} watch_ui_event_t;
 
 typedef struct
 {
@@ -59,8 +59,9 @@ bool watch_runtime_heartbeat(watch_runtime_service_t service, uint32_t now_ms);
 bool watch_runtime_read_health(watch_runtime_service_t service, uint32_t now_ms,
                                watch_runtime_health_t *health);
 
-bool watch_runtime_post_service_event(const watch_service_event_t *event);
-bool watch_runtime_take_service_event(watch_service_event_t *event);
-uint8_t watch_runtime_service_event_count(void);
+/* Task-context services post events; the UI task is the sole consumer. */
+bool watch_runtime_post_ui_event(const watch_ui_event_t *event);
+bool watch_runtime_take_ui_event(watch_ui_event_t *event);
+uint8_t watch_runtime_ui_event_count(void);
 
 #endif /* WATCH_RUNTIME_H */

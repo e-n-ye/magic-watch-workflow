@@ -25,8 +25,11 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "app/watch_app.h"
 #include "app/watch_diagnostic.h"
 #include "app/watch_usb_diagnostic.h"
+#include "ui/watch_ui.h"
+#include "watch_runtime.h"
 
 /* USER CODE END Includes */
 
@@ -132,8 +135,6 @@ void MX_FREERTOS_Init(void) {
   defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
-  usbDiagnosticTaskHandle = osThreadNew(StartUsbDiagnosticTask, NULL,
-                                        &usbDiagnosticTask_attributes);
   /* USER CODE END RTOS_THREADS */
 
   /* USER CODE BEGIN RTOS_EVENTS */
@@ -154,11 +155,16 @@ void StartDefaultTask(void *argument)
   /* init code for USB_DEVICE */
   MX_USB_DEVICE_Init();
   /* USER CODE BEGIN StartDefaultTask */
-  /* Infinite loop */
-  for(;;)
-  {
-    osDelay(1);
+  (void)argument;
+
+  usbDiagnosticTaskHandle = osThreadNew(StartUsbDiagnosticTask, NULL,
+                                        &usbDiagnosticTask_attributes);
+  if (usbDiagnosticTaskHandle == NULL
+      || (watch_app_is_ready() && !watch_ui_start())) {
+    watch_runtime_fail();
   }
+
+  osThreadExit();
   /* USER CODE END StartDefaultTask */
 }
 

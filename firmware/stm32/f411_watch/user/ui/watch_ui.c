@@ -8,6 +8,7 @@
 #include "main.h"
 #include "app/watch_app.h"
 #include "board/display/watch_lcd.h"
+#include "board/sensors/watch_lsm6ds3_board.h"
 #include "watch_page_lifecycle.h"
 #include "watch_runtime.h"
 
@@ -107,6 +108,17 @@ static void watch_ui_update_snapshot(const watch_snapshot_t *snapshot)
     (void)watch_page_lifecycle_apply(&s_page_lifecycle, snapshot);
 }
 
+static void watch_ui_process_events(void)
+{
+    watch_ui_event_t event;
+
+    while (watch_runtime_take_ui_event(&event)) {
+        if (event.type == WATCH_LSM6DS3_SERVICE_EVENT_SAMPLE) {
+            /* The board service owns the latest sample; this is its UI notification. */
+        }
+    }
+}
+
 static void watch_ui_update_tick(void)
 {
     uint32_t now = HAL_GetTick();
@@ -153,6 +165,7 @@ static void watch_ui_task(void *argument)
         (void)watch_runtime_heartbeat(WATCH_RUNTIME_SERVICE_UI, HAL_GetTick());
         watch_ui_update_tick();
         watch_app_process();
+        watch_ui_process_events();
         if (watch_app_read_snapshot(&snapshot)) {
             watch_ui_update_snapshot(&snapshot);
         }

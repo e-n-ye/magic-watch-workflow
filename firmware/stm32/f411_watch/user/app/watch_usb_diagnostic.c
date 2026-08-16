@@ -11,11 +11,9 @@
 #include "watch_app.h"
 #include "watch_diagnostic.h"
 #include "watch_runtime.h"
-#include "ui/watch_ui.h"
 
 #define WATCH_USB_DIAGNOSTIC_COMMAND_SIZE 96U
 #define WATCH_USB_DIAGNOSTIC_READ_SIZE 32U
-#define WATCH_USB_DIAGNOSTIC_EVENT_COMMAND 1U
 
 typedef enum {
     WATCH_USB_COMMAND_HELP = 1,
@@ -136,7 +134,7 @@ static void send_health(void)
                       (unsigned long)ui_health.heartbeat_count, health_state_name(usb_health.state),
                       (unsigned long)usb_health.heartbeat_count, health_state_name(sensor_health.state),
                       (unsigned long)sensor_health.heartbeat_count,
-                      (unsigned int)watch_runtime_service_event_count());
+                      (unsigned int)watch_runtime_ui_event_count());
     if ((length > 0) && ((size_t)length < sizeof(response))) {
         watch_usb_cdc_write((const uint8_t *)response, (size_t)length);
     }
@@ -321,19 +319,10 @@ static watch_usb_command_t parse_command(void)
 static void consume_byte(uint8_t byte)
 {
     if ((byte == '\r') || (byte == '\n')) {
-        watch_service_event_t event;
-
         if (s_command_overflow) {
             send_text("error=line-too-long\r\n");
         } else if (s_command_length > 0U) {
-            event = (watch_service_event_t) {
-                .type = WATCH_USB_DIAGNOSTIC_EVENT_COMMAND,
-                .value = (uint32_t)parse_command(),
-                .timestamp_ms = HAL_GetTick(),
-            };
-            if (!watch_runtime_post_service_event(&event)) {
-                send_text("error=service-queue-full\r\n");
-            }
+            handle_command(parse_command());
         }
 
         s_command_length = 0U;
@@ -353,22 +342,6 @@ static void consume_byte(uint8_t byte)
     }
 }
 
-static void process_service_events(void)
-{
-    watch_service_event_t event;
-
-    while (watch_runtime_take_service_event(&event)) {
-        if (event.type == WATCH_USB_DIAGNOSTIC_EVENT_COMMAND
-            && event.value >= WATCH_USB_COMMAND_HELP && event.value < WATCH_USB_COMMAND_COUNT) {
-            handle_command((watch_usb_command_t)event.value);
-        } else if (event.type == WATCH_LSM6DS3_SERVICE_EVENT_SAMPLE) {
-            /* The latest sample is exposed by the sensor command. */
-        } else {
-            send_text("error=unknown-service-event\r\n");
-        }
-    }
-}
-
 void watch_usb_diagnostic_process(void)
 {
     uint8_t input[WATCH_USB_DIAGNOSTIC_READ_SIZE];
@@ -379,15 +352,10 @@ void watch_usb_diagnostic_process(void)
     (void)watch_runtime_start_service(WATCH_RUNTIME_SERVICE_USB, now_ms);
     (void)watch_runtime_heartbeat(WATCH_RUNTIME_SERVICE_USB, now_ms);
 
-    if (watch_app_is_ready()) {
-        (void)watch_ui_start();
-    }
-
     for (size_t index = 0U; index < length; ++index) {
         consume_byte(input[index]);
     }
 
-    process_service_events();
     watch_power_board_process(HAL_GetTick());
     watch_usb_cdc_process();
 }
