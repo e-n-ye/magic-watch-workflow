@@ -27,13 +27,13 @@ UI/resources, power, then secure OTA. No empty placeholder modules are added.
 
 ## Baseline and completion
 
-- This M2 board-acceptance update began from clean `origin/main` at `a8fe734`
-  (`feat:f411:add diagnostic runtime preset`).
+- This M8d board-acceptance update began from clean `origin/main` at `2d993d4`
+  (`docs:f411:record M2 negative board acceptance`).
 - The original pre-relocation Debug App reference was Flash `64,340 B` and RAM
   `30,208 B`. The current practical App budget remains 400 KiB Flash and 128 KiB
   RAM.
-- Eight of 21 numbered milestones are fully closed: M0-M7. This is about 38%
-  by strict closed-loop scope and about 50% by implemented capability.
+- Nine of 21 numbered milestones are fully closed: M0-M8. This is about 43%
+  by strict closed-loop scope and about 55% by implemented capability.
 - Current hardware facts include STM32F411, 24 MHz HSE, ST-Link-compatible SWD,
   ST7789, CST816, W25Q128, KT6368, and a schematic EEPROM candidate
   `BL24C02F-RRRC`. EEPROM board address and response remain unconfirmed.
@@ -50,7 +50,7 @@ UI/resources, power, then secure OTA. No empty placeholder modules are added.
 | M5 | CST816, encoder, button, normalized input | Complete. |
 | M6 | LVGL 9.5, DMA flush, UI task, 240x280 budget | Complete. |
 | M7 | Editor XML, generated C, PC simulator | Complete for the approved manual Editor export workflow. |
-| M8 | Six page categories, lifecycle, interaction, leak pressure | Partial; page lifecycle, physical normal navigation, Diagnostic preset, and simulator pressure are present. No real core-driven popup consumer exists yet. |
+| M8 | Six page categories, lifecycle, interaction, leak pressure | Complete; the core-driven Diagnostic popup, physical input path, page lifecycle, and simulator pressure coverage are accepted. |
 | M9 | RTC/time service, queues, heartbeats, init policy | Partial; bounded queue and health foundations exist, but task ownership and the RTC/time contract are incomplete. |
 | M10 | Five sensor drivers and aggregation | Partial; only LSM6DS3 has a closed driver/service path. |
 | M11 | EEPROM part/address facts | Not started; `BL24C02F-RRRC` is a schematic candidate only. |
@@ -64,21 +64,18 @@ UI/resources, power, then secure OTA. No empty placeholder modules are added.
 | M19 | Trial confirmation and rollback | Not started. |
 | M20 | Final configurations, simulator, fault injection, budgets, regression report | Not started. |
 
-## Current round: M8d diagnostic popup closure
-
-Add a real Diagnostic-page popup state to the pure-C core snapshot and command
-contract. `SELECT` opens the popup, the first `BACK` closes it, and the next
-`BACK` returns to the watch face. The UI creates and destroys the existing LVGL
-popup strictly from the snapshot; input code does not call LVGL. Core tests,
-simulator coverage, Diagnostic board acceptance, and CDC popup visibility are
-the closure evidence.
-
-## Next round: M9a task ownership
+## Current round: M9a task ownership
 
 Move runtime bootstrap ownership to `defaultTask`, which starts required runtime
 tasks and exits. UI ownership moves out of the USB service, and the UI/app owner
 becomes the sole consumer of the service event queue. RTC/time work remains the
 separate M9b round.
+
+## Next round: M9b time service
+
+Add a pure-C local-calendar time contract, RTC adapter, normalized time events,
+core snapshot data, watchface consumption, and CDC diagnostics. Time zones, NTP,
+and network synchronization remain out of scope.
 
 ## Risks and blockers
 
@@ -87,8 +84,12 @@ separate M9b round.
   M17-M19.
 - Editor regeneration remains a manual LVGL Pro Editor operation. CI builds the
   committed generated C and does not replace the generator.
-- M8 lacks a real core-driven popup interaction path.
+- The UI task previously overflowed its 4 KiB stack during Diagnostic work. It
+  now uses 6 KiB and passed board stability plus the popup interaction sequence;
+  broader duration regression remains part of M20.
 - M9 still starts the UI from the USB service and keeps `defaultTask` alive.
+- CDC diagnostic output can drop while no host reader is attached. The accepted
+  M8d interaction sequence used snapshot state, not a zero-drop assertion.
 - LSM6DS3 is the only closed sensor; missing sensors remain diagnostic degraded
   states rather than accepted sensor support.
 - The no-battery board cannot establish KEY_WAKE, physical power-latch polarity,
@@ -98,18 +99,21 @@ separate M9b round.
 
 ## Latest verification
 
-- Debug App and Bootloader build, format check, Cppcheck, and all eight Manifest
-  host tests passed.
-- A valid fixed-size signed App package passed host verification against the
-  Bootloader public key.
-- Four independently mutated packages were rejected by both host validation and
-  the board: image digest mismatch, wrong board ID, out-of-range image length,
-  and nonzero invalid ECDSA signature.
-- For each board rejection, the target CDC device remained absent for eight
-  seconds and the halted PC was `0x080002D4` inside the Bootloader region.
-- Each rejection was followed by writing and verifying the valid package. The
-  restored App returned CDC `ping`, `info`, `health`, `stats`, and `diag`; it
-  reported 240x280, runtime stage 3, no stored diagnostic capsule, and zero
-  observed CDC drops.
-- A 64 KiB readback before and after the acceptance sequence produced identical
-  Bootloader SHA-256 values. Only the App slot was erased and programmed.
+- Debug, Diagnostic, and Release App and Bootloader builds passed. Debug
+  format-check and Cppcheck passed; host CTest passed 5/5 and the 240x280
+  simulator smoke test passed 1/1.
+- Diagnostic and Release App sizes remain within the 400 KiB practical Flash
+  budget: Diagnostic Flash `266,108 B` / RAM `83,144 B`; Release Flash
+  `139,016 B` / RAM `83,136 B`.
+- The new signed Diagnostic App package passed host verification, was written
+  and readback-verified in the App slot only, and left the Bootloader readback
+  SHA-256 unchanged.
+- Reset-to-CDC availability was measured at about four seconds while the
+  Bootloader verifies the signed App. The last LCD frame can remain visible
+  during that interval, so a transient old purple frame alone is not a fault.
+- The initial Diagnostic build recorded a `watchUi` stack-overflow capsule. The
+  targeted 6 KiB UI stack build ran for about one minute with increasing app,
+  UI, USB, and sensor heartbeats and `diag=none`.
+- Board input acceptance completed `SELECT -> popup=1`, first `BACK -> popup=0`
+  on the Diagnostic page, then second `BACK -> watchface`; all final services
+  were healthy and no diagnostic capsule was present.

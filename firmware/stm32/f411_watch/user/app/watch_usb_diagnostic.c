@@ -54,8 +54,9 @@ static void send_info(void)
     }
 
     length = snprintf(response, sizeof(response),
-                      "watch=f411 usb=cdc protocol=1 display=240x280 page=%u depth=%u\r\n",
-                      (unsigned int)snapshot.page, (unsigned int)snapshot.page_depth);
+                      "watch=f411 usb=cdc protocol=1 display=240x280 page=%u depth=%u popup=%u\r\n",
+                      (unsigned int)snapshot.page, (unsigned int)snapshot.page_depth,
+                      snapshot.popup_visible ? 1U : 0U);
     if ((length > 0) && ((size_t)length < sizeof(response))) {
         watch_usb_cdc_write((const uint8_t *)response, (size_t)length);
     }
