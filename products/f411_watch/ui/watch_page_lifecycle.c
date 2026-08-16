@@ -92,6 +92,21 @@ static bool watch_page_render(lv_obj_t *screen, const watch_snapshot_t *snapshot
         && watch_page_set_label(screen, 2, watch_page_hint(snapshot));
 }
 
+static bool watch_page_sync_popup(watch_page_lifecycle_t *lifecycle,
+                                  const watch_snapshot_t *snapshot)
+{
+    if (snapshot->page != WATCH_PAGE_DIAGNOSTICS || !snapshot->popup_visible) {
+        watch_page_lifecycle_close_popup(lifecycle);
+        return true;
+    }
+
+    if (lifecycle->active_popup != NULL) {
+        return true;
+    }
+
+    return watch_page_lifecycle_show_popup(lifecycle, "DIAGNOSTICS", "CORE READY");
+}
+
 bool watch_page_lifecycle_init(watch_page_lifecycle_t *lifecycle, lv_display_t *display)
 {
     if (lifecycle == NULL || display == NULL) {
@@ -175,12 +190,13 @@ bool watch_page_lifecycle_apply(watch_page_lifecycle_t *lifecycle, const watch_s
 
     if (lifecycle->active && lifecycle->active_page == snapshot->page
         && lifecycle->launcher_index == snapshot->launcher_index) {
-        return true;
+        return watch_page_sync_popup(lifecycle, snapshot);
     }
 
     if (lifecycle->active && lifecycle->active_page == snapshot->page) {
         lifecycle->launcher_index = snapshot->launcher_index;
-        return watch_page_render(lifecycle->active_screen, snapshot);
+        return watch_page_render(lifecycle->active_screen, snapshot)
+            && watch_page_sync_popup(lifecycle, snapshot);
     }
 
     next_screen = watch_page_create(snapshot->page);
@@ -204,7 +220,7 @@ bool watch_page_lifecycle_apply(watch_page_lifecycle_t *lifecycle, const watch_s
     lifecycle->launcher_index = snapshot->launcher_index;
     lifecycle->active = true;
     lifecycle->created_count++;
-    return true;
+    return watch_page_sync_popup(lifecycle, snapshot);
 }
 
 void watch_page_lifecycle_deinit(watch_page_lifecycle_t *lifecycle)

@@ -37,6 +37,7 @@ typedef enum {
     WATCH_COMMAND_NONE = 0,
     WATCH_COMMAND_PAGE_CHANGED,
     WATCH_COMMAND_SELECTION_CHANGED,
+    WATCH_COMMAND_POPUP_CHANGED,
     WATCH_COMMAND_COUNT
 } watch_command_type_t;
 
@@ -45,6 +46,7 @@ typedef struct
     watch_command_type_t type;
     watch_page_t page;
     uint8_t launcher_index;
+    bool popup_visible;
     uint32_t revision;
 } watch_command_t;
 
@@ -53,6 +55,7 @@ typedef struct
     watch_page_t page;
     uint8_t page_depth;
     uint8_t launcher_index;
+    bool popup_visible;
     uint32_t revision;
 } watch_snapshot_t;
 
@@ -63,6 +66,7 @@ typedef struct
     watch_page_t page;
     uint8_t page_depth;
     uint8_t launcher_index;
+    bool popup_visible;
     uint8_t command_head;
     uint8_t command_tail;
     uint8_t command_count;

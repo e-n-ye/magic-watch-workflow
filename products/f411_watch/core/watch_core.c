@@ -20,6 +20,7 @@ static void watch_core_enqueue_command(watch_core_t *core, watch_command_type_t 
     command->type = type;
     command->page = core->page;
     command->launcher_index = core->launcher_index;
+    command->popup_visible = core->popup_visible;
     command->revision = core->revision;
     core->command_head = (uint8_t)((core->command_head + 1U) % WATCH_CORE_COMMAND_CAPACITY);
     core->command_count++;
@@ -31,6 +32,21 @@ static void watch_core_commit_change(watch_core_t *core, watch_command_type_t ty
     watch_core_enqueue_command(core, type);
 }
 
+static bool watch_core_set_popup_visible(watch_core_t *core, bool popup_visible)
+{
+    if (core->popup_visible == popup_visible) {
+        return true;
+    }
+
+    if (!watch_core_has_command_space(core)) {
+        return false;
+    }
+
+    core->popup_visible = popup_visible;
+    watch_core_commit_change(core, WATCH_COMMAND_POPUP_CHANGED);
+    return true;
+}
+
 static bool watch_core_open_page(watch_core_t *core, watch_page_t page)
 {
     if (core->page_depth >= WATCH_CORE_PAGE_STACK_CAPACITY || !watch_core_has_command_space(core)) {
@@ -40,6 +56,7 @@ static bool watch_core_open_page(watch_core_t *core, watch_page_t page)
     core->page_stack[core->page_depth] = core->page;
     core->page_depth++;
     core->page = page;
+    core->popup_visible = false;
     watch_core_commit_change(core, WATCH_COMMAND_PAGE_CHANGED);
     return true;
 }
@@ -89,6 +106,7 @@ static bool watch_core_go_back(watch_core_t *core)
 
     core->page_depth--;
     core->page = core->page_stack[core->page_depth];
+    core->popup_visible = false;
     watch_core_commit_change(core, WATCH_COMMAND_PAGE_CHANGED);
     return true;
 }
@@ -123,8 +141,14 @@ bool watch_core_dispatch_event(watch_core_t *core, const watch_event_t *event)
         /* Power ownership is deferred; keep WAKE in the normalized contract. */
         return true;
     case WATCH_EVENT_BACK:
+        if (core->popup_visible) {
+            return watch_core_set_popup_visible(core, false);
+        }
         return watch_core_go_back(core);
     case WATCH_EVENT_SELECT:
+        if (core->page == WATCH_PAGE_DIAGNOSTICS) {
+            return watch_core_set_popup_visible(core, true);
+        }
         if (core->page == WATCH_PAGE_WATCHFACE) {
             return watch_core_open_page(core, WATCH_PAGE_LAUNCHER);
         }
@@ -159,6 +183,7 @@ bool watch_core_read_snapshot(const watch_core_t *core, watch_snapshot_t *snapsh
     snapshot->page = core->page;
     snapshot->page_depth = core->page_depth;
     snapshot->launcher_index = core->launcher_index;
+    snapshot->popup_visible = core->popup_visible;
     snapshot->revision = core->revision;
     return true;
 }

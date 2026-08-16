@@ -35,6 +35,7 @@ static void test_initial_state(void)
     assert(snapshot.page == WATCH_PAGE_WATCHFACE);
     assert(snapshot.page_depth == 0U);
     assert(snapshot.launcher_index == 0U);
+    assert(!snapshot.popup_visible);
     assert(snapshot.revision == 0U);
     assert(!watch_core_take_command(&core, &(watch_command_t){0}));
 }
@@ -55,6 +56,7 @@ static void test_navigation_and_commands(void)
     assert(watch_core_take_command(&core, &command));
     assert(command.type == WATCH_COMMAND_PAGE_CHANGED);
     assert(command.page == WATCH_PAGE_LAUNCHER);
+    assert(!command.popup_visible);
     assert(command.revision == 1U);
 
     assert(watch_test_dispatch(&core, WATCH_EVENT_DOWN));

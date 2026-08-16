@@ -144,13 +144,6 @@ static bool watch_simulator_show_popup(watch_page_lifecycle_t *lifecycle, const 
     return result;
 }
 
-static void watch_simulator_close_popup(watch_page_lifecycle_t *lifecycle)
-{
-    lv_lock();
-    watch_page_lifecycle_close_popup(lifecycle);
-    lv_unlock();
-}
-
 static bool watch_simulator_check_lifecycle(lv_display_t *display,
                                             watch_page_lifecycle_t *lifecycle)
 {
@@ -236,15 +229,28 @@ static bool watch_simulator_check_lifecycle(lv_display_t *display,
 
     diagnostics_snapshot = snapshot;
     diagnostics_snapshot.page = WATCH_PAGE_DIAGNOSTICS;
+    diagnostics_snapshot.page_depth = 1U;
+    diagnostics_snapshot.popup_visible = false;
     if (!watch_simulator_show_page(lifecycle, &diagnostics_snapshot, "DIAGNOSTICS",
                                    "BACK: RETURN")
-        || watch_page_lifecycle_active_popup(lifecycle) != NULL
-        || !watch_simulator_show_popup(lifecycle, "DIAG", "VISIBLE")) {
+        || watch_page_lifecycle_active_popup(lifecycle) != NULL) {
         return false;
     }
 
-    watch_simulator_close_popup(lifecycle);
-    if (watch_page_lifecycle_active_popup(lifecycle) != NULL
+    diagnostics_snapshot.popup_visible = true;
+    if (!watch_simulator_show_page(lifecycle, &diagnostics_snapshot, "DIAGNOSTICS",
+                                   "BACK: RETURN")
+        || !watch_simulator_popup_is(lifecycle, "DIAGNOSTICS", "CORE READY")
+        || !watch_simulator_show_page(lifecycle, &diagnostics_snapshot, "DIAGNOSTICS",
+                                      "BACK: RETURN")
+        || !watch_simulator_popup_is(lifecycle, "DIAGNOSTICS", "CORE READY")) {
+        return false;
+    }
+
+    diagnostics_snapshot.popup_visible = false;
+    if (!watch_simulator_show_page(lifecycle, &diagnostics_snapshot, "DIAGNOSTICS",
+                                   "BACK: RETURN")
+        || watch_page_lifecycle_active_popup(lifecycle) != NULL
         || !watch_simulator_show_page(lifecycle, &snapshot, "WATCHFACE", "SELECT: LAUNCHER")) {
         return false;
     }
@@ -252,8 +258,9 @@ static bool watch_simulator_check_lifecycle(lv_display_t *display,
     watch_page_lifecycle_read_stats(lifecycle, &stats);
     expected_pages = WATCH_SIMULATOR_EXPECTED_INITIAL_PAGES
         + (WATCH_SIMULATOR_LIFECYCLE_CYCLES * WATCH_SIMULATOR_EXPECTED_CYCLE_PAGES) + 2U;
-    return stats.created_count == expected_pages && stats.destroyed_count == (stats.created_count - 1U)
-        && stats.popup_created_count == 3U && stats.popup_destroyed_count == 3U;
+    return stats.created_count == expected_pages
+        && stats.destroyed_count == (stats.created_count - 1U) && stats.popup_created_count == 3U
+        && stats.popup_destroyed_count == 3U;
 }
 
 int main(int argc, char **argv)
