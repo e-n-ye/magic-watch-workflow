@@ -1,6 +1,7 @@
 #include "watch_runtime.h"
 
 #include <stddef.h>
+#include <stdatomic.h>
 
 typedef struct
 {
@@ -15,18 +16,31 @@ typedef struct
     bool initialized;
     uint32_t initialized_at_ms;
     watch_runtime_init_stage_t init_stage;
-    watch_service_event_t service_events[WATCH_RUNTIME_SERVICE_QUEUE_CAPACITY];
-    uint8_t service_event_head;
-    uint8_t service_event_tail;
-    uint8_t service_event_count;
+    watch_ui_event_t ui_events[WATCH_RUNTIME_UI_EVENT_QUEUE_CAPACITY];
+    uint8_t ui_event_head;
+    uint8_t ui_event_tail;
+    uint8_t ui_event_count;
     watch_runtime_health_entry_t health[WATCH_RUNTIME_SERVICE_COUNT];
 } watch_runtime_state_t;
 
 static watch_runtime_state_t s_runtime;
+static atomic_flag s_ui_event_lock = ATOMIC_FLAG_INIT;
 
 static bool watch_runtime_valid_service(watch_runtime_service_t service)
 {
     return (uint32_t)service < WATCH_RUNTIME_SERVICE_COUNT;
+}
+
+static void watch_runtime_lock_ui_events(void)
+{
+    while (atomic_flag_test_and_set_explicit(&s_ui_event_lock, memory_order_acquire)) {
+        /* Producers and the UI task hold this critical section only briefly. */
+    }
+}
+
+static void watch_runtime_unlock_ui_events(void)
+{
+    atomic_flag_clear_explicit(&s_ui_event_lock, memory_order_release);
 }
 
 uint32_t watch_runtime_elapsed_ms(uint32_t now_ms, uint32_t previous_ms)
@@ -37,6 +51,7 @@ uint32_t watch_runtime_elapsed_ms(uint32_t now_ms, uint32_t previous_ms)
 bool watch_runtime_init(uint32_t now_ms)
 {
     s_runtime = (watch_runtime_state_t) { 0 };
+    atomic_flag_clear_explicit(&s_ui_event_lock, memory_order_release);
     s_runtime.initialized = true;
     s_runtime.initialized_at_ms = now_ms;
     s_runtime.init_stage = WATCH_RUNTIME_INIT_RESET;
@@ -137,34 +152,58 @@ bool watch_runtime_read_health(watch_runtime_service_t service, uint32_t now_ms,
     return true;
 }
 
-bool watch_runtime_post_service_event(const watch_service_event_t *event)
+bool watch_runtime_post_ui_event(const watch_ui_event_t *event)
 {
-    if (!s_runtime.initialized || event == NULL
-        || s_runtime.service_event_count >= WATCH_RUNTIME_SERVICE_QUEUE_CAPACITY) {
+    bool posted = false;
+
+    if (!s_runtime.initialized || event == NULL) {
         return false;
     }
 
-    s_runtime.service_events[s_runtime.service_event_head] = *event;
-    s_runtime.service_event_head =
-        (uint8_t)((s_runtime.service_event_head + 1U) % WATCH_RUNTIME_SERVICE_QUEUE_CAPACITY);
-    s_runtime.service_event_count++;
-    return true;
+    watch_runtime_lock_ui_events();
+    if (s_runtime.ui_event_count < WATCH_RUNTIME_UI_EVENT_QUEUE_CAPACITY) {
+        s_runtime.ui_events[s_runtime.ui_event_head] = *event;
+        s_runtime.ui_event_head =
+            (uint8_t)((s_runtime.ui_event_head + 1U) % WATCH_RUNTIME_UI_EVENT_QUEUE_CAPACITY);
+        s_runtime.ui_event_count++;
+        posted = true;
+    }
+
+    watch_runtime_unlock_ui_events();
+    return posted;
 }
 
-bool watch_runtime_take_service_event(watch_service_event_t *event)
+bool watch_runtime_take_ui_event(watch_ui_event_t *event)
 {
-    if (!s_runtime.initialized || event == NULL || s_runtime.service_event_count == 0U) {
+    bool taken = false;
+
+    if (!s_runtime.initialized || event == NULL) {
         return false;
     }
 
-    *event = s_runtime.service_events[s_runtime.service_event_tail];
-    s_runtime.service_event_tail =
-        (uint8_t)((s_runtime.service_event_tail + 1U) % WATCH_RUNTIME_SERVICE_QUEUE_CAPACITY);
-    s_runtime.service_event_count--;
-    return true;
+    watch_runtime_lock_ui_events();
+    if (s_runtime.ui_event_count > 0U) {
+        *event = s_runtime.ui_events[s_runtime.ui_event_tail];
+        s_runtime.ui_event_tail =
+            (uint8_t)((s_runtime.ui_event_tail + 1U) % WATCH_RUNTIME_UI_EVENT_QUEUE_CAPACITY);
+        s_runtime.ui_event_count--;
+        taken = true;
+    }
+
+    watch_runtime_unlock_ui_events();
+    return taken;
 }
 
-uint8_t watch_runtime_service_event_count(void)
+uint8_t watch_runtime_ui_event_count(void)
 {
-    return s_runtime.initialized ? s_runtime.service_event_count : 0U;
+    uint8_t count;
+
+    if (!s_runtime.initialized) {
+        return 0U;
+    }
+
+    watch_runtime_lock_ui_events();
+    count = s_runtime.ui_event_count;
+    watch_runtime_unlock_ui_events();
+    return count;
 }

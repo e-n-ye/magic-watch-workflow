@@ -33,15 +33,15 @@ static bool watch_lsm6ds3_i2c_write(void *context, uint8_t address, uint8_t reg,
 
 static bool watch_lsm6ds3_publish_sample(void *context, uint32_t timestamp_ms)
 {
-    watch_service_event_t event;
+    watch_ui_event_t event;
 
     (void)context;
-    event = (watch_service_event_t) {
+    event = (watch_ui_event_t) {
         .type = WATCH_LSM6DS3_SERVICE_EVENT_SAMPLE,
         .value = 0U,
         .timestamp_ms = timestamp_ms,
     };
-    return watch_runtime_post_service_event(&event);
+    return watch_runtime_post_ui_event(&event);
 }
 
 static void watch_lsm6ds3_board_init_once(void)

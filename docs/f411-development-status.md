@@ -27,13 +27,15 @@ UI/resources, power, then secure OTA. No empty placeholder modules are added.
 
 ## Baseline and completion
 
-- This M8d board-acceptance update began from clean `origin/main` at `2d993d4`
-  (`docs:f411:record M2 negative board acceptance`).
+- This M9a task-ownership update began from clean `origin/main` at `55caa80`
+  (`feat:f411:close diagnostic popup lifecycle`).
 - The original pre-relocation Debug App reference was Flash `64,340 B` and RAM
   `30,208 B`. The current practical App budget remains 400 KiB Flash and 128 KiB
   RAM.
-- Nine of 21 numbered milestones are fully closed: M0-M8. This is about 43%
-  by strict closed-loop scope and about 55% by implemented capability.
+- Nine of 21 numbered milestones are fully closed: M0-M8. M9a is now closed
+  as a sub-round; M9 remains partial pending the separate RTC/time contract.
+  This remains about 43% by strict closed-loop scope and about 55% by
+  implemented capability.
 - Current hardware facts include STM32F411, 24 MHz HSE, ST-Link-compatible SWD,
   ST7789, CST816, W25Q128, KT6368, and a schematic EEPROM candidate
   `BL24C02F-RRRC`. EEPROM board address and response remain unconfirmed.
@@ -51,7 +53,7 @@ UI/resources, power, then secure OTA. No empty placeholder modules are added.
 | M6 | LVGL 9.5, DMA flush, UI task, 240x280 budget | Complete. |
 | M7 | Editor XML, generated C, PC simulator | Complete for the approved manual Editor export workflow. |
 | M8 | Six page categories, lifecycle, interaction, leak pressure | Complete; the core-driven Diagnostic popup, physical input path, page lifecycle, and simulator pressure coverage are accepted. |
-| M9 | RTC/time service, queues, heartbeats, init policy | Partial; bounded queue and health foundations exist, but task ownership and the RTC/time contract are incomplete. |
+| M9 | RTC/time service, queues, heartbeats, init policy | Partial; M9a closes bootstrap task ownership, UI-inbound queue ownership, and board acceptance. The RTC/time contract remains M9b. |
 | M10 | Five sensor drivers and aggregation | Partial; only LSM6DS3 has a closed driver/service path. |
 | M11 | EEPROM part/address facts | Not started; `BL24C02F-RRRC` is a schematic candidate only. |
 | M12 | Power and watchdog | Partial; RTC Stop/wake, display-off, software-off, and IWDG have software and no-battery board evidence. KEY_WAKE, physical cutoff, watchdog wiring, and current remain open. |
@@ -64,18 +66,17 @@ UI/resources, power, then secure OTA. No empty placeholder modules are added.
 | M19 | Trial confirmation and rollback | Not started. |
 | M20 | Final configurations, simulator, fault injection, budgets, regression report | Not started. |
 
-## Current round: M9a task ownership
-
-Move runtime bootstrap ownership to `defaultTask`, which starts required runtime
-tasks and exits. UI ownership moves out of the USB service, and the UI/app owner
-becomes the sole consumer of the service event queue. RTC/time work remains the
-separate M9b round.
-
-## Next round: M9b time service
+## Current round: M9b time service
 
 Add a pure-C local-calendar time contract, RTC adapter, normalized time events,
 core snapshot data, watchface consumption, and CDC diagnostics. Time zones, NTP,
 and network synchronization remain out of scope.
+
+## Next round: M10b LIS2MDL
+
+Add the LIS2MDL driver and board service as its own hardware-verified PR. Its
+availability and failures remain explicit diagnostic states; aggregation remains
+the later M10f round.
 
 ## Risks and blockers
 
@@ -85,9 +86,9 @@ and network synchronization remain out of scope.
 - Editor regeneration remains a manual LVGL Pro Editor operation. CI builds the
   committed generated C and does not replace the generator.
 - The UI task previously overflowed its 4 KiB stack during Diagnostic work. It
-  now uses 6 KiB and passed board stability plus the popup interaction sequence;
+  now uses 6 KiB and passed the popup sequence plus M9a CDC stability checks;
   broader duration regression remains part of M20.
-- M9 still starts the UI from the USB service and keeps `defaultTask` alive.
+- M9b has no RTC/local-calendar contract or time consumer yet.
 - CDC diagnostic output can drop while no host reader is attached. The accepted
   M8d interaction sequence used snapshot state, not a zero-drop assertion.
 - LSM6DS3 is the only closed sensor; missing sensors remain diagnostic degraded
@@ -99,21 +100,19 @@ and network synchronization remain out of scope.
 
 ## Latest verification
 
-- Debug, Diagnostic, and Release App and Bootloader builds passed. Debug
-  format-check and Cppcheck passed; host CTest passed 5/5 and the 240x280
-  simulator smoke test passed 1/1.
-- Diagnostic and Release App sizes remain within the 400 KiB practical Flash
-  budget: Diagnostic Flash `266,108 B` / RAM `83,144 B`; Release Flash
-  `139,016 B` / RAM `83,136 B`.
-- The new signed Diagnostic App package passed host verification, was written
-  and readback-verified in the App slot only, and left the Bootloader readback
+- Debug, Diagnostic, and Release App builds passed. Debug format-check and
+  Cppcheck passed; host CTest passed 5/5 and the 240x280 simulator smoke test
+  passed 1/1.
+- App sizes remain within the 400 KiB practical Flash budget: Debug Flash
+  `256,960 B` / RAM `83,144 B`; Diagnostic Flash `266,344 B` / RAM `83,144 B`;
+  Release Flash `139,160 B` / RAM `83,136 B`.
+- A newly signed Diagnostic package passed host verification, was written and
+  readback-verified only in the App slot, and left the Bootloader 64 KiB
   SHA-256 unchanged.
-- Reset-to-CDC availability was measured at about four seconds while the
-  Bootloader verifies the signed App. The last LCD frame can remain visible
-  during that interval, so a transient old purple frame alone is not a fault.
-- The initial Diagnostic build recorded a `watchUi` stack-overflow capsule. The
-  targeted 6 KiB UI stack build ran for about one minute with increasing app,
-  UI, USB, and sensor heartbeats and `diag=none`.
-- Board input acceptance completed `SELECT -> popup=1`, first `BACK -> popup=0`
-  on the Diagnostic page, then second `BACK -> watchface`; all final services
-  were healthy and no diagnostic capsule was present.
+- After dynamic CDC re-enumeration, `ping`, `info`, `health`, `diag`, and
+  `stats` were valid. Health was stage 3 with app, UI, USB, and sensor services
+  healthy and the UI event queue empty; no diagnostic capsule appeared during
+  two ten-second stability segments.
+- SWD observed four runtime tasks after boot, proving `defaultTask` had exited.
+  Physical M9a acceptance completed encoder `SELECT -> popup=1`, then two
+  left-edge `BACK` gestures for `popup=0` and Watchface return.
