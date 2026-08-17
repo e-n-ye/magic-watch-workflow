@@ -142,6 +142,18 @@ if(BUILD_TESTING)
 
     add_test(NAME watch_eeprom_probe COMMAND watch_eeprom_probe_tests)
 
+    add_executable(watch_w25q128_tests
+        ${CMAKE_CURRENT_LIST_DIR}/watch_w25q128_test.c
+        ${CMAKE_CURRENT_LIST_DIR}/../products/f411_watch/storage/watch_w25q128.c
+    )
+
+    target_include_directories(watch_w25q128_tests
+        PRIVATE
+            ${CMAKE_CURRENT_LIST_DIR}/../products/f411_watch/storage
+    )
+
+    add_test(NAME watch_w25q128 COMMAND watch_w25q128_tests)
+
     add_executable(watch_max30102_tests
         ${CMAKE_CURRENT_LIST_DIR}/watch_max30102_test.c
         ${CMAKE_CURRENT_LIST_DIR}/../products/f411_watch/sensors/watch_max30102.c
