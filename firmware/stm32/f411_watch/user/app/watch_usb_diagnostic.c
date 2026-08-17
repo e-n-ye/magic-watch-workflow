@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include "board/usb/watch_usb_cdc.h"
+#include "board/sensors/watch_aht20_board.h"
 #include "board/sensors/watch_lis2mdl_board.h"
 #include "board/sensors/watch_lsm6ds3_board.h"
 #include "board/power/watch_power.h"
@@ -154,8 +155,11 @@ static void send_sensor(void)
     watch_lsm6ds3_sample_t sample = { 0 };
     watch_lis2mdl_service_status_t lis2mdl_status;
     watch_lis2mdl_sample_t lis2mdl_sample = { 0 };
+    watch_aht20_service_status_t aht20_status;
+    watch_aht20_sample_t aht20_sample = { 0 };
     bool sample_valid;
     bool lis2mdl_sample_valid;
+    bool aht20_sample_valid;
     int length;
 
     if (!watch_lsm6ds3_board_read_status(&status)) {
@@ -172,6 +176,28 @@ static void send_sensor(void)
                       (unsigned long)status.event_drop_count, (int)sample.accel_x,
                       (int)sample.accel_y, (int)sample.accel_z, (int)sample.gyro_x,
                       (int)sample.gyro_y, (int)sample.gyro_z);
+    if ((length > 0) && ((size_t)length < sizeof(response))) {
+        watch_usb_cdc_write((const uint8_t *)response, (size_t)length);
+    }
+
+    if (!watch_aht20_board_read_status(&aht20_status)) {
+        send_text("sensor aht20=unavailable\r\n");
+        return;
+    }
+
+    aht20_sample_valid = watch_aht20_board_read_latest(&aht20_sample);
+    length = snprintf(response, sizeof(response),
+                      "sensor aht20=%u cal=%u sample=%u count=%lu errors=%lu crc=%lu "
+                      "timeout=%lu drop=%lu temp_x100=%d humidity_x100=%u state=%u status=0x%02x\r\n",
+                      aht20_status.ready ? 1U : 0U, aht20_status.calibrated ? 1U : 0U,
+                      aht20_sample_valid ? 1U : 0U, (unsigned long)aht20_status.sample_count,
+                      (unsigned long)aht20_status.read_error_count,
+                      (unsigned long)aht20_status.crc_error_count,
+                      (unsigned long)aht20_status.timeout_count,
+                      (unsigned long)aht20_status.event_drop_count,
+                      (int)aht20_sample.temperature_centi_c,
+                      (unsigned int)aht20_sample.humidity_centi_percent,
+                      (unsigned int)aht20_status.state, aht20_status.status_byte);
     if ((length > 0) && ((size_t)length < sizeof(response))) {
         watch_usb_cdc_write((const uint8_t *)response, (size_t)length);
     }
@@ -380,6 +406,7 @@ void watch_usb_diagnostic_process(void)
 
     watch_lsm6ds3_board_process(now_ms);
     watch_lis2mdl_board_process(now_ms);
+    watch_aht20_board_process(now_ms);
     (void)watch_runtime_start_service(WATCH_RUNTIME_SERVICE_USB, now_ms);
     (void)watch_runtime_heartbeat(WATCH_RUNTIME_SERVICE_USB, now_ms);
 
