@@ -30,6 +30,8 @@ set(FORMAT_FILES
     "${FORMAT_ROOT}/board/input/watch_input_hw.h"
     "${FORMAT_ROOT}/board/power/watch_power.c"
     "${FORMAT_ROOT}/board/power/watch_power.h"
+    "${FORMAT_ROOT}/board/sensors/watch_lis2mdl_board.c"
+    "${FORMAT_ROOT}/board/sensors/watch_lis2mdl_board.h"
     "${FORMAT_ROOT}/board/sensors/watch_lsm6ds3_board.c"
     "${FORMAT_ROOT}/board/sensors/watch_lsm6ds3_board.h"
     "${FORMAT_ROOT}/board/time/watch_rtc_board.c"
@@ -67,8 +69,12 @@ endif()
 
 if(DEFINED FORMAT_SENSOR_ROOT AND NOT FORMAT_SENSOR_ROOT STREQUAL "")
     list(APPEND FORMAT_FILES
+        "${FORMAT_SENSOR_ROOT}/watch_lis2mdl.c"
+        "${FORMAT_SENSOR_ROOT}/watch_lis2mdl.h"
         "${FORMAT_SENSOR_ROOT}/watch_lsm6ds3.c"
         "${FORMAT_SENSOR_ROOT}/watch_lsm6ds3.h"
+        "${FORMAT_SENSOR_ROOT}/watch_lsm6ds3_sensor_hub.c"
+        "${FORMAT_SENSOR_ROOT}/watch_lsm6ds3_sensor_hub.h"
     )
 endif()
 

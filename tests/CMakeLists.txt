@@ -76,6 +76,19 @@ if(BUILD_TESTING)
 
     add_test(NAME watch_lsm6ds3 COMMAND watch_lsm6ds3_tests)
 
+    add_executable(watch_lis2mdl_tests
+        ${CMAKE_CURRENT_LIST_DIR}/watch_lis2mdl_test.c
+        ${CMAKE_CURRENT_LIST_DIR}/../products/f411_watch/sensors/watch_lis2mdl.c
+        ${CMAKE_CURRENT_LIST_DIR}/../products/f411_watch/sensors/watch_lsm6ds3_sensor_hub.c
+    )
+
+    target_include_directories(watch_lis2mdl_tests
+        PRIVATE
+            ${CMAKE_CURRENT_LIST_DIR}/../products/f411_watch/sensors
+    )
+
+    add_test(NAME watch_lis2mdl COMMAND watch_lis2mdl_tests)
+
     add_executable(watch_power_tests
         ${CMAKE_CURRENT_LIST_DIR}/watch_power_test.c
         ${CMAKE_CURRENT_LIST_DIR}/../products/f411_watch/power/watch_power_state.c
