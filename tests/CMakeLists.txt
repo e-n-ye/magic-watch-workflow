@@ -89,6 +89,18 @@ if(BUILD_TESTING)
 
     add_test(NAME watch_lis2mdl COMMAND watch_lis2mdl_tests)
 
+    add_executable(watch_aht20_tests
+        ${CMAKE_CURRENT_LIST_DIR}/watch_aht20_test.c
+        ${CMAKE_CURRENT_LIST_DIR}/../products/f411_watch/sensors/watch_aht20.c
+    )
+
+    target_include_directories(watch_aht20_tests
+        PRIVATE
+            ${CMAKE_CURRENT_LIST_DIR}/../products/f411_watch/sensors
+    )
+
+    add_test(NAME watch_aht20 COMMAND watch_aht20_tests)
+
     add_executable(watch_power_tests
         ${CMAKE_CURRENT_LIST_DIR}/watch_power_test.c
         ${CMAKE_CURRENT_LIST_DIR}/../products/f411_watch/power/watch_power_state.c

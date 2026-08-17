@@ -32,6 +32,7 @@ add_library(f411_watch_user OBJECT
     board/input/watch_cst816.c
     board/input/watch_input_hw.c
     board/power/watch_power.c
+    board/sensors/watch_aht20_board.c
     board/sensors/watch_lis2mdl_board.c
     board/sensors/watch_lsm6ds3_board.c
     board/time/watch_rtc_board.c
@@ -49,6 +50,7 @@ add_library(f411_watch_user OBJECT
     ${WATCH_INPUT_SOURCE_DIR}/watch_input.c
     ${WATCH_RUNTIME_SOURCE_DIR}/watch_runtime.c
     ${WATCH_SENSOR_SOURCE_DIR}/watch_lis2mdl.c
+    ${WATCH_SENSOR_SOURCE_DIR}/watch_aht20.c
     ${WATCH_SENSOR_SOURCE_DIR}/watch_lsm6ds3.c
     ${WATCH_SENSOR_SOURCE_DIR}/watch_lsm6ds3_sensor_hub.c
     ${WATCH_POWER_SOURCE_DIR}/watch_power_state.c
