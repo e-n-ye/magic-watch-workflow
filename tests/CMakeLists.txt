@@ -101,6 +101,18 @@ if(BUILD_TESTING)
 
     add_test(NAME watch_aht20 COMMAND watch_aht20_tests)
 
+    add_executable(watch_cw2015_tests
+        ${CMAKE_CURRENT_LIST_DIR}/watch_cw2015_test.c
+        ${CMAKE_CURRENT_LIST_DIR}/../products/f411_watch/sensors/watch_cw2015.c
+    )
+
+    target_include_directories(watch_cw2015_tests
+        PRIVATE
+            ${CMAKE_CURRENT_LIST_DIR}/../products/f411_watch/sensors
+    )
+
+    add_test(NAME watch_cw2015 COMMAND watch_cw2015_tests)
+
     add_executable(watch_max30102_tests
         ${CMAKE_CURRENT_LIST_DIR}/watch_max30102_test.c
         ${CMAKE_CURRENT_LIST_DIR}/../products/f411_watch/sensors/watch_max30102.c
