@@ -117,7 +117,9 @@ static void watch_ui_process_events(void)
     watch_ui_event_t event;
 
     while (watch_runtime_take_ui_event(&event)) {
-        if (event.type == WATCH_LSM6DS3_SERVICE_EVENT_SAMPLE
+        if (event.type == WATCH_SENSOR_AGGREGATE_SERVICE_EVENT_STATUS) {
+            (void)watch_app_dispatch_sensor_snapshot(&event.sensor_snapshot);
+        } else if (event.type == WATCH_LSM6DS3_SERVICE_EVENT_SAMPLE
             || event.type == WATCH_LIS2MDL_SERVICE_EVENT_SAMPLE
             || event.type == WATCH_AHT20_SERVICE_EVENT_SAMPLE
             || event.type == WATCH_CW2015_SERVICE_EVENT_SAMPLE
