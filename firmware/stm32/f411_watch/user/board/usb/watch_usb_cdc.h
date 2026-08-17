@@ -6,6 +6,7 @@
 
 void watch_usb_cdc_reset(void);
 void watch_usb_cdc_stop(void);
+void watch_usb_cdc_reinitialize(void);
 void watch_usb_cdc_on_receive(const uint8_t *data, uint32_t length);
 void watch_usb_cdc_on_transmit_complete(void);
 size_t watch_usb_cdc_read(uint8_t *data, size_t capacity);

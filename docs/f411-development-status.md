@@ -27,8 +27,8 @@ UI/resources, power, then secure OTA. No empty placeholder modules are added.
 
 ## Baseline and completion
 
-- This M11 EEPROM-facts update began from clean `origin/main` at `ecca53c`
-  (`feat:f411:add sensor aggregation service`).
+- This M12b power-acceptance update began from clean `origin/main` at `f35bfec`
+  (`test:f411:include stddef for eeprom probe`).
 - The original pre-relocation Debug App reference was Flash `64,340 B` and RAM
   `30,208 B`. The current practical App budget remains 400 KiB Flash and 128 KiB
   RAM.
@@ -70,17 +70,19 @@ UI/resources, power, then secure OTA. No empty placeholder modules are added.
 | M19 | Trial confirmation and rollback | Not started. |
 | M20 | Final configurations, simulator, fault injection, budgets, regression report | Not started. |
 
-## Current round: M11 EEPROM facts
+## Current round: M12b Stop/wake acceptance
 
-M11 adds only a bounded, read-only I2C address probe for the schematic EEPROM
-candidate. It scans `0x50..0x57` with `HAL_I2C_IsDeviceReady`, exposes the
-response mask through the CDC `eeprom` command, and performs no memory read or
-write. The probe is a fact-finding consumer, not an EEPROM driver.
+M12b keeps the power scope bounded to Stop/wake and watchdog behavior. The
+connected board entered Stop and woke through the RTC, restored the system
+clock, reinitialized USB CDC, and accepted a subsequent diagnostic command.
+The physical `KEY_WAKE` source has not yet been observed; no-battery physical
+cutoff, watchdog wiring, and current reduction remain unverified.
 
-## Next round: M12b power acceptance
+## Next round: M13 W25Q128 raw driver
 
-M12b will recheck KEY_WAKE and Stop/wake behavior on the connected board. The
-no-battery limitation continues to block physical cutoff and current claims.
+M13 will add the shared W25Q128 protocol layer and verify JEDEC ID, reads,
+page-program, 4 KiB erase, ready timeouts, and error recovery without mounting
+littlefs or touching OTA metadata.
 
 ## Risks and blockers
 
@@ -123,8 +125,8 @@ no-battery limitation continues to block physical cutoff and current claims.
   Cppcheck passed; Host CTest passed `12/12` and the 240x280 simulator smoke
   test passed `1/1`.
 - Current App budgets remain within the 400 KiB practical Flash budget:
-  Debug Flash `278,236 B` / RAM `85,976 B`; Diagnostic Flash `287,680 B` /
-  RAM `85,976 B`; Release Flash `149,636 B` / RAM `85,968 B`. Bootloader is
+  Debug Flash `279,344 B` / RAM `85,976 B`; Diagnostic Flash `288,852 B` /
+  RAM `85,976 B`; Release Flash `150,216 B` / RAM `85,968 B`. Bootloader is
   `6,564 B` Flash / `1,056 B` RAM.
 - M10b host tests cover Sensor Hub bank selection, LIS2MDL address/configuration,
   `sensor_hub_end_op` timeout, NACK handling, identity, sample decoding,
@@ -152,3 +154,8 @@ no-battery limitation continues to block physical cutoff and current claims.
   ready with part `0x15`, revision `0x03`, and finger detection active. CW2015
   and LIS2MDL remained explicitly degraded with no valid samples; these are
   hardware facts, not false acceptance.
+- M12b board acceptance: `sleep` entered Stop and returned with
+  `power state=active wake=rtc transitions=6 stops=3 wakes=3 watchdog=1`;
+  CDC responded after wake because the USB device was explicitly deinitialized
+  and initialized again. A physical `KEY_WAKE` wake was not observed, so it
+  remains pending rather than being inferred from RTC wake.
