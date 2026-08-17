@@ -42,6 +42,8 @@ set(FORMAT_FILES
     "${FORMAT_ROOT}/board/sensors/watch_lsm6ds3_board.h"
     "${FORMAT_ROOT}/board/sensors/watch_sensor_aggregate_board.c"
     "${FORMAT_ROOT}/board/sensors/watch_sensor_aggregate_board.h"
+    "${FORMAT_ROOT}/board/storage/watch_eeprom_probe_board.c"
+    "${FORMAT_ROOT}/board/storage/watch_eeprom_probe_board.h"
     "${FORMAT_ROOT}/board/time/watch_rtc_board.c"
     "${FORMAT_ROOT}/board/time/watch_rtc_board.h"
     "${FORMAT_ROOT}/config/user_config.h"
@@ -107,6 +109,13 @@ if(DEFINED FORMAT_TIME_ROOT AND NOT FORMAT_TIME_ROOT STREQUAL "")
     list(APPEND FORMAT_FILES
         "${FORMAT_TIME_ROOT}/watch_time.c"
         "${FORMAT_TIME_ROOT}/watch_time.h"
+    )
+endif()
+
+if(DEFINED FORMAT_STORAGE_ROOT AND NOT FORMAT_STORAGE_ROOT STREQUAL "")
+    list(APPEND FORMAT_FILES
+        "${FORMAT_STORAGE_ROOT}/watch_eeprom_probe.c"
+        "${FORMAT_STORAGE_ROOT}/watch_eeprom_probe.h"
     )
 endif()
 

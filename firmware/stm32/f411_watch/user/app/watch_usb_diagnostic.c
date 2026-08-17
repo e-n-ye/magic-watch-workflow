@@ -12,6 +12,7 @@
 #include "board/sensors/watch_lis2mdl_board.h"
 #include "board/sensors/watch_lsm6ds3_board.h"
 #include "board/power/watch_power.h"
+#include "board/storage/watch_eeprom_probe_board.h"
 #include "main.h"
 #include "watch_app.h"
 #include "watch_diagnostic.h"
@@ -28,6 +29,7 @@ typedef enum {
     WATCH_USB_COMMAND_STATS,
     WATCH_USB_COMMAND_HEALTH,
     WATCH_USB_COMMAND_SENSOR,
+    WATCH_USB_COMMAND_EEPROM,
     WATCH_USB_COMMAND_POWER,
     WATCH_USB_COMMAND_DISPLAY_OFF,
     WATCH_USB_COMMAND_SLEEP,
@@ -344,11 +346,33 @@ static void send_power(void)
     }
 }
 
+static void send_eeprom(void)
+{
+    char response[192];
+    watch_eeprom_probe_status_t status;
+    int length;
+
+    if (!watch_eeprom_probe_board_read_status(&status)) {
+        send_text("eeprom=unavailable\r\n");
+        return;
+    }
+
+    length = snprintf(response, sizeof(response),
+                      "eeprom candidate=BL24C02F-RRRC complete=%u range=0x%02x-0x%02x "
+                      "probed=%u response_mask=0x%02x scans=%lu\r\n",
+                      status.complete ? 1U : 0U, (unsigned int)status.first_address,
+                      (unsigned int)status.last_address, (unsigned int)status.probed_count,
+                      (unsigned int)status.response_mask, (unsigned long)status.scan_count);
+    if ((length > 0) && ((size_t)length < sizeof(response))) {
+        watch_usb_cdc_write((const uint8_t *)response, (size_t)length);
+    }
+}
+
 static void handle_command(watch_usb_command_t command)
 {
     switch (command) {
     case WATCH_USB_COMMAND_HELP:
-        send_text("commands: help ping info diag stats health sensor power display-off sleep shutdown\r\n");
+        send_text("commands: help ping info diag stats health sensor eeprom power display-off sleep shutdown\r\n");
         break;
     case WATCH_USB_COMMAND_PING:
         send_text("pong\r\n");
@@ -367,6 +391,9 @@ static void handle_command(watch_usb_command_t command)
         break;
     case WATCH_USB_COMMAND_SENSOR:
         send_sensor();
+        break;
+    case WATCH_USB_COMMAND_EEPROM:
+        send_eeprom();
         break;
     case WATCH_USB_COMMAND_POWER:
         send_power();
@@ -417,6 +444,8 @@ static watch_usb_command_t parse_command(void)
         return WATCH_USB_COMMAND_HEALTH;
     } else if (strcmp(s_command, "sensor") == 0) {
         return WATCH_USB_COMMAND_SENSOR;
+    } else if (strcmp(s_command, "eeprom") == 0) {
+        return WATCH_USB_COMMAND_EEPROM;
     } else if (strcmp(s_command, "power") == 0) {
         return WATCH_USB_COMMAND_POWER;
     } else if (strcmp(s_command, "display-off") == 0) {
@@ -468,6 +497,7 @@ void watch_usb_diagnostic_process(void)
     watch_cw2015_board_process(now_ms);
     watch_max30102_board_process(now_ms);
     watch_sensor_aggregate_board_process(now_ms);
+    watch_eeprom_probe_board_process(now_ms);
     (void)watch_runtime_start_service(WATCH_RUNTIME_SERVICE_USB, now_ms);
     (void)watch_runtime_heartbeat(WATCH_RUNTIME_SERVICE_USB, now_ms);
 

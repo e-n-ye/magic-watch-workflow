@@ -27,21 +27,22 @@ UI/resources, power, then secure OTA. No empty placeholder modules are added.
 
 ## Baseline and completion
 
-- This M10f sensor-aggregation update began from clean `origin/main` at `12ff3a1`
-  (`feat:f411:add CW2015 fuel gauge service`).
+- This M11 EEPROM-facts update began from clean `origin/main` at `ecca53c`
+  (`feat:f411:add sensor aggregation service`).
 - The original pre-relocation Debug App reference was Flash `64,340 B` and RAM
   `30,208 B`. The current practical App budget remains 400 KiB Flash and 128 KiB
   RAM.
-- Ten of 21 numbered milestones are fully closed: M0-M9. M10b LIS2MDL,
+- Eleven of 21 numbered milestones are fully closed: M0-M9 and M11. M10b LIS2MDL,
   M10c AHT20-compatible, M10d MAX30102, and M10e CW2015 driver/service paths
   plus the M10f aggregation path are implemented. M10 remains partial because
   the board still lacks independent LIS2MDL and CW2015 physical acceptance.
-  This is about 48% by strict numbered scope. The current artifact is a
+  This is about 52% by strict numbered scope. The current artifact is a
   runnable, diagnosable vertical slice; upgrade, power-loss recovery, and
   rollback are not present.
 - Current hardware facts include STM32F411, 24 MHz HSE, ST-Link-compatible SWD,
   ST7789, CST816, W25Q128, KT6368, and a schematic EEPROM candidate
-  `BL24C02F-RRRC`. EEPROM board address and response remain unconfirmed.
+  `BL24C02F-RRRC`. A read-only scan saw ACK at `0x50` and `0x57`; the exact
+  populated part and address strap remain unconfirmed.
 
 ## Milestones
 
@@ -58,7 +59,7 @@ UI/resources, power, then secure OTA. No empty placeholder modules are added.
 | M8 | Six page categories, lifecycle, interaction, leak pressure | Complete; the core-driven Diagnostic popup, physical input path, page lifecycle, and simulator pressure coverage are accepted. |
 | M9 | RTC/time service, queues, heartbeats, init policy | Complete; M9a closed bootstrap and queue ownership, and M9b added the local-calendar RTC contract, normalized events, core snapshots, Watchface and CDC consumers, plus reset-retention board evidence. |
 | M10 | Five sensor drivers and aggregation | Partial; all five driver/service paths and M10f pure-C aggregation are implemented. The board reports LSM6DS3/AHT20/MAX30102 available and explicitly degrades LIS2MDL/CW2015; physical acceptance of those two missing devices remains open. |
-| M11 | EEPROM part/address facts | Next; `BL24C02F-RRRC` is a schematic candidate only. |
+| M11 | EEPROM part/address facts | Complete as a read-only fact probe; `0x50` and `0x57` responded, but the exact part/strap remains a documented risk and no legacy driver was migrated. |
 | M12 | Power and watchdog | Partial; RTC Stop/wake, display-off, software-off, and IWDG have software and no-battery board evidence. KEY_WAKE, physical cutoff, watchdog wiring, and current remain open. |
 | M13 | W25Q128 raw driver | Not started. |
 | M14 | littlefs and resource streaming | Not started. |
@@ -69,22 +70,17 @@ UI/resources, power, then secure OTA. No empty placeholder modules are added.
 | M19 | Trial confirmation and rollback | Not started. |
 | M20 | Final configurations, simulator, fault injection, budgets, regression report | Not started. |
 
-## Current round: M10f sensor aggregation
+## Current round: M11 EEPROM facts
 
-M10f is complete as a pure-C aggregation contract and board adapter. It maps
-each sensor to `ready`, `sample_valid`, state, latest sample timestamp, sample
-count, and a saturating error count; the core snapshot carries the aggregate
-`available_mask`, `degraded` flag, and revision. The USB task publishes only
-changed snapshots into the bounded UI event queue and retains a pending snapshot
-when the queue is full. The UI task is the sole queue consumer and dispatches the
-snapshot into `watch_core`; sensor absence is a degraded state and does not
-block application health or OTA trial confirmation.
+M11 adds only a bounded, read-only I2C address probe for the schematic EEPROM
+candidate. It scans `0x50..0x57` with `HAL_I2C_IsDeviceReady`, exposes the
+response mask through the CDC `eeprom` command, and performs no memory read or
+write. The probe is a fact-finding consumer, not an EEPROM driver.
 
-## Next round: M11 EEPROM facts
+## Next round: M12b power acceptance
 
-M11 will perform only a read-only probe of the schematic EEPROM candidate and
-record the address/response evidence. If the facts remain unclear, it will
-record the risk without migrating the legacy 24LC32 driver.
+M12b will recheck KEY_WAKE and Stop/wake behavior on the connected board. The
+no-battery limitation continues to block physical cutoff and current claims.
 
 ## Risks and blockers
 
@@ -113,6 +109,9 @@ record the risk without migrating the legacy 24LC32 driver.
   no-battery board returned no response. Power, population, and PCB routing
   remain unconfirmed; the new service stays read-only until those facts are
   established.
+- The M11 EEPROM probe returned ACK at both `0x50` and `0x57`. This is not
+  enough to identify the populated part or strap state, so the old 24LC32
+  driver remains intentionally unmigrated.
 - The no-battery board cannot establish KEY_WAKE, physical power-latch polarity,
   external watchdog wiring, or measured current reduction.
 - W25Q128, resource storage, KT6368 transport, OTA metadata, install recovery,
@@ -121,11 +120,11 @@ record the risk without migrating the legacy 24LC32 driver.
 ## Latest verification
 
 - Debug, Diagnostic, and Release App builds passed. Debug format-check and
-  Cppcheck passed; Host CTest passed `11/11` and the 240x280 simulator smoke
+  Cppcheck passed; Host CTest passed `12/12` and the 240x280 simulator smoke
   test passed `1/1`.
 - Current App budgets remain within the 400 KiB practical Flash budget:
-  Debug Flash `276,776 B` / RAM `85,952 B`; Diagnostic Flash `286,220 B` /
-  RAM `85,952 B`; Release Flash `148,796 B` / RAM `85,944 B`. Bootloader is
+  Debug Flash `278,236 B` / RAM `85,976 B`; Diagnostic Flash `287,680 B` /
+  RAM `85,976 B`; Release Flash `149,636 B` / RAM `85,968 B`. Bootloader is
   `6,564 B` Flash / `1,056 B` RAM.
 - M10b host tests cover Sensor Hub bank selection, LIS2MDL address/configuration,
   `sensor_hub_end_op` timeout, NACK handling, identity, sample decoding,
@@ -136,20 +135,20 @@ record the risk without migrating the legacy 24LC32 driver.
   CW2015 voltage/SOC decode, periodic reads, invalid SOC, read failure, and
   event-drop accounting. M10f Host tests cover aggregate availability,
   degraded-state calculation, revision coalescing, snapshot validation, and
-  core sensor-status commands. A signed Diagnostic version 13/counter 13
-  package passed host verification, was written to and verified at
+  core sensor-status commands. M11 Host tests cover the read-only EEPROM probe
+  address window, response mask, completion, and invalid-argument handling. A
+  signed Diagnostic version 14/counter 14 package passed host verification,
+  was written to and verified at
   `0x08010000`, and did not change the Bootloader. A halted read confirmed the
   before/after Bootloader SHA-256 as
   `59034D2B990BFA044A1A928551E17828365D99ACB950D33F7E68371C9107FEB1`.
-- After dynamic CDC re-enumeration, `ping`, `info`, `health`, `stats`, `diag`,
-  `sensor`, and `power` were valid. Health was stage 3 with app, UI, USB, and
-  sensor services healthy; the queue briefly reached `2` during enumeration and
-  then drained to `0`, with zero CDC drops and no diagnostic capsule. `info`
-  reported `sensors=0x15 degraded=1`. Board evidence was LSM6DS3 ready with ID
-  `0x6A` and `2,884` samples, AHT20-compatible `30.45 C` / `72.97%` with zero
-  errors, and MAX30102 ready with part `0x15`, revision `0x03`, `1,482` samples,
-  zero read/ID/reset/FIFO errors, and finger detection active. CW2015 remained
-  `ready=0`, `version=0x00`, no sample, one read error, state `2`; LIS2MDL
-  remained `ready=0`, `id=0x00`, no sample, one read error, NACK count `0`, and
-  state `7`. Both are recorded as degraded hardware facts, not false
-  acceptance.
+- After dynamic CDC re-enumeration, `ping`, `info`, `eeprom`, `health`,
+  `stats`, `diag`, `sensor`, and `power` were valid. Health was stage 3 with
+  app, UI, USB, and sensor services healthy; the queue was `2` during the read,
+  with zero RX/TX drops and `diag=none`. The EEPROM line reported
+  `complete=1`, `range=0x50-0x57`, `probed=8`, and `response_mask=0x81`.
+  `info` reported `sensors=0x15 degraded=1`. Board sensor evidence was LSM6DS3
+  ready with ID `0x6A`, AHT20-compatible `30.51 C` / `71.79%`, and MAX30102
+  ready with part `0x15`, revision `0x03`, and finger detection active. CW2015
+  and LIS2MDL remained explicitly degraded with no valid samples; these are
+  hardware facts, not false acceptance.
