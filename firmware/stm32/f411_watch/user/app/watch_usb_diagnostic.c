@@ -6,6 +6,7 @@
 
 #include "board/usb/watch_usb_cdc.h"
 #include "board/sensors/watch_aht20_board.h"
+#include "board/sensors/watch_cw2015_board.h"
 #include "board/sensors/watch_max30102_board.h"
 #include "board/sensors/watch_lis2mdl_board.h"
 #include "board/sensors/watch_lsm6ds3_board.h"
@@ -158,10 +159,11 @@ static void send_sensor(void)
     watch_lis2mdl_sample_t lis2mdl_sample = { 0 };
     watch_aht20_service_status_t aht20_status;
     watch_aht20_sample_t aht20_sample = { 0 };
+    watch_cw2015_service_status_t cw2015_status;
+    watch_cw2015_sample_t cw2015_sample = { 0 };
     watch_max30102_service_status_t max30102_status;
     watch_max30102_sample_t max30102_sample = { 0 };
     bool sample_valid;
-    bool lis2mdl_sample_valid;
     bool aht20_sample_valid;
     int length;
 
@@ -232,24 +234,46 @@ static void send_sensor(void)
         }
     }
 
-    if (!watch_lis2mdl_board_read_status(&lis2mdl_status)) {
-        send_text("sensor lis2mdl=unavailable\r\n");
-        return;
+    if (!watch_cw2015_board_read_status(&cw2015_status)) {
+        send_text("sensor cw2015=unavailable\r\n");
+    } else {
+        bool cw2015_sample_valid = watch_cw2015_board_read_latest(&cw2015_sample);
+
+        length = snprintf(
+            response, sizeof(response),
+            "sensor cw2015=%u version=0x%02x sample=%u count=%lu errors=%lu "
+            "invalid_soc=%lu drop=%lu voltage_mv=%u soc=%u fraction=%u state=%u\r\n",
+            cw2015_status.ready ? 1U : 0U, cw2015_status.version,
+            cw2015_sample_valid ? 1U : 0U, (unsigned long)cw2015_status.sample_count,
+            (unsigned long)cw2015_status.read_error_count,
+            (unsigned long)cw2015_status.invalid_soc_count,
+            (unsigned long)cw2015_status.event_drop_count,
+            (unsigned int)cw2015_sample.voltage_mv, (unsigned int)cw2015_sample.soc_percent,
+            (unsigned int)cw2015_sample.soc_fraction, (unsigned int)cw2015_status.state);
+        if ((length > 0) && ((size_t)length < sizeof(response))) {
+            watch_usb_cdc_write((const uint8_t *)response, (size_t)length);
+        }
     }
 
-    lis2mdl_sample_valid = watch_lis2mdl_board_read_latest(&lis2mdl_sample);
-    length = snprintf(response, sizeof(response),
-                      "sensor lis2mdl=%u id=0x%02x sample=%u count=%lu errors=%lu nack=%lu "
-                      "drop=%lu mag=%d,%d,%d state=%u\r\n",
-                      lis2mdl_status.ready ? 1U : 0U, lis2mdl_status.who_am_i,
-                      lis2mdl_sample_valid ? 1U : 0U, (unsigned long)lis2mdl_status.sample_count,
-                      (unsigned long)lis2mdl_status.read_error_count,
-                      (unsigned long)lis2mdl_status.nack_count,
-                      (unsigned long)lis2mdl_status.event_drop_count, (int)lis2mdl_sample.magnetic_x,
-                      (int)lis2mdl_sample.magnetic_y, (int)lis2mdl_sample.magnetic_z,
-                      (unsigned int)lis2mdl_status.state);
-    if ((length > 0) && ((size_t)length < sizeof(response))) {
-        watch_usb_cdc_write((const uint8_t *)response, (size_t)length);
+    if (!watch_lis2mdl_board_read_status(&lis2mdl_status)) {
+        send_text("sensor lis2mdl=unavailable\r\n");
+    } else {
+        bool lis2mdl_sample_valid = watch_lis2mdl_board_read_latest(&lis2mdl_sample);
+
+        length = snprintf(response, sizeof(response),
+                          "sensor lis2mdl=%u id=0x%02x sample=%u count=%lu errors=%lu nack=%lu "
+                          "drop=%lu mag=%d,%d,%d state=%u\r\n",
+                          lis2mdl_status.ready ? 1U : 0U, lis2mdl_status.who_am_i,
+                          lis2mdl_sample_valid ? 1U : 0U,
+                          (unsigned long)lis2mdl_status.sample_count,
+                          (unsigned long)lis2mdl_status.read_error_count,
+                          (unsigned long)lis2mdl_status.nack_count,
+                          (unsigned long)lis2mdl_status.event_drop_count,
+                          (int)lis2mdl_sample.magnetic_x, (int)lis2mdl_sample.magnetic_y,
+                          (int)lis2mdl_sample.magnetic_z, (unsigned int)lis2mdl_status.state);
+        if ((length > 0) && ((size_t)length < sizeof(response))) {
+            watch_usb_cdc_write((const uint8_t *)response, (size_t)length);
+        }
     }
 }
 
@@ -437,6 +461,7 @@ void watch_usb_diagnostic_process(void)
     watch_lsm6ds3_board_process(now_ms);
     watch_lis2mdl_board_process(now_ms);
     watch_aht20_board_process(now_ms);
+    watch_cw2015_board_process(now_ms);
     watch_max30102_board_process(now_ms);
     (void)watch_runtime_start_service(WATCH_RUNTIME_SERVICE_USB, now_ms);
     (void)watch_runtime_heartbeat(WATCH_RUNTIME_SERVICE_USB, now_ms);
