@@ -27,14 +27,16 @@ UI/resources, power, then secure OTA. No empty placeholder modules are added.
 
 ## Baseline and completion
 
-- This M9b time-service update began from clean `origin/main` at `e91b4a9`
-  (`feat:f411:close M9a task ownership`).
+- This M10b LIS2MDL update began from clean `origin/main` at `1fedb07`
+  (`feat:f411:add rtc time service`).
 - The original pre-relocation Debug App reference was Flash `64,340 B` and RAM
   `30,208 B`. The current practical App budget remains 400 KiB Flash and 128 KiB
   RAM.
-- Ten of 21 numbered milestones are fully closed: M0-M9. This is about 48% by
-  strict closed-loop scope. The current artifact is a runnable, diagnosable
-  vertical slice; upgrade, power-loss recovery, and rollback are not present.
+- Ten of 21 numbered milestones are fully closed: M0-M9. M10b is closed as an
+  isolated LIS2MDL driver/service round, while the five-sensor M10 aggregate is
+  still partial. This is about 48% by strict numbered scope. The current
+  artifact is a runnable, diagnosable vertical slice; upgrade, power-loss
+  recovery, and rollback are not present.
 - Current hardware facts include STM32F411, 24 MHz HSE, ST-Link-compatible SWD,
   ST7789, CST816, W25Q128, KT6368, and a schematic EEPROM candidate
   `BL24C02F-RRRC`. EEPROM board address and response remain unconfirmed.
@@ -53,7 +55,7 @@ UI/resources, power, then secure OTA. No empty placeholder modules are added.
 | M7 | Editor XML, generated C, PC simulator | Complete for the approved manual Editor export workflow. |
 | M8 | Six page categories, lifecycle, interaction, leak pressure | Complete; the core-driven Diagnostic popup, physical input path, page lifecycle, and simulator pressure coverage are accepted. |
 | M9 | RTC/time service, queues, heartbeats, init policy | Complete; M9a closed bootstrap and queue ownership, and M9b added the local-calendar RTC contract, normalized events, core snapshots, Watchface and CDC consumers, plus reset-retention board evidence. |
-| M10 | Five sensor drivers and aggregation | Partial; only LSM6DS3 has a closed driver/service path. |
+| M10 | Five sensor drivers and aggregation | Partial; LSM6DS3 and LIS2MDL driver/service paths are implemented. M10b board evidence confirms LSM6DS3 and an explicit LIS2MDL degraded state; aggregation remains for M10f. |
 | M11 | EEPROM part/address facts | Not started; `BL24C02F-RRRC` is a schematic candidate only. |
 | M12 | Power and watchdog | Partial; RTC Stop/wake, display-off, software-off, and IWDG have software and no-battery board evidence. KEY_WAKE, physical cutoff, watchdog wiring, and current remain open. |
 | M13 | W25Q128 raw driver | Not started. |
@@ -65,16 +67,16 @@ UI/resources, power, then secure OTA. No empty placeholder modules are added.
 | M19 | Trial confirmation and rollback | Not started. |
 | M20 | Final configurations, simulator, fault injection, budgets, regression report | Not started. |
 
-## Current round: M10b LIS2MDL
+## Current round: M10c AHT20
 
-The next isolated hardware closure is the LIS2MDL driver and board service.
-Availability and failures remain explicit diagnostic states; sensor aggregation
-remains the separate M10f round.
+M10b LIS2MDL is complete as a pure-C driver, Sensor Hub board service, host
+test, and diagnostic integration. The board did not return a LIS2MDL identity
+or sample; this remains an explicit hardware risk and does not block the next
+independent sensor round. Sensor aggregation remains the separate M10f round.
 
-## Next round: M10c AHT20
+## Next round: M10d MAX30102
 
-The AHT20 driver and board service remain a separate hardware-verified PR after
-M10b.
+M10c AHT20 is the next isolated hardware-verified PR; MAX30102 follows it.
 
 ## Risks and blockers
 
@@ -89,13 +91,13 @@ M10b.
 - M9b reads the local RTC and retains it across reset, but does not add a
   calendar-setting or synchronization surface. Off-power retention remains
   unproven on the no-battery board.
-- During M9b App-slot recovery, unused bytes in the reserved Bootloader area
-  changed. The compiled Bootloader range matched before and after, but no full
-  64 KiB raw-preservation assertion is claimed.
-- CDC diagnostic output can drop while no host reader is attached. The board
-  session reported transmit drops, so acceptance does not claim a zero counter.
-- LSM6DS3 is the only closed sensor; missing sensors remain diagnostic degraded
-  states rather than accepted sensor support.
+- CDC diagnostic output can drop while no host reader is attached. The M10b
+  session had an active reader and reported zero drops; this is not a general
+  no-reader guarantee.
+- The LIS2MDL schematic route is through the LSM6DS3 auxiliary Sensor Hub.
+  M10b software integration and explicit degradation are complete, but the
+  board returned `id=0x00` with no sample, so magnetometer support is not
+  accepted until the auxiliary-I2C hardware facts are resolved.
 - The no-battery board cannot establish KEY_WAKE, physical power-latch polarity,
   external watchdog wiring, or measured current reduction.
 - W25Q128, resource storage, KT6368 transport, OTA metadata, install recovery,
@@ -104,17 +106,24 @@ M10b.
 ## Latest verification
 
 - Debug, Diagnostic, and Release App builds passed. Debug format-check and
-  Cppcheck passed; host CTest passed 6/6 and the 240x280 simulator smoke test
-  passed 1/1, including Watchface time rendering without page recreation.
-- Current App ELF budgets remain within the 400 KiB practical Flash budget:
-  Debug Flash `260,156 B` / RAM `83,376 B`; Diagnostic Flash `269,572 B` /
-  RAM `83,376 B`; Release Flash `140,804 B` / RAM `83,360 B`.
-- A signed Diagnostic package passed host verification and App-slot write/read
-  verification. After dynamic CDC re-enumeration, `ping`, `info`, `health`,
-  `diag`, and `stats` were valid; health was stage 3 with app, UI, USB, and
-  sensor services healthy and the UI event queue empty.
-- Reset-only RTC retention preserved the local calendar. Two successive CDC
-  `info` responses advanced by two seconds on the Watchface.
-- Physical M9b acceptance completed Diagnostics `BACK` to Watchface, observed
-  central `HH:MM:SS` progression, then completed encoder `SELECT` to Launcher
-  and `BACK` to Watchface. No diagnostic capsule appeared.
+  Cppcheck passed; Host CTest passed `7/7` and the 240x280 simulator smoke test
+  passed `1/1`.
+- Current App budgets remain within the 400 KiB practical Flash budget:
+  Debug Flash `263,952 B` / RAM `83,440 B`; Diagnostic Flash `273,368 B` /
+  RAM `83,440 B`; Release Flash `142,632 B` / RAM `83,432 B`. Bootloader is
+  `6,564 B` Flash / `1,056 B` RAM.
+- M10b host tests cover Sensor Hub bank selection, LIS2MDL address/configuration,
+  `sensor_hub_end_op` timeout, NACK handling, identity, sample decoding,
+  periodic service behavior, and event-drop accounting.
+- A newly signed v7 Diagnostic package passed host verification and was written
+  and verified at `0x08010000`. The full 64 KiB Bootloader SHA-256 was identical
+  before and after the App-slot operation.
+- After dynamic CDC re-enumeration, `ping`, `info`, `health`, `stats`, `diag`,
+  `sensor`, and `power` were valid. Health was stage 3 with app, UI, USB, and
+  sensor services healthy; the queue and CDC drop counters were zero and no
+  diagnostic capsule was present.
+- Board sensor evidence: LSM6DS3 was ready with ID `0x6A`, `5,394` samples,
+  and zero read/event drops. LIS2MDL remained `ready=0`, `id=0x00`, sample
+  count `0`, read errors `1`, NACK count `0`, and state `7`; this is recorded as
+  the authorized Sensor Hub/auxiliary-I2C hardware risk, not as a passing
+  magnetometer acceptance.

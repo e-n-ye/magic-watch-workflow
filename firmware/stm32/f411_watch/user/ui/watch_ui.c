@@ -8,6 +8,7 @@
 #include "main.h"
 #include "app/watch_app.h"
 #include "board/display/watch_lcd.h"
+#include "board/sensors/watch_lis2mdl_board.h"
 #include "board/sensors/watch_lsm6ds3_board.h"
 #include "watch_page_lifecycle.h"
 #include "watch_runtime.h"
@@ -113,7 +114,8 @@ static void watch_ui_process_events(void)
     watch_ui_event_t event;
 
     while (watch_runtime_take_ui_event(&event)) {
-        if (event.type == WATCH_LSM6DS3_SERVICE_EVENT_SAMPLE) {
+        if (event.type == WATCH_LSM6DS3_SERVICE_EVENT_SAMPLE
+            || event.type == WATCH_LIS2MDL_SERVICE_EVENT_SAMPLE) {
             /* The board service owns the latest sample; this is its UI notification. */
         }
     }

@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include "board/usb/watch_usb_cdc.h"
+#include "board/sensors/watch_lis2mdl_board.h"
 #include "board/sensors/watch_lsm6ds3_board.h"
 #include "board/power/watch_power.h"
 #include "main.h"
@@ -151,7 +152,10 @@ static void send_sensor(void)
     char response[256];
     watch_lsm6ds3_service_status_t status;
     watch_lsm6ds3_sample_t sample = { 0 };
+    watch_lis2mdl_service_status_t lis2mdl_status;
+    watch_lis2mdl_sample_t lis2mdl_sample = { 0 };
     bool sample_valid;
+    bool lis2mdl_sample_valid;
     int length;
 
     if (!watch_lsm6ds3_board_read_status(&status)) {
@@ -168,6 +172,26 @@ static void send_sensor(void)
                       (unsigned long)status.event_drop_count, (int)sample.accel_x,
                       (int)sample.accel_y, (int)sample.accel_z, (int)sample.gyro_x,
                       (int)sample.gyro_y, (int)sample.gyro_z);
+    if ((length > 0) && ((size_t)length < sizeof(response))) {
+        watch_usb_cdc_write((const uint8_t *)response, (size_t)length);
+    }
+
+    if (!watch_lis2mdl_board_read_status(&lis2mdl_status)) {
+        send_text("sensor lis2mdl=unavailable\r\n");
+        return;
+    }
+
+    lis2mdl_sample_valid = watch_lis2mdl_board_read_latest(&lis2mdl_sample);
+    length = snprintf(response, sizeof(response),
+                      "sensor lis2mdl=%u id=0x%02x sample=%u count=%lu errors=%lu nack=%lu "
+                      "drop=%lu mag=%d,%d,%d state=%u\r\n",
+                      lis2mdl_status.ready ? 1U : 0U, lis2mdl_status.who_am_i,
+                      lis2mdl_sample_valid ? 1U : 0U, (unsigned long)lis2mdl_status.sample_count,
+                      (unsigned long)lis2mdl_status.read_error_count,
+                      (unsigned long)lis2mdl_status.nack_count,
+                      (unsigned long)lis2mdl_status.event_drop_count, (int)lis2mdl_sample.magnetic_x,
+                      (int)lis2mdl_sample.magnetic_y, (int)lis2mdl_sample.magnetic_z,
+                      (unsigned int)lis2mdl_status.state);
     if ((length > 0) && ((size_t)length < sizeof(response))) {
         watch_usb_cdc_write((const uint8_t *)response, (size_t)length);
     }
@@ -355,6 +379,7 @@ void watch_usb_diagnostic_process(void)
     uint32_t now_ms = HAL_GetTick();
 
     watch_lsm6ds3_board_process(now_ms);
+    watch_lis2mdl_board_process(now_ms);
     (void)watch_runtime_start_service(WATCH_RUNTIME_SERVICE_USB, now_ms);
     (void)watch_runtime_heartbeat(WATCH_RUNTIME_SERVICE_USB, now_ms);
 
