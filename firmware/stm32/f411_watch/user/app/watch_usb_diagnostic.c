@@ -409,6 +409,7 @@ static void handle_command(watch_usb_command_t command)
         if (!watch_power_board_request_stop()) {
             send_text("power error=stop\r\n");
         } else {
+            watch_usb_cdc_reinitialize();
             send_power();
         }
         break;

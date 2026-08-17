@@ -2,7 +2,11 @@
 
 #include <stdbool.h>
 
+#include "usb_device.h"
+#include "usbd_core.h"
 #include "usbd_cdc_if.h"
+
+extern USBD_HandleTypeDef hUsbDeviceFS;
 
 #define WATCH_USB_CDC_RX_CAPACITY 1024U
 #define WATCH_USB_CDC_TX_CAPACITY 1024U
@@ -46,6 +50,13 @@ void watch_usb_cdc_stop(void)
 {
     s_initialized = false;
     s_tx_in_flight = false;
+}
+
+void watch_usb_cdc_reinitialize(void)
+{
+    (void)USBD_Stop(&hUsbDeviceFS);
+    (void)USBD_DeInit(&hUsbDeviceFS);
+    MX_USB_DEVICE_Init();
 }
 
 void watch_usb_cdc_on_receive(const uint8_t *data, uint32_t length)
