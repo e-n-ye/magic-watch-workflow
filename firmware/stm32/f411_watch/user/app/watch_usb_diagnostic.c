@@ -6,6 +6,7 @@
 
 #include "board/usb/watch_usb_cdc.h"
 #include "board/sensors/watch_aht20_board.h"
+#include "board/sensors/watch_max30102_board.h"
 #include "board/sensors/watch_lis2mdl_board.h"
 #include "board/sensors/watch_lsm6ds3_board.h"
 #include "board/power/watch_power.h"
@@ -157,6 +158,8 @@ static void send_sensor(void)
     watch_lis2mdl_sample_t lis2mdl_sample = { 0 };
     watch_aht20_service_status_t aht20_status;
     watch_aht20_sample_t aht20_sample = { 0 };
+    watch_max30102_service_status_t max30102_status;
+    watch_max30102_sample_t max30102_sample = { 0 };
     bool sample_valid;
     bool lis2mdl_sample_valid;
     bool aht20_sample_valid;
@@ -200,6 +203,33 @@ static void send_sensor(void)
                       (unsigned int)aht20_status.state, aht20_status.status_byte);
     if ((length > 0) && ((size_t)length < sizeof(response))) {
         watch_usb_cdc_write((const uint8_t *)response, (size_t)length);
+    }
+
+    if (!watch_max30102_board_read_status(&max30102_status)) {
+        send_text("sensor max30102=unavailable\r\n");
+    } else {
+        bool max30102_sample_valid = watch_max30102_board_read_latest(&max30102_sample);
+
+        length = snprintf(
+            response, sizeof(response),
+            "sensor max30102=%u part=0x%02x rev=0x%02x sample=%u count=%lu errors=%lu "
+            "id_errors=%lu reset_timeouts=%lu no_data=%lu fifo_overflow=%lu drop=%lu "
+            "red=%lu ir=%lu finger=%u state=%u mode=0x%02x\r\n",
+            max30102_status.ready ? 1U : 0U, max30102_status.part_id,
+            max30102_status.revision_id, max30102_sample_valid ? 1U : 0U,
+            (unsigned long)max30102_status.sample_count,
+            (unsigned long)max30102_status.read_error_count,
+            (unsigned long)max30102_status.id_error_count,
+            (unsigned long)max30102_status.reset_timeout_count,
+            (unsigned long)max30102_status.no_data_count,
+            (unsigned long)max30102_status.fifo_overflow_count,
+            (unsigned long)max30102_status.event_drop_count,
+            (unsigned long)max30102_sample.red_raw, (unsigned long)max30102_sample.ir_raw,
+            max30102_sample.finger_on ? 1U : 0U, (unsigned int)max30102_status.state,
+            max30102_status.mode_config);
+        if ((length > 0) && ((size_t)length < sizeof(response))) {
+            watch_usb_cdc_write((const uint8_t *)response, (size_t)length);
+        }
     }
 
     if (!watch_lis2mdl_board_read_status(&lis2mdl_status)) {
@@ -407,6 +437,7 @@ void watch_usb_diagnostic_process(void)
     watch_lsm6ds3_board_process(now_ms);
     watch_lis2mdl_board_process(now_ms);
     watch_aht20_board_process(now_ms);
+    watch_max30102_board_process(now_ms);
     (void)watch_runtime_start_service(WATCH_RUNTIME_SERVICE_USB, now_ms);
     (void)watch_runtime_heartbeat(WATCH_RUNTIME_SERVICE_USB, now_ms);
 

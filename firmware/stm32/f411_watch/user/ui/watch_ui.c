@@ -10,6 +10,7 @@
 #include "board/display/watch_lcd.h"
 #include "board/sensors/watch_lis2mdl_board.h"
 #include "board/sensors/watch_aht20_board.h"
+#include "board/sensors/watch_max30102_board.h"
 #include "board/sensors/watch_lsm6ds3_board.h"
 #include "watch_page_lifecycle.h"
 #include "watch_runtime.h"
@@ -117,7 +118,8 @@ static void watch_ui_process_events(void)
     while (watch_runtime_take_ui_event(&event)) {
         if (event.type == WATCH_LSM6DS3_SERVICE_EVENT_SAMPLE
             || event.type == WATCH_LIS2MDL_SERVICE_EVENT_SAMPLE
-            || event.type == WATCH_AHT20_SERVICE_EVENT_SAMPLE) {
+            || event.type == WATCH_AHT20_SERVICE_EVENT_SAMPLE
+            || event.type == WATCH_MAX30102_SERVICE_EVENT_SAMPLE) {
             /* The board service owns the latest sample; this is its UI notification. */
         }
     }
