@@ -1,6 +1,7 @@
 #include "watch_eeprom_probe.h"
 
 #include <assert.h>
+#include <stddef.h>
 #include <stdint.h>
 
 typedef struct
