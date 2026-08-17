@@ -40,6 +40,8 @@ set(FORMAT_FILES
     "${FORMAT_ROOT}/board/sensors/watch_lis2mdl_board.h"
     "${FORMAT_ROOT}/board/sensors/watch_lsm6ds3_board.c"
     "${FORMAT_ROOT}/board/sensors/watch_lsm6ds3_board.h"
+    "${FORMAT_ROOT}/board/sensors/watch_sensor_aggregate_board.c"
+    "${FORMAT_ROOT}/board/sensors/watch_sensor_aggregate_board.h"
     "${FORMAT_ROOT}/board/time/watch_rtc_board.c"
     "${FORMAT_ROOT}/board/time/watch_rtc_board.h"
     "${FORMAT_ROOT}/config/user_config.h"
@@ -87,6 +89,8 @@ if(DEFINED FORMAT_SENSOR_ROOT AND NOT FORMAT_SENSOR_ROOT STREQUAL "")
         "${FORMAT_SENSOR_ROOT}/watch_lsm6ds3.h"
         "${FORMAT_SENSOR_ROOT}/watch_lsm6ds3_sensor_hub.c"
         "${FORMAT_SENSOR_ROOT}/watch_lsm6ds3_sensor_hub.h"
+        "${FORMAT_SENSOR_ROOT}/watch_sensor_aggregate.c"
+        "${FORMAT_SENSOR_ROOT}/watch_sensor_aggregate.h"
     )
 endif()
 

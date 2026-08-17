@@ -23,6 +23,7 @@ static void watch_core_enqueue_command(watch_core_t *core, watch_command_type_t 
     command->popup_visible = core->popup_visible;
     command->time_valid = core->time_valid;
     command->time = core->time;
+    command->sensor_snapshot = core->sensor_snapshot;
     command->revision = core->revision;
     core->command_head = (uint8_t)((core->command_head + 1U) % WATCH_CORE_COMMAND_CAPACITY);
     core->command_count++;
@@ -66,6 +67,26 @@ static bool watch_core_set_time(watch_core_t *core, const watch_time_value_t *ti
     core->time = *time;
     core->time_valid = true;
     watch_core_commit_change(core, WATCH_COMMAND_TIME_CHANGED);
+    return true;
+}
+
+static bool watch_core_set_sensor_snapshot(watch_core_t *core,
+                                           const watch_sensor_aggregate_snapshot_t *snapshot)
+{
+    if (!watch_sensor_aggregate_snapshot_is_valid(snapshot)) {
+        return false;
+    }
+
+    if (watch_sensor_aggregate_snapshot_equal(&core->sensor_snapshot, snapshot)) {
+        return true;
+    }
+
+    if (!watch_core_has_command_space(core)) {
+        return false;
+    }
+
+    core->sensor_snapshot = *snapshot;
+    watch_core_commit_change(core, WATCH_COMMAND_SENSOR_STATUS_CHANGED);
     return true;
 }
 
@@ -140,6 +161,7 @@ bool watch_core_init(watch_core_t *core)
     }
 
     *core = (watch_core_t) { 0 };
+    core->sensor_snapshot.degraded = true;
 #if defined(WATCH_DIAGNOSTIC)
     core->page_stack[0] = WATCH_PAGE_WATCHFACE;
     core->page = WATCH_PAGE_DIAGNOSTICS;
@@ -190,6 +212,8 @@ bool watch_core_dispatch_event(watch_core_t *core, const watch_event_t *event)
         return watch_core_move_selection(core, 1);
     case WATCH_EVENT_TIME_UPDATED:
         return watch_core_set_time(core, &event->time);
+    case WATCH_EVENT_SENSOR_STATUS_UPDATED:
+        return watch_core_set_sensor_snapshot(core, &event->sensor_snapshot);
     case WATCH_EVENT_NONE:
     case WATCH_EVENT_COUNT:
         return false;
@@ -210,6 +234,7 @@ bool watch_core_read_snapshot(const watch_core_t *core, watch_snapshot_t *snapsh
     snapshot->popup_visible = core->popup_visible;
     snapshot->time_valid = core->time_valid;
     snapshot->time = core->time;
+    snapshot->sensor_snapshot = core->sensor_snapshot;
     snapshot->revision = core->revision;
     return true;
 }

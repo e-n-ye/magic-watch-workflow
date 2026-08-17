@@ -4,6 +4,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include "watch_sensor_aggregate.h"
+
 #define WATCH_RUNTIME_UI_EVENT_QUEUE_CAPACITY 8U
 #define WATCH_RUNTIME_HEARTBEAT_TIMEOUT_MS 2000U
 
@@ -36,6 +38,7 @@ typedef struct
     uint16_t type;
     uint32_t value;
     uint32_t timestamp_ms;
+    watch_sensor_aggregate_snapshot_t sensor_snapshot;
 } watch_ui_event_t;
 
 typedef struct

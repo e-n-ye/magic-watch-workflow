@@ -46,6 +46,8 @@ static void test_initial_state(void)
     assert(snapshot.page_depth == 0U);
     assert(snapshot.launcher_index == 0U);
     assert(!snapshot.popup_visible);
+    assert(snapshot.sensor_snapshot.degraded);
+    assert(snapshot.sensor_snapshot.available_mask == 0U);
     assert(snapshot.revision == 0U);
     assert(!watch_core_take_command(&core, &(watch_command_t){0}));
 }
@@ -166,6 +168,40 @@ static void test_time_event_updates_snapshot_and_command(void)
     assert(snapshot.revision == 1U);
     time.year = 1999U;
     assert(!watch_test_dispatch_time(&core, time));
+}
+
+static void test_sensor_status_event_updates_snapshot_and_command(void)
+{
+    watch_core_t core;
+    watch_command_t command;
+    watch_sensor_aggregate_service_t aggregate;
+    watch_sensor_aggregate_status_t statuses[WATCH_SENSOR_AGGREGATE_SENSOR_COUNT] = { 0 };
+    watch_sensor_aggregate_snapshot_t sensor_snapshot;
+    watch_snapshot_t snapshot;
+    watch_event_t event;
+
+    statuses[WATCH_SENSOR_AGGREGATE_LSM6DS3].ready = true;
+    statuses[WATCH_SENSOR_AGGREGATE_LSM6DS3].sample_valid = true;
+    statuses[WATCH_SENSOR_AGGREGATE_LSM6DS3].state = 1U;
+    statuses[WATCH_SENSOR_AGGREGATE_LSM6DS3].sample_count = 10U;
+    assert(watch_sensor_aggregate_init(&aggregate));
+    assert(watch_sensor_aggregate_update(&aggregate, statuses, &sensor_snapshot));
+    assert(watch_core_init(&core));
+
+    event = (watch_event_t) {
+        .type = WATCH_EVENT_SENSOR_STATUS_UPDATED,
+        .sensor_snapshot = sensor_snapshot,
+    };
+    assert(watch_core_dispatch_event(&core, &event));
+    assert(watch_core_read_snapshot(&core, &snapshot));
+    assert(snapshot.sensor_snapshot.degraded);
+    assert(snapshot.sensor_snapshot.available_mask == 1U);
+    assert(snapshot.sensor_snapshot.revision == 1U);
+    assert(watch_core_take_command(&core, &command));
+    assert(command.type == WATCH_COMMAND_SENSOR_STATUS_CHANGED);
+    assert(command.sensor_snapshot.available_mask == 1U);
+    assert(watch_core_dispatch_event(&core, &event));
+    assert(!watch_core_take_command(&core, &command));
 }
 
 static void test_command_queue_is_bounded(void)
@@ -295,6 +331,7 @@ int main(void)
     test_resource_navigation();
     test_ignored_events_and_validation();
     test_time_event_updates_snapshot_and_command();
+    test_sensor_status_event_updates_snapshot_and_command();
     test_command_queue_is_bounded();
     test_button_debounce();
     test_encoder_and_touch_mapping();

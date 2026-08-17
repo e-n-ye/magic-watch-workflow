@@ -33,6 +33,8 @@ static const char *watch_app_event_name(watch_event_type_t type)
         return "down";
     case WATCH_EVENT_TIME_UPDATED:
         return "time";
+    case WATCH_EVENT_SENSOR_STATUS_UPDATED:
+        return "sensor";
     case WATCH_EVENT_NONE:
     case WATCH_EVENT_COUNT:
         return "none";
@@ -227,4 +229,19 @@ bool watch_app_read_snapshot(watch_snapshot_t *snapshot)
     }
 
     return watch_core_read_snapshot(&s_core, snapshot);
+}
+
+bool watch_app_dispatch_sensor_snapshot(const watch_sensor_aggregate_snapshot_t *sensor_snapshot)
+{
+    watch_event_t event;
+
+    if (!s_app_ready || !watch_sensor_aggregate_snapshot_is_valid(sensor_snapshot)) {
+        return false;
+    }
+
+    event = (watch_event_t) {
+        .type = WATCH_EVENT_SENSOR_STATUS_UPDATED,
+        .sensor_snapshot = *sensor_snapshot,
+    };
+    return watch_app_dispatch_event(&event, false);
 }

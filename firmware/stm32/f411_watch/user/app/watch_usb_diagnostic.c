@@ -7,6 +7,7 @@
 #include "board/usb/watch_usb_cdc.h"
 #include "board/sensors/watch_aht20_board.h"
 #include "board/sensors/watch_cw2015_board.h"
+#include "board/sensors/watch_sensor_aggregate_board.h"
 #include "board/sensors/watch_max30102_board.h"
 #include "board/sensors/watch_lis2mdl_board.h"
 #include "board/sensors/watch_lsm6ds3_board.h"
@@ -62,9 +63,12 @@ static void send_info(void)
     }
 
     length = snprintf(response, sizeof(response),
-                      "watch=f411 usb=cdc protocol=1 display=240x280 page=%u depth=%u popup=%u time=%s\r\n",
+                      "watch=f411 usb=cdc protocol=1 display=240x280 page=%u depth=%u popup=%u "
+                      "sensors=0x%02x degraded=%u time=%s\r\n",
                       (unsigned int)snapshot.page, (unsigned int)snapshot.page_depth,
-                      snapshot.popup_visible ? 1U : 0U, time_text);
+                      snapshot.popup_visible ? 1U : 0U,
+                      (unsigned int)snapshot.sensor_snapshot.available_mask,
+                      snapshot.sensor_snapshot.degraded ? 1U : 0U, time_text);
     if ((length > 0) && ((size_t)length < sizeof(response))) {
         watch_usb_cdc_write((const uint8_t *)response, (size_t)length);
     }
@@ -463,6 +467,7 @@ void watch_usb_diagnostic_process(void)
     watch_aht20_board_process(now_ms);
     watch_cw2015_board_process(now_ms);
     watch_max30102_board_process(now_ms);
+    watch_sensor_aggregate_board_process(now_ms);
     (void)watch_runtime_start_service(WATCH_RUNTIME_SERVICE_USB, now_ms);
     (void)watch_runtime_heartbeat(WATCH_RUNTIME_SERVICE_USB, now_ms);
 

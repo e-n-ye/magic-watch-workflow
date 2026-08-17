@@ -13,6 +13,7 @@ if(BUILD_TESTING)
         ${CMAKE_CURRENT_LIST_DIR}/watch_core_test.c
         ${CMAKE_CURRENT_LIST_DIR}/../products/f411_watch/core/watch_core.c
         ${CMAKE_CURRENT_LIST_DIR}/../products/f411_watch/input/watch_input.c
+        ${CMAKE_CURRENT_LIST_DIR}/../products/f411_watch/sensors/watch_sensor_aggregate.c
         ${CMAKE_CURRENT_LIST_DIR}/../products/f411_watch/time/watch_time.c
     )
 
@@ -20,6 +21,7 @@ if(BUILD_TESTING)
         PRIVATE
             ${CMAKE_CURRENT_LIST_DIR}/../products/f411_watch/core
             ${CMAKE_CURRENT_LIST_DIR}/../products/f411_watch/input
+            ${CMAKE_CURRENT_LIST_DIR}/../products/f411_watch/sensors
             ${CMAKE_CURRENT_LIST_DIR}/../products/f411_watch/time
     )
 
@@ -28,6 +30,7 @@ if(BUILD_TESTING)
     add_executable(watch_core_diagnostic_tests
         ${CMAKE_CURRENT_LIST_DIR}/watch_core_diagnostic_test.c
         ${CMAKE_CURRENT_LIST_DIR}/../products/f411_watch/core/watch_core.c
+        ${CMAKE_CURRENT_LIST_DIR}/../products/f411_watch/sensors/watch_sensor_aggregate.c
         ${CMAKE_CURRENT_LIST_DIR}/../products/f411_watch/time/watch_time.c
     )
 
@@ -35,6 +38,7 @@ if(BUILD_TESTING)
     target_include_directories(watch_core_diagnostic_tests
         PRIVATE
             ${CMAKE_CURRENT_LIST_DIR}/../products/f411_watch/core
+            ${CMAKE_CURRENT_LIST_DIR}/../products/f411_watch/sensors
             ${CMAKE_CURRENT_LIST_DIR}/../products/f411_watch/time
     )
 
@@ -60,6 +64,7 @@ if(BUILD_TESTING)
     target_include_directories(watch_runtime_tests
         PRIVATE
             ${CMAKE_CURRENT_LIST_DIR}/../products/f411_watch/runtime
+            ${CMAKE_CURRENT_LIST_DIR}/../products/f411_watch/sensors
     )
 
     add_test(NAME watch_runtime COMMAND watch_runtime_tests)
@@ -112,6 +117,18 @@ if(BUILD_TESTING)
     )
 
     add_test(NAME watch_cw2015 COMMAND watch_cw2015_tests)
+
+    add_executable(watch_sensor_aggregate_tests
+        ${CMAKE_CURRENT_LIST_DIR}/watch_sensor_aggregate_test.c
+        ${CMAKE_CURRENT_LIST_DIR}/../products/f411_watch/sensors/watch_sensor_aggregate.c
+    )
+
+    target_include_directories(watch_sensor_aggregate_tests
+        PRIVATE
+            ${CMAKE_CURRENT_LIST_DIR}/../products/f411_watch/sensors
+    )
+
+    add_test(NAME watch_sensor_aggregate COMMAND watch_sensor_aggregate_tests)
 
     add_executable(watch_max30102_tests
         ${CMAKE_CURRENT_LIST_DIR}/watch_max30102_test.c

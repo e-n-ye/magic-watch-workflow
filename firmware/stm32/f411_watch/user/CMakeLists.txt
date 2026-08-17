@@ -37,6 +37,7 @@ add_library(f411_watch_user OBJECT
     board/sensors/watch_max30102_board.c
     board/sensors/watch_lis2mdl_board.c
     board/sensors/watch_lsm6ds3_board.c
+    board/sensors/watch_sensor_aggregate_board.c
     board/time/watch_rtc_board.c
     board/usb/watch_usb_cdc.c
     ui/watch_ui.c
@@ -57,6 +58,7 @@ add_library(f411_watch_user OBJECT
     ${WATCH_SENSOR_SOURCE_DIR}/watch_max30102.c
     ${WATCH_SENSOR_SOURCE_DIR}/watch_lsm6ds3.c
     ${WATCH_SENSOR_SOURCE_DIR}/watch_lsm6ds3_sensor_hub.c
+    ${WATCH_SENSOR_SOURCE_DIR}/watch_sensor_aggregate.c
     ${WATCH_POWER_SOURCE_DIR}/watch_power_state.c
     ${WATCH_POWER_SOURCE_DIR}/watch_watchdog.c
     ${WATCH_TIME_SOURCE_DIR}/watch_time.c
