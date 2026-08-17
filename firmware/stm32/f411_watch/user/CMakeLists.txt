@@ -40,6 +40,7 @@ add_library(f411_watch_user OBJECT
     board/sensors/watch_lsm6ds3_board.c
     board/sensors/watch_sensor_aggregate_board.c
     board/storage/watch_eeprom_probe_board.c
+    board/storage/watch_w25q128_board.c
     board/time/watch_rtc_board.c
     board/usb/watch_usb_cdc.c
     ui/watch_ui.c
@@ -62,6 +63,7 @@ add_library(f411_watch_user OBJECT
     ${WATCH_SENSOR_SOURCE_DIR}/watch_lsm6ds3_sensor_hub.c
     ${WATCH_SENSOR_SOURCE_DIR}/watch_sensor_aggregate.c
     ${WATCH_STORAGE_SOURCE_DIR}/watch_eeprom_probe.c
+    ${WATCH_STORAGE_SOURCE_DIR}/watch_w25q128.c
     ${WATCH_POWER_SOURCE_DIR}/watch_power_state.c
     ${WATCH_POWER_SOURCE_DIR}/watch_watchdog.c
     ${WATCH_TIME_SOURCE_DIR}/watch_time.c
