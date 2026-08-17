@@ -2,6 +2,7 @@ set(WATCH_CORE_SOURCE_DIR "${CMAKE_SOURCE_DIR}/../../../products/f411_watch/core
 set(WATCH_INPUT_SOURCE_DIR "${CMAKE_SOURCE_DIR}/../../../products/f411_watch/input")
 set(WATCH_RUNTIME_SOURCE_DIR "${CMAKE_SOURCE_DIR}/../../../products/f411_watch/runtime")
 set(WATCH_SENSOR_SOURCE_DIR "${CMAKE_SOURCE_DIR}/../../../products/f411_watch/sensors")
+set(WATCH_STORAGE_SOURCE_DIR "${CMAKE_SOURCE_DIR}/../../../products/f411_watch/storage")
 set(WATCH_POWER_SOURCE_DIR "${CMAKE_SOURCE_DIR}/../../../products/f411_watch/power")
 set(WATCH_TIME_SOURCE_DIR "${CMAKE_SOURCE_DIR}/../../../products/f411_watch/time")
 set(WATCH_LVGL_SOURCE_DIR "${CMAKE_SOURCE_DIR}/third_party/lvgl")
@@ -38,6 +39,7 @@ add_library(f411_watch_user OBJECT
     board/sensors/watch_lis2mdl_board.c
     board/sensors/watch_lsm6ds3_board.c
     board/sensors/watch_sensor_aggregate_board.c
+    board/storage/watch_eeprom_probe_board.c
     board/time/watch_rtc_board.c
     board/usb/watch_usb_cdc.c
     ui/watch_ui.c
@@ -59,6 +61,7 @@ add_library(f411_watch_user OBJECT
     ${WATCH_SENSOR_SOURCE_DIR}/watch_lsm6ds3.c
     ${WATCH_SENSOR_SOURCE_DIR}/watch_lsm6ds3_sensor_hub.c
     ${WATCH_SENSOR_SOURCE_DIR}/watch_sensor_aggregate.c
+    ${WATCH_STORAGE_SOURCE_DIR}/watch_eeprom_probe.c
     ${WATCH_POWER_SOURCE_DIR}/watch_power_state.c
     ${WATCH_POWER_SOURCE_DIR}/watch_watchdog.c
     ${WATCH_TIME_SOURCE_DIR}/watch_time.c
@@ -71,6 +74,7 @@ target_include_directories(f411_watch_user
         ${WATCH_INPUT_SOURCE_DIR}
         ${WATCH_RUNTIME_SOURCE_DIR}
         ${WATCH_SENSOR_SOURCE_DIR}
+        ${WATCH_STORAGE_SOURCE_DIR}
         ${WATCH_POWER_SOURCE_DIR}
         ${WATCH_TIME_SOURCE_DIR}
         ${CMAKE_SOURCE_DIR}/../../../products/f411_watch/ui
@@ -104,6 +108,7 @@ add_custom_target(format
         -DFORMAT_INPUT_ROOT=${WATCH_INPUT_SOURCE_DIR}
         -DFORMAT_RUNTIME_ROOT=${WATCH_RUNTIME_SOURCE_DIR}
         -DFORMAT_SENSOR_ROOT=${WATCH_SENSOR_SOURCE_DIR}
+        -DFORMAT_STORAGE_ROOT=${WATCH_STORAGE_SOURCE_DIR}
         -DFORMAT_POWER_ROOT=${WATCH_POWER_SOURCE_DIR}
         -DFORMAT_TIME_ROOT=${WATCH_TIME_SOURCE_DIR}
         -DFORMAT_MODE=fix
@@ -121,6 +126,7 @@ add_custom_target(format-check
         -DFORMAT_INPUT_ROOT=${WATCH_INPUT_SOURCE_DIR}
         -DFORMAT_RUNTIME_ROOT=${WATCH_RUNTIME_SOURCE_DIR}
         -DFORMAT_SENSOR_ROOT=${WATCH_SENSOR_SOURCE_DIR}
+        -DFORMAT_STORAGE_ROOT=${WATCH_STORAGE_SOURCE_DIR}
         -DFORMAT_POWER_ROOT=${WATCH_POWER_SOURCE_DIR}
         -DFORMAT_TIME_ROOT=${WATCH_TIME_SOURCE_DIR}
         -DFORMAT_MODE=check
