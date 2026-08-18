@@ -260,11 +260,52 @@ static void test_reader_bounds_and_backend_failure(void)
            == WATCH_LITTLEFS_RESULT_NOT_MOUNTED);
 }
 
+static void test_streaming_upload(void)
+{
+    uint8_t source[733];
+    uint8_t buffer[97];
+    watch_littlefs_t filesystem;
+    watch_littlefs_upload_t upload;
+    chunk_verify_t verify;
+    size_t total_length = 0U;
+
+    for (size_t index = 0U; index < sizeof(source); ++index) {
+        source[index] = (uint8_t)(index * 7U + 1U);
+    }
+    fake_flash_init(&s_flash);
+    assert(initialize_filesystem(&filesystem));
+    assert(watch_littlefs_format(&filesystem) == WATCH_LITTLEFS_RESULT_OK);
+    assert(watch_littlefs_upload_begin(&filesystem, &upload, "/stream.bin")
+           == WATCH_LITTLEFS_RESULT_OK);
+    assert(watch_littlefs_upload_write(&upload, 0U, source, 317U) == WATCH_LITTLEFS_RESULT_OK);
+    assert(watch_littlefs_upload_write(&upload, 317U, source + 317U, sizeof(source) - 317U)
+           == WATCH_LITTLEFS_RESULT_OK);
+    assert(watch_littlefs_upload_commit(&upload) == WATCH_LITTLEFS_RESULT_OK);
+    verify = (chunk_verify_t) {
+        .expected = source,
+        .expected_length = sizeof(source),
+    };
+    assert(watch_littlefs_read_file_chunks(&filesystem, "/stream.bin", buffer, sizeof(buffer),
+                                           verify_chunk, &verify, &total_length)
+           == WATCH_LITTLEFS_RESULT_OK);
+    assert(verify.position == sizeof(source));
+    assert(total_length == sizeof(source));
+
+    assert(watch_littlefs_upload_begin(&filesystem, &upload, "/aborted.bin")
+           == WATCH_LITTLEFS_RESULT_OK);
+    assert(watch_littlefs_upload_write(&upload, 0U, source, 1U) == WATCH_LITTLEFS_RESULT_OK);
+    watch_littlefs_upload_abort(&upload);
+    assert(watch_littlefs_read_file_chunks(&filesystem, "/aborted.bin", buffer, sizeof(buffer),
+                                           verify_chunk, &verify, &total_length)
+           == WATCH_LITTLEFS_RESULT_NOT_FOUND);
+}
+
 int main(void)
 {
     test_partition_contract();
     test_format_mount_and_chunked_resources();
     test_reader_bounds_and_backend_failure();
+    test_streaming_upload();
     assert(strcmp(watch_littlefs_result_name(WATCH_LITTLEFS_RESULT_CORRUPT), "corrupt") == 0);
     return 0;
 }
