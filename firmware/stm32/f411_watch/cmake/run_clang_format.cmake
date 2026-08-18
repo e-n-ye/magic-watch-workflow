@@ -134,6 +134,8 @@ if(DEFINED FORMAT_STORAGE_ROOT AND NOT FORMAT_STORAGE_ROOT STREQUAL "")
         "${FORMAT_STORAGE_ROOT}/watch_littlefs.c"
         "${FORMAT_STORAGE_ROOT}/watch_littlefs.h"
         "${FORMAT_STORAGE_ROOT}/watch_w25_partitions.h"
+        "${FORMAT_STORAGE_ROOT}/watch_ota_metadata.c"
+        "${FORMAT_STORAGE_ROOT}/watch_ota_metadata.h"
         "${FORMAT_STORAGE_ROOT}/watch_w25q128.c"
         "${FORMAT_STORAGE_ROOT}/watch_w25q128.h"
     )
