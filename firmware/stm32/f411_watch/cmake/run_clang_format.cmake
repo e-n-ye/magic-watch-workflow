@@ -124,6 +124,8 @@ if(DEFINED FORMAT_TRANSPORT_ROOT AND NOT FORMAT_TRANSPORT_ROOT STREQUAL "")
         "${FORMAT_TRANSPORT_ROOT}/watch_resource_protocol.h"
         "${FORMAT_TRANSPORT_ROOT}/watch_spp_transport.c"
         "${FORMAT_TRANSPORT_ROOT}/watch_spp_transport.h"
+        "${FORMAT_TRANSPORT_ROOT}/watch_ymodem.c"
+        "${FORMAT_TRANSPORT_ROOT}/watch_ymodem.h"
     )
 endif()
 
@@ -136,6 +138,8 @@ if(DEFINED FORMAT_STORAGE_ROOT AND NOT FORMAT_STORAGE_ROOT STREQUAL "")
         "${FORMAT_STORAGE_ROOT}/watch_w25_partitions.h"
         "${FORMAT_STORAGE_ROOT}/watch_ota_metadata.c"
         "${FORMAT_STORAGE_ROOT}/watch_ota_metadata.h"
+        "${FORMAT_STORAGE_ROOT}/watch_ota_package.c"
+        "${FORMAT_STORAGE_ROOT}/watch_ota_package.h"
         "${FORMAT_STORAGE_ROOT}/watch_w25q128.c"
         "${FORMAT_STORAGE_ROOT}/watch_w25q128.h"
     )
