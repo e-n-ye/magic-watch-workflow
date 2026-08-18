@@ -44,6 +44,10 @@ set(FORMAT_FILES
     "${FORMAT_ROOT}/board/sensors/watch_sensor_aggregate_board.h"
     "${FORMAT_ROOT}/board/storage/watch_eeprom_probe_board.c"
     "${FORMAT_ROOT}/board/storage/watch_eeprom_probe_board.h"
+    "${FORMAT_ROOT}/board/storage/watch_littlefs_board.c"
+    "${FORMAT_ROOT}/board/storage/watch_littlefs_board.h"
+    "${FORMAT_ROOT}/board/storage/watch_w25q128_board.c"
+    "${FORMAT_ROOT}/board/storage/watch_w25q128_board.h"
     "${FORMAT_ROOT}/board/time/watch_rtc_board.c"
     "${FORMAT_ROOT}/board/time/watch_rtc_board.h"
     "${FORMAT_ROOT}/config/user_config.h"
@@ -116,6 +120,11 @@ if(DEFINED FORMAT_STORAGE_ROOT AND NOT FORMAT_STORAGE_ROOT STREQUAL "")
     list(APPEND FORMAT_FILES
         "${FORMAT_STORAGE_ROOT}/watch_eeprom_probe.c"
         "${FORMAT_STORAGE_ROOT}/watch_eeprom_probe.h"
+        "${FORMAT_STORAGE_ROOT}/watch_littlefs.c"
+        "${FORMAT_STORAGE_ROOT}/watch_littlefs.h"
+        "${FORMAT_STORAGE_ROOT}/watch_w25_partitions.h"
+        "${FORMAT_STORAGE_ROOT}/watch_w25q128.c"
+        "${FORMAT_STORAGE_ROOT}/watch_w25q128.h"
     )
 endif()
 

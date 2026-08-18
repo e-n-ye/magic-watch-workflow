@@ -154,6 +154,21 @@ if(BUILD_TESTING)
 
     add_test(NAME watch_w25q128 COMMAND watch_w25q128_tests)
 
+    add_executable(watch_littlefs_tests
+        ${CMAKE_CURRENT_LIST_DIR}/watch_littlefs_test.c
+        ${CMAKE_CURRENT_LIST_DIR}/../products/f411_watch/storage/watch_littlefs.c
+        ${CMAKE_CURRENT_LIST_DIR}/../firmware/stm32/f411_watch/third_party/littlefs/lfs.c
+        ${CMAKE_CURRENT_LIST_DIR}/../firmware/stm32/f411_watch/third_party/littlefs/lfs_util.c
+    )
+
+    target_include_directories(watch_littlefs_tests
+        PRIVATE
+            ${CMAKE_CURRENT_LIST_DIR}/../products/f411_watch/storage
+            ${CMAKE_CURRENT_LIST_DIR}/../firmware/stm32/f411_watch/third_party/littlefs
+    )
+
+    add_test(NAME watch_littlefs COMMAND watch_littlefs_tests)
+
     add_executable(watch_max30102_tests
         ${CMAKE_CURRENT_LIST_DIR}/watch_max30102_test.c
         ${CMAKE_CURRENT_LIST_DIR}/../products/f411_watch/sensors/watch_max30102.c
