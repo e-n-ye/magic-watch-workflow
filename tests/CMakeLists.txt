@@ -209,6 +209,25 @@ if(BUILD_TESTING)
 
     add_test(NAME watch_spp_transport COMMAND watch_spp_transport_tests)
 
+    add_executable(watch_ota_download_tests
+        ${CMAKE_CURRENT_LIST_DIR}/watch_ota_download_test.c
+        ${CMAKE_CURRENT_LIST_DIR}/../products/f411_watch/transport/watch_ymodem.c
+        ${CMAKE_CURRENT_LIST_DIR}/../products/f411_watch/storage/watch_ota_package.c
+        ${CMAKE_CURRENT_LIST_DIR}/../firmware/stm32/f411_watch/third_party/tinycrypt/lib/source/ecc.c
+        ${CMAKE_CURRENT_LIST_DIR}/../firmware/stm32/f411_watch/third_party/tinycrypt/lib/source/ecc_dsa.c
+        ${CMAKE_CURRENT_LIST_DIR}/../firmware/stm32/f411_watch/third_party/tinycrypt/lib/source/sha256.c
+        ${CMAKE_CURRENT_LIST_DIR}/../firmware/stm32/f411_watch/third_party/tinycrypt/lib/source/utils.c
+    )
+
+    target_include_directories(watch_ota_download_tests
+        PRIVATE
+            ${CMAKE_CURRENT_LIST_DIR}/../products/f411_watch/storage
+            ${CMAKE_CURRENT_LIST_DIR}/../products/f411_watch/transport
+            ${CMAKE_CURRENT_LIST_DIR}/../firmware/stm32/f411_watch/third_party/tinycrypt/lib/include
+    )
+
+    add_test(NAME watch_ota_download COMMAND watch_ota_download_tests)
+
     add_executable(watch_max30102_tests
         ${CMAKE_CURRENT_LIST_DIR}/watch_max30102_test.c
         ${CMAKE_CURRENT_LIST_DIR}/../products/f411_watch/sensors/watch_max30102.c
