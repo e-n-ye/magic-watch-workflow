@@ -7,7 +7,6 @@
 #include "watch_w25q128.h"
 
 #define WATCH_W25Q128_BOARD_DEFAULT_TIMEOUT_MS 1000U
-#define WATCH_W25Q128_BOARD_TEST_ADDRESS 0x00F000U
 
 bool watch_w25q128_board_init(void);
 watch_w25q128_result_t watch_w25q128_board_read_id(uint32_t *jedec_id);

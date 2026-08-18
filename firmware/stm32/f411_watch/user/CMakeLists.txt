@@ -6,6 +6,7 @@ set(WATCH_STORAGE_SOURCE_DIR "${CMAKE_SOURCE_DIR}/../../../products/f411_watch/s
 set(WATCH_POWER_SOURCE_DIR "${CMAKE_SOURCE_DIR}/../../../products/f411_watch/power")
 set(WATCH_TIME_SOURCE_DIR "${CMAKE_SOURCE_DIR}/../../../products/f411_watch/time")
 set(WATCH_LVGL_SOURCE_DIR "${CMAKE_SOURCE_DIR}/third_party/lvgl")
+set(WATCH_LITTLEFS_SOURCE_DIR "${CMAKE_SOURCE_DIR}/third_party/littlefs")
 
 file(GLOB_RECURSE WATCH_LVGL_SOURCES CONFIGURE_DEPENDS
     "${WATCH_LVGL_SOURCE_DIR}/src/*.c"
@@ -40,6 +41,7 @@ add_library(f411_watch_user OBJECT
     board/sensors/watch_lsm6ds3_board.c
     board/sensors/watch_sensor_aggregate_board.c
     board/storage/watch_eeprom_probe_board.c
+    board/storage/watch_littlefs_board.c
     board/storage/watch_w25q128_board.c
     board/time/watch_rtc_board.c
     board/usb/watch_usb_cdc.c
@@ -63,7 +65,10 @@ add_library(f411_watch_user OBJECT
     ${WATCH_SENSOR_SOURCE_DIR}/watch_lsm6ds3_sensor_hub.c
     ${WATCH_SENSOR_SOURCE_DIR}/watch_sensor_aggregate.c
     ${WATCH_STORAGE_SOURCE_DIR}/watch_eeprom_probe.c
+    ${WATCH_STORAGE_SOURCE_DIR}/watch_littlefs.c
     ${WATCH_STORAGE_SOURCE_DIR}/watch_w25q128.c
+    ${WATCH_LITTLEFS_SOURCE_DIR}/lfs.c
+    ${WATCH_LITTLEFS_SOURCE_DIR}/lfs_util.c
     ${WATCH_POWER_SOURCE_DIR}/watch_power_state.c
     ${WATCH_POWER_SOURCE_DIR}/watch_watchdog.c
     ${WATCH_TIME_SOURCE_DIR}/watch_time.c
@@ -79,6 +84,7 @@ target_include_directories(f411_watch_user
         ${WATCH_STORAGE_SOURCE_DIR}
         ${WATCH_POWER_SOURCE_DIR}
         ${WATCH_TIME_SOURCE_DIR}
+        ${WATCH_LITTLEFS_SOURCE_DIR}
         ${CMAKE_SOURCE_DIR}/../../../products/f411_watch/ui
 )
 

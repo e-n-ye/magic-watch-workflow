@@ -53,7 +53,7 @@
 osThreadId_t usbDiagnosticTaskHandle;
 const osThreadAttr_t usbDiagnosticTask_attributes = {
   .name = "usbDiagnostic",
-  .stack_size = 1024 * 2,
+  .stack_size = 1024 * 4,
   .priority = (osPriority_t) osPriorityBelowNormal,
 };
 

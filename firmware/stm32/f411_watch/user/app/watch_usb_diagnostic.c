@@ -13,6 +13,7 @@
 #include "board/sensors/watch_lsm6ds3_board.h"
 #include "board/power/watch_power.h"
 #include "board/storage/watch_eeprom_probe_board.h"
+#include "board/storage/watch_littlefs_board.h"
 #include "board/storage/watch_w25q128_board.h"
 #include "main.h"
 #include "watch_app.h"
@@ -32,7 +33,8 @@ typedef enum {
     WATCH_USB_COMMAND_SENSOR,
     WATCH_USB_COMMAND_EEPROM,
     WATCH_USB_COMMAND_W25,
-    WATCH_USB_COMMAND_W25_TEST,
+    WATCH_USB_COMMAND_FS,
+    WATCH_USB_COMMAND_FS_TEST,
     WATCH_USB_COMMAND_POWER,
     WATCH_USB_COMMAND_DISPLAY_OFF,
     WATCH_USB_COMMAND_SLEEP,
@@ -388,46 +390,49 @@ static void send_w25(void)
     }
 }
 
-static void send_w25_test(void)
+static void send_fs(void)
 {
-    static const uint8_t pattern[] = {
-        0x00U, 0x11U, 0x22U, 0x33U, 0x44U, 0x55U, 0x66U, 0x77U,
-        0x88U, 0x99U, 0xAAU, 0xBBU, 0xCCU, 0xDDU, 0xEEU, 0xFFU,
-    };
-    uint32_t jedec_id = 0U;
-    watch_w25q128_result_t id_result;
-    watch_w25q128_result_t erase_result;
-    watch_w25q128_result_t program_result = WATCH_W25Q128_RESULT_INVALID_ARGUMENT;
-    watch_w25q128_result_t read_result = WATCH_W25Q128_RESULT_INVALID_ARGUMENT;
-    watch_w25q128_result_t cleanup_result;
-    bool verify = false;
-    char response[256];
+    char response[224];
+    watch_littlefs_board_status_t status;
+    watch_littlefs_result_t mount_result = watch_littlefs_board_mount();
     int length;
 
-    id_result = watch_w25q128_board_read_id(&jedec_id);
-    erase_result = watch_w25q128_board_sector_erase(WATCH_W25Q128_BOARD_TEST_ADDRESS);
-    if (erase_result == WATCH_W25Q128_RESULT_OK) {
-        program_result = watch_w25q128_board_page_program(WATCH_W25Q128_BOARD_TEST_ADDRESS,
-                                                            pattern, sizeof(pattern));
-        if (program_result == WATCH_W25Q128_RESULT_OK) {
-            uint8_t readback[sizeof(pattern)] = { 0 };
-
-            read_result = watch_w25q128_board_read(WATCH_W25Q128_BOARD_TEST_ADDRESS, readback,
-                                                   sizeof(readback));
-            verify = read_result == WATCH_W25Q128_RESULT_OK
-                && memcmp(pattern, readback, sizeof(pattern)) == 0;
-        }
+    if (!watch_littlefs_board_read_status(&status)) {
+        send_text("fs=unavailable\r\n");
+        return;
     }
-    cleanup_result = watch_w25q128_board_sector_erase(WATCH_W25Q128_BOARD_TEST_ADDRESS);
+
     length = snprintf(response, sizeof(response),
-                      "w25test addr=0x%06lx id=0x%06lx id_result=%s erase=%s program=%s "
-                      "read=%s verify=%u cleanup=%s\r\n",
-                      (unsigned long)WATCH_W25Q128_BOARD_TEST_ADDRESS, (unsigned long)jedec_id,
-                      watch_w25q128_result_name(id_result),
-                      watch_w25q128_result_name(erase_result),
-                      watch_w25q128_result_name(program_result),
-                      watch_w25q128_result_name(read_result), verify ? 1U : 0U,
-                      watch_w25q128_result_name(cleanup_result));
+                      "fs mounted=%u result=%s mount=%s partition=0x%06lx-0x%06lx "
+                      "chunks=%lu,%lu,%lu\r\n",
+                      status.mounted ? 1U : 0U, watch_littlefs_result_name(status.last_result),
+                      watch_littlefs_result_name(mount_result), (unsigned long)WATCH_W25_LITTLEFS_OFFSET,
+                      (unsigned long)WATCH_W25_LITTLEFS_END, (unsigned long)status.image_chunks,
+                      (unsigned long)status.font_chunks, (unsigned long)status.text_chunks);
+    if ((length > 0) && ((size_t)length < sizeof(response))) {
+        watch_usb_cdc_write((const uint8_t *)response, (size_t)length);
+    }
+}
+
+static void send_fs_test(void)
+{
+    char response[224];
+    watch_littlefs_board_status_t status;
+    watch_littlefs_result_t result = watch_littlefs_board_run_resource_test();
+    int length;
+
+    if (!watch_littlefs_board_read_status(&status)) {
+        send_text("fs-test=unavailable\r\n");
+        return;
+    }
+
+    length = snprintf(response, sizeof(response),
+                      "fs-test result=%s mounted=%u image=%lu font=%lu text=%lu "
+                      "partition=0x%06lx-0x%06lx\r\n",
+                      watch_littlefs_result_name(result), status.mounted ? 1U : 0U,
+                      (unsigned long)status.image_chunks, (unsigned long)status.font_chunks,
+                      (unsigned long)status.text_chunks, (unsigned long)WATCH_W25_LITTLEFS_OFFSET,
+                      (unsigned long)WATCH_W25_LITTLEFS_END);
     if ((length > 0) && ((size_t)length < sizeof(response))) {
         watch_usb_cdc_write((const uint8_t *)response, (size_t)length);
     }
@@ -437,7 +442,7 @@ static void handle_command(watch_usb_command_t command)
 {
     switch (command) {
     case WATCH_USB_COMMAND_HELP:
-        send_text("commands: help ping info diag stats health sensor eeprom w25 w25-test power "
+        send_text("commands: help ping info diag stats health sensor eeprom w25 fs fs-test power "
                   "display-off sleep shutdown\r\n");
         break;
     case WATCH_USB_COMMAND_PING:
@@ -464,8 +469,11 @@ static void handle_command(watch_usb_command_t command)
     case WATCH_USB_COMMAND_W25:
         send_w25();
         break;
-    case WATCH_USB_COMMAND_W25_TEST:
-        send_w25_test();
+    case WATCH_USB_COMMAND_FS:
+        send_fs();
+        break;
+    case WATCH_USB_COMMAND_FS_TEST:
+        send_fs_test();
         break;
     case WATCH_USB_COMMAND_POWER:
         send_power();
@@ -521,8 +529,10 @@ static watch_usb_command_t parse_command(void)
         return WATCH_USB_COMMAND_EEPROM;
     } else if (strcmp(s_command, "w25") == 0) {
         return WATCH_USB_COMMAND_W25;
-    } else if (strcmp(s_command, "w25-test") == 0) {
-        return WATCH_USB_COMMAND_W25_TEST;
+    } else if (strcmp(s_command, "fs") == 0) {
+        return WATCH_USB_COMMAND_FS;
+    } else if (strcmp(s_command, "fs-test") == 0) {
+        return WATCH_USB_COMMAND_FS_TEST;
     } else if (strcmp(s_command, "power") == 0) {
         return WATCH_USB_COMMAND_POWER;
     } else if (strcmp(s_command, "display-off") == 0) {
