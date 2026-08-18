@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include "board/usb/watch_usb_cdc.h"
+#include "board/bluetooth/watch_kt6368_board.h"
 #include "board/sensors/watch_aht20_board.h"
 #include "board/sensors/watch_cw2015_board.h"
 #include "board/sensors/watch_sensor_aggregate_board.h"
@@ -36,6 +37,8 @@ typedef enum {
     WATCH_USB_COMMAND_W25,
     WATCH_USB_COMMAND_FS,
     WATCH_USB_COMMAND_FS_TEST,
+    WATCH_USB_COMMAND_BLE,
+    WATCH_USB_COMMAND_BLE_PROBE,
     WATCH_USB_COMMAND_POWER,
     WATCH_USB_COMMAND_DISPLAY_OFF,
     WATCH_USB_COMMAND_SLEEP,
@@ -447,6 +450,73 @@ static void send_fs(void)
     }
 }
 
+static const char *spp_state_name(watch_spp_state_t state)
+{
+    switch (state) {
+    case WATCH_SPP_STATE_DISABLED:
+        return "disabled";
+    case WATCH_SPP_STATE_READY:
+        return "ready";
+    case WATCH_SPP_STATE_ACTIVE:
+        return "active";
+    case WATCH_SPP_STATE_FAULT:
+        return "fault";
+    case WATCH_SPP_STATE_COUNT:
+        return "invalid";
+    }
+
+    return "invalid";
+}
+
+static void send_ble(void)
+{
+    char response[256];
+    watch_kt6368_board_status_t status;
+    int length;
+
+    if (!watch_kt6368_board_read_status(&status)) {
+        send_text("ble=unavailable\r\n");
+        return;
+    }
+
+    length = snprintf(response, sizeof(response),
+                      "ble state=%s enabled=%u active_low=%u armed=%u rx=%lu tx=%lu "
+                      "rx_drop=%lu tx_drop=%lu idle=%lu rx_err=%lu tx_err=%lu "
+                      "disconnects=%lu recoveries=%lu recovery_pending=%u uart_err=%lu "
+                      "tx_busy=%lu last_error=%lu\r\n",
+                      spp_state_name(status.transport.state), status.transport.enabled ? 1U : 0U,
+                      status.enable_active_low ? 1U : 0U, status.transport.rx_armed ? 1U : 0U,
+                      (unsigned long)status.transport.rx_bytes,
+                      (unsigned long)status.transport.tx_bytes,
+                      (unsigned long)status.transport.rx_dropped,
+                      (unsigned long)status.transport.tx_dropped,
+                      (unsigned long)status.transport.idle_events,
+                      (unsigned long)status.transport.rx_errors,
+                      (unsigned long)status.transport.tx_errors,
+                      (unsigned long)status.transport.disconnects,
+                      (unsigned long)status.transport.recovery_count,
+                      status.recovery_pending ? 1U : 0U,
+                      (unsigned long)status.uart_error_count,
+                      (unsigned long)status.tx_busy_count,
+                      (unsigned long)status.last_error_ms);
+    if ((length > 0) && ((size_t)length < sizeof(response))) {
+        watch_usb_cdc_write((const uint8_t *)response, (size_t)length);
+    }
+}
+
+static void send_ble_probe(void)
+{
+    static const uint8_t probe[] = "MW-SPP-PROBE\r\n";
+    size_t accepted = watch_kt6368_board_write(probe, sizeof(probe) - 1U);
+    char response[96];
+    int length = snprintf(response, sizeof(response), "ble-probe queued=%lu/%lu\r\n",
+                          (unsigned long)accepted, (unsigned long)(sizeof(probe) - 1U));
+
+    if ((length > 0) && ((size_t)length < sizeof(response))) {
+        watch_usb_cdc_write((const uint8_t *)response, (size_t)length);
+    }
+}
+
 static void send_fs_test(void)
 {
     char response[224];
@@ -476,7 +546,7 @@ static void handle_command(watch_usb_command_t command)
     switch (command) {
     case WATCH_USB_COMMAND_HELP:
         send_text("commands: help ping info diag stats health sensor eeprom w25 fs fs-test power "
-                  "display-off sleep shutdown\r\n");
+                  "ble ble-probe display-off sleep shutdown\r\n");
         break;
     case WATCH_USB_COMMAND_PING:
         send_text("pong\r\n");
@@ -507,6 +577,12 @@ static void handle_command(watch_usb_command_t command)
         break;
     case WATCH_USB_COMMAND_FS_TEST:
         send_fs_test();
+        break;
+    case WATCH_USB_COMMAND_BLE:
+        send_ble();
+        break;
+    case WATCH_USB_COMMAND_BLE_PROBE:
+        send_ble_probe();
         break;
     case WATCH_USB_COMMAND_POWER:
         send_power();
@@ -566,6 +642,10 @@ static watch_usb_command_t parse_command(void)
         return WATCH_USB_COMMAND_FS;
     } else if (strcmp(s_command, "fs-test") == 0) {
         return WATCH_USB_COMMAND_FS_TEST;
+    } else if (strcmp(s_command, "ble") == 0) {
+        return WATCH_USB_COMMAND_BLE;
+    } else if (strcmp(s_command, "ble-probe") == 0) {
+        return WATCH_USB_COMMAND_BLE_PROBE;
     } else if (strcmp(s_command, "power") == 0) {
         return WATCH_USB_COMMAND_POWER;
     } else if (strcmp(s_command, "display-off") == 0) {
@@ -638,5 +718,6 @@ void watch_usb_diagnostic_process(void)
     }
 
     watch_power_board_process(HAL_GetTick());
+    watch_kt6368_board_process(HAL_GetTick());
     watch_usb_cdc_process();
 }

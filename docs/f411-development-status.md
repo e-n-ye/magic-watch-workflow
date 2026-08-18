@@ -27,16 +27,16 @@ UI/resources, power, then secure OTA. No empty placeholder modules are added.
 
 ## Baseline and completion
 
-- This M15 USB resource update began from clean `origin/main` at `18815c2`
-  (the merged M14 littlefs/resource-storage baseline).
+- This M16 KT6368 update began from clean `origin/main` at `80c415e`
+  (the merged M15 USB resource-transfer baseline).
 - The original pre-relocation Debug App reference was Flash `64,340 B` and RAM
   `30,208 B`. The current practical App budget remains 400 KiB Flash and 128 KiB
   RAM.
-- Fourteen of 21 numbered milestones are fully closed: M0-M9, M11, and M13-M15. M10b LIS2MDL,
+- Fifteen of 21 numbered milestones are fully closed: M0-M9, M11, and M13-M16. M10b LIS2MDL,
   M10c AHT20-compatible, M10d MAX30102, and M10e CW2015 driver/service paths
   plus the M10f aggregation path are implemented. M10 remains partial because
   the board still lacks independent LIS2MDL and CW2015 physical acceptance.
-  This is about 67% by strict numbered scope. The current artifact is a
+  This is about 71% by strict numbered scope. The current artifact is a
   runnable, diagnosable vertical slice; upgrade, power-loss recovery, and
   rollback are not present.
 - Current hardware facts include STM32F411, 24 MHz HSE, ST-Link-compatible SWD,
@@ -64,29 +64,30 @@ UI/resources, power, then secure OTA. No empty placeholder modules are added.
 | M13 | W25Q128 raw driver | Complete; pure-C protocol, SPI3 board adapter, host fault tests, and explicit board read/program/erase acceptance are closed. |
 | M14 | littlefs and resource streaming | Complete. Fixed raw partitions, App-only littlefs, bounded resource reads, host tests, and board persistence acceptance are closed. |
 | M15 | USB diagnostic/log/resource protocol | Complete; fixed MWRP framing, ACK/NACK, CRC32, SHA-256, bounded paths, LittleFS temporary writes, atomic rename, and board acceptance are closed. |
-| M16 | KT6368 SPP transport | Not started. |
+| M16 | KT6368 SPP transport | Complete; USART1 115200 8N1, PB14 active-low enable, RX DMA+IDLE, TX DMA, bounded rings, timeout/error recovery, and board SPP RX/TX acceptance are closed. |
 | M17 | YModem candidate download and package verification | Not started. |
 | M18 | Backup, install, and power-loss recovery | Not started. |
 | M19 | Trial confirmation and rollback | Not started. |
 | M20 | Final configurations, simulator, fault injection, budgets, regression report | Not started. |
 
-## Current round: M15 USB atomic resource transfer
+## Current round: M16 KT6368 SPP transport
 
-M15 keeps the M14 raw map and adds the fixed little-endian `MWRP` frame contract:
-`MWRP/version/type/flags/sequence/payload-length/CRC32`, with a 512-byte maximum
-payload. `BEGIN` carries a bounded absolute littlefs path, size, and SHA-256;
-ordered `DATA` frames stream to a `*.upload` temporary file; `COMMIT` verifies
-the digest and atomically renames; `ABORT`, CRC errors, sequence/offset errors,
-storage failures, and digest mismatches remove the temporary file. Existing
-ASCII CDC diagnostics remain available when the binary protocol is idle. No
-MSC mode and no OTA partition access were added.
+M16 adds a pure-C SPP transport contract and a F411 board adapter for KT6368.
+USART1 is fixed at 115200 8N1 on PA9/PA10; PB14 is treated as active-low
+enable. RX uses DMA2 Stream5 with IDLE callbacks and TX uses DMA2 Stream7 in
+bounded chunks. RX/TX overflow counters, link timeout, UART-error recovery,
+and USB read-only `ble`/`ble-probe` diagnostics are exposed without relying on
+unverified AT commands. The connected board accepted a signed v21 App, sent a
+14-byte probe with `tx_err=0`, and after a Bluetooth SPP send reported an RX
+increase from 129 to 147 bytes with `rx_drop=0` and `tx_drop=0`. The transport
+does not consume OTA packages yet; YModem begins in M17.
 
-## Next round: M16 KT6368 SPP transport
+## Next round: M17 YModem candidate download and package verification
 
-M16 will verify KT6368 enable polarity, SPP pairing, USART1 DMA+IDLE ring
-transport, and recovery from disconnects. It will carry the same signed-package
-bytes only after the board facts are established; no unsupported AT command or
-phone application is planned.
+M17 will add the persistent dual-copy metadata log and YModem candidate
+download. It will verify the fixed manifest, SHA-256, signature, board type, and
+security counter before any internal App write; failed downloads will leave the
+current App untouched.
 
 ## Risks and blockers
 
@@ -126,17 +127,17 @@ phone application is planned.
   and verified only the App slot, and the Bootloader executable prefix still
   matches the local build, but a reliable whole-region hash procedure remains
   an open debug-tooling issue.
-- KT6368 transport, OTA metadata, install recovery, and rollback are not
-  implemented. M15 does not provide them implicitly.
+- OTA metadata, candidate download, install recovery, and rollback are not
+  implemented. M16 only provides the transparent transport and diagnostics.
 
 ## Latest verification
 
 - Debug, Diagnostic, and Release App builds passed. Debug format-check and
-  Cppcheck passed; Host CTest passed `15/15` and the 240x280 simulator smoke
+  Cppcheck passed; Host CTest passed `16/16` and the 240x280 simulator smoke
   test passed `1/1`.
 - Current App budgets remain within the 400 KiB practical Flash budget:
-  Debug Flash `333,872 B` / RAM `91,572 B`; Diagnostic Flash `343,412 B` /
-  RAM `91,572 B`; Release Flash `182,132 B` / RAM `91,560 B`. Bootloader is
+  Debug Flash `339,640 B` / RAM `93,988 B`; Diagnostic Flash `349,180 B` /
+  RAM `93,988 B`; Release Flash `185,108 B` / RAM `93,976 B`. Bootloader is
   `6,564 B` Flash / `1,056 B` RAM.
 - M10b host tests cover Sensor Hub bank selection, LIS2MDL address/configuration,
   `sensor_hub_end_op` timeout, NACK handling, identity, sample decoding,
@@ -155,7 +156,9 @@ phone application is planned.
   format/mount persistence, bounded image/font/text reads, and unmounted and
   invalid-reader paths. M15 protocol tests cover split input, valid multi-frame
   transfer, CRC/version/flags/path/sequence/offset/state rejection, digest
-  mismatch, and ABORT. Host CTest passed `15/15`.
+  mismatch, and ABORT. M16 transport tests cover ring wrap, bounded TX
+  chunks, overflow accounting, timeout state, and recovery. Host CTest passed
+  `16/16`.
 - After dynamic CDC re-enumeration, `ping`, `info`, `eeprom`, `health`,
   `stats`, `diag`, `sensor`, and `power` were valid. Health was stage 3 with
   app, UI, USB, and sensor services healthy; the queue was `2` during the read,
@@ -179,3 +182,10 @@ phone application is planned.
   received NACK error `4`; a wrong SHA-256 received NACK error `12`. After a
   reset, `ping`, `info`, `fs`, and `stats` were valid; `fs` remounted the fixed
   littlefs partition and `stats` showed zero CDC drops.
+- For M16, the host verifier accepted the signed v21 package with image length
+  `339,680 B`. OpenOCD wrote and verified only the App slot at `0x08010000`;
+  the 64 KiB Bootloader SHA-256 before and after the final write was identical.
+  USB `ble` reported `active_low=1`, `enabled=1`, and `armed=1`. After the
+  Bluetooth SPP test send, RX increased from `129` to `147` bytes, with
+  `idle=5`, `rx_drop=0`, and `tx_drop=0`; the queued probe completed with
+  `tx=14` and `tx_err=0`.

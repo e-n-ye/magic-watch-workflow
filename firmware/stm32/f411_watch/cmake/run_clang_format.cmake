@@ -50,6 +50,8 @@ set(FORMAT_FILES
     "${FORMAT_ROOT}/board/storage/watch_w25q128_board.h"
     "${FORMAT_ROOT}/board/time/watch_rtc_board.c"
     "${FORMAT_ROOT}/board/time/watch_rtc_board.h"
+    "${FORMAT_ROOT}/board/bluetooth/watch_kt6368_board.c"
+    "${FORMAT_ROOT}/board/bluetooth/watch_kt6368_board.h"
     "${FORMAT_ROOT}/config/user_config.h"
 )
 
@@ -120,6 +122,8 @@ if(DEFINED FORMAT_TRANSPORT_ROOT AND NOT FORMAT_TRANSPORT_ROOT STREQUAL "")
     list(APPEND FORMAT_FILES
         "${FORMAT_TRANSPORT_ROOT}/watch_resource_protocol.c"
         "${FORMAT_TRANSPORT_ROOT}/watch_resource_protocol.h"
+        "${FORMAT_TRANSPORT_ROOT}/watch_spp_transport.c"
+        "${FORMAT_TRANSPORT_ROOT}/watch_spp_transport.h"
     )
 endif()
 
