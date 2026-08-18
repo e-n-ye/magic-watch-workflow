@@ -28,6 +28,7 @@
 #include "app/watch_app.h"
 #include "app/watch_diagnostic.h"
 #include "app/watch_usb_diagnostic.h"
+#include "board/bluetooth/watch_kt6368_board.h"
 #include "ui/watch_ui.h"
 #include "watch_runtime.h"
 
@@ -154,6 +155,7 @@ void StartDefaultTask(void *argument)
 {
   /* init code for USB_DEVICE */
   MX_USB_DEVICE_Init();
+  (void)watch_kt6368_board_init();
   /* USER CODE BEGIN StartDefaultTask */
   (void)argument;
 

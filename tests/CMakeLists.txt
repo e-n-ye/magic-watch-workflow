@@ -184,6 +184,18 @@ if(BUILD_TESTING)
 
     add_test(NAME watch_resource_protocol COMMAND watch_resource_protocol_tests)
 
+    add_executable(watch_spp_transport_tests
+        ${CMAKE_CURRENT_LIST_DIR}/watch_spp_transport_test.c
+        ${CMAKE_CURRENT_LIST_DIR}/../products/f411_watch/transport/watch_spp_transport.c
+    )
+
+    target_include_directories(watch_spp_transport_tests
+        PRIVATE
+            ${CMAKE_CURRENT_LIST_DIR}/../products/f411_watch/transport
+    )
+
+    add_test(NAME watch_spp_transport COMMAND watch_spp_transport_tests)
+
     add_executable(watch_max30102_tests
         ${CMAKE_CURRENT_LIST_DIR}/watch_max30102_test.c
         ${CMAKE_CURRENT_LIST_DIR}/../products/f411_watch/sensors/watch_max30102.c

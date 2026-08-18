@@ -46,6 +46,8 @@ add_library(f411_watch_user OBJECT
     board/storage/watch_littlefs_board.c
     board/storage/watch_w25q128_board.c
     board/time/watch_rtc_board.c
+    board/bluetooth/watch_kt6368_board.c
+    board/bluetooth/watch_kt6368_dma_irq.c
     board/usb/watch_usb_cdc.c
     ui/watch_ui.c
     ${CMAKE_SOURCE_DIR}/../../../products/f411_watch/ui/f411_watch_ui_gen.c
@@ -75,6 +77,7 @@ add_library(f411_watch_user OBJECT
     ${WATCH_POWER_SOURCE_DIR}/watch_watchdog.c
     ${WATCH_TIME_SOURCE_DIR}/watch_time.c
     ${WATCH_TRANSPORT_SOURCE_DIR}/watch_resource_protocol.c
+    ${WATCH_TRANSPORT_SOURCE_DIR}/watch_spp_transport.c
     ${WATCH_TINYCRYPT_SOURCE_DIR}/lib/source/sha256.c
     ${WATCH_TINYCRYPT_SOURCE_DIR}/lib/source/utils.c
 )
