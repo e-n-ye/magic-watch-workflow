@@ -20,6 +20,17 @@ static bool watch_littlefs_valid(const watch_littlefs_t *filesystem)
         && watch_littlefs_backend_valid(&filesystem->backend);
 }
 
+static bool upload_path_valid(const char *path)
+{
+    size_t length;
+
+    if (path == NULL || path[0] != '/') {
+        return false;
+    }
+    length = strlen(path);
+    return length > 1U && length < WATCH_LITTLEFS_UPLOAD_PATH_SIZE && path[length - 1U] != '/';
+}
+
 static bool watch_littlefs_block_address(lfs_block_t block, lfs_off_t offset, lfs_size_t length,
                                          uint32_t *address)
 {
@@ -303,6 +314,100 @@ watch_littlefs_result_t watch_littlefs_read_file_chunks(watch_littlefs_t *filesy
         result = watch_littlefs_result_from_lfs(close_result);
     }
     return result;
+}
+
+watch_littlefs_result_t watch_littlefs_upload_begin(watch_littlefs_t *filesystem,
+                                                    watch_littlefs_upload_t *upload,
+                                                    const char *path)
+{
+    int result;
+    size_t path_length;
+    size_t temporary_length;
+
+    if (!watch_littlefs_valid(filesystem) || upload == NULL || !upload_path_valid(path)) {
+        return WATCH_LITTLEFS_RESULT_INVALID_ARGUMENT;
+    }
+    if (!filesystem->mounted) {
+        return WATCH_LITTLEFS_RESULT_NOT_MOUNTED;
+    }
+
+    memset(upload, 0, sizeof(*upload));
+    path_length = strlen(path);
+    temporary_length = path_length + sizeof(".upload") - 1U;
+    if (temporary_length >= sizeof(upload->temporary_path)) {
+        return WATCH_LITTLEFS_RESULT_INVALID_ARGUMENT;
+    }
+    memcpy(upload->final_path, path, path_length + 1U);
+    memcpy(upload->temporary_path, path, path_length);
+    memcpy(&upload->temporary_path[path_length], ".upload", sizeof(".upload"));
+
+    (void)lfs_remove(&filesystem->filesystem, upload->temporary_path);
+    result = lfs_file_open(&filesystem->filesystem, &upload->file, upload->temporary_path,
+                           LFS_O_WRONLY | LFS_O_CREAT | LFS_O_TRUNC);
+    if (result != LFS_ERR_OK) {
+        return watch_littlefs_result_from_lfs(result);
+    }
+
+    upload->filesystem = filesystem;
+    upload->active = true;
+    return WATCH_LITTLEFS_RESULT_OK;
+}
+
+watch_littlefs_result_t watch_littlefs_upload_write(watch_littlefs_upload_t *upload, size_t offset,
+                                                    const uint8_t *data, size_t length)
+{
+    lfs_ssize_t written;
+
+    if (upload == NULL || !upload->active || upload->filesystem == NULL
+        || (data == NULL && length > 0U) || offset != upload->written) {
+        return WATCH_LITTLEFS_RESULT_INVALID_ARGUMENT;
+    }
+    if (length == 0U) {
+        return WATCH_LITTLEFS_RESULT_OK;
+    }
+    written = lfs_file_write(&upload->filesystem->filesystem, &upload->file, data, length);
+    if (written != (lfs_ssize_t)length) {
+        return written < 0 ? watch_littlefs_result_from_lfs((int)written)
+                           : WATCH_LITTLEFS_RESULT_IO;
+    }
+    upload->written += length;
+    return WATCH_LITTLEFS_RESULT_OK;
+}
+
+watch_littlefs_result_t watch_littlefs_upload_commit(watch_littlefs_upload_t *upload)
+{
+    int result;
+
+    if (upload == NULL || !upload->active || upload->filesystem == NULL) {
+        return WATCH_LITTLEFS_RESULT_INVALID_ARGUMENT;
+    }
+    result = lfs_file_close(&upload->filesystem->filesystem, &upload->file);
+    upload->active = false;
+    if (result != LFS_ERR_OK) {
+        (void)lfs_remove(&upload->filesystem->filesystem, upload->temporary_path);
+        return watch_littlefs_result_from_lfs(result);
+    }
+    result =
+        lfs_rename(&upload->filesystem->filesystem, upload->temporary_path, upload->final_path);
+    if (result != LFS_ERR_OK) {
+        (void)lfs_remove(&upload->filesystem->filesystem, upload->temporary_path);
+        return watch_littlefs_result_from_lfs(result);
+    }
+    upload->filesystem = NULL;
+    return WATCH_LITTLEFS_RESULT_OK;
+}
+
+void watch_littlefs_upload_abort(watch_littlefs_upload_t *upload)
+{
+    if (upload == NULL || upload->filesystem == NULL) {
+        return;
+    }
+    if (upload->active) {
+        (void)lfs_file_close(&upload->filesystem->filesystem, &upload->file);
+        upload->active = false;
+    }
+    (void)lfs_remove(&upload->filesystem->filesystem, upload->temporary_path);
+    upload->filesystem = NULL;
 }
 
 bool watch_littlefs_is_mounted(const watch_littlefs_t *filesystem)

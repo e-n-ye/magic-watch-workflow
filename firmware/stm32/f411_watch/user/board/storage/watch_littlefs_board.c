@@ -25,6 +25,7 @@ static uint32_t s_text_chunks;
 static uint8_t s_image[WATCH_LITTLEFS_BOARD_IMAGE_BYTES];
 static uint8_t s_font[WATCH_LITTLEFS_BOARD_FONT_BYTES];
 static uint8_t s_text[WATCH_LITTLEFS_BOARD_TEXT_BYTES];
+static watch_littlefs_upload_t s_upload;
 
 static bool watch_littlefs_board_read(void *context, uint32_t address, uint8_t *data, size_t length)
 {
@@ -189,4 +190,40 @@ bool watch_littlefs_board_read_status(watch_littlefs_board_status_t *status)
         .text_chunks = s_text_chunks,
     };
     return true;
+}
+
+bool watch_littlefs_board_upload_begin(void *context, const char *path, uint32_t size,
+                                       const uint8_t digest[WATCH_RESOURCE_PROTOCOL_DIGEST_SIZE])
+{
+    (void)context;
+    (void)size;
+    (void)digest;
+
+    if (watch_littlefs_board_mount() != WATCH_LITTLEFS_RESULT_OK) {
+        return false;
+    }
+    s_last_result = watch_littlefs_upload_begin(&s_filesystem, &s_upload, path);
+    return s_last_result == WATCH_LITTLEFS_RESULT_OK;
+}
+
+bool watch_littlefs_board_upload_data(void *context, uint32_t offset, const uint8_t *data,
+                                      size_t length)
+{
+    (void)context;
+    s_last_result = watch_littlefs_upload_write(&s_upload, offset, data, length);
+    return s_last_result == WATCH_LITTLEFS_RESULT_OK;
+}
+
+bool watch_littlefs_board_upload_commit(void *context)
+{
+    (void)context;
+    s_last_result = watch_littlefs_upload_commit(&s_upload);
+    return s_last_result == WATCH_LITTLEFS_RESULT_OK;
+}
+
+void watch_littlefs_board_upload_abort(void *context)
+{
+    (void)context;
+    watch_littlefs_upload_abort(&s_upload);
+    s_last_result = WATCH_LITTLEFS_RESULT_OK;
 }

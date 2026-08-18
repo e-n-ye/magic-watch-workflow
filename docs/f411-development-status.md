@@ -27,16 +27,16 @@ UI/resources, power, then secure OTA. No empty placeholder modules are added.
 
 ## Baseline and completion
 
-- This M14 littlefs update began from clean `origin/main` at `baf171f`
-  (the merged M13 W25Q128 raw-driver baseline).
+- This M15 USB resource update began from clean `origin/main` at `18815c2`
+  (the merged M14 littlefs/resource-storage baseline).
 - The original pre-relocation Debug App reference was Flash `64,340 B` and RAM
   `30,208 B`. The current practical App budget remains 400 KiB Flash and 128 KiB
   RAM.
-- Thirteen of 21 numbered milestones are fully closed: M0-M9, M11, M13, and M14. M10b LIS2MDL,
+- Fourteen of 21 numbered milestones are fully closed: M0-M9, M11, and M13-M15. M10b LIS2MDL,
   M10c AHT20-compatible, M10d MAX30102, and M10e CW2015 driver/service paths
   plus the M10f aggregation path are implemented. M10 remains partial because
   the board still lacks independent LIS2MDL and CW2015 physical acceptance.
-  This is about 62% by strict numbered scope. The current artifact is a
+  This is about 67% by strict numbered scope. The current artifact is a
   runnable, diagnosable vertical slice; upgrade, power-loss recovery, and
   rollback are not present.
 - Current hardware facts include STM32F411, 24 MHz HSE, ST-Link-compatible SWD,
@@ -63,30 +63,30 @@ UI/resources, power, then secure OTA. No empty placeholder modules are added.
 | M12 | Power and watchdog | Partial; RTC Stop/wake, display-off, software-off, and IWDG have software and no-battery board evidence. KEY_WAKE, physical cutoff, watchdog wiring, and current remain open. |
 | M13 | W25Q128 raw driver | Complete; pure-C protocol, SPI3 board adapter, host fault tests, and explicit board read/program/erase acceptance are closed. |
 | M14 | littlefs and resource streaming | Complete. Fixed raw partitions, App-only littlefs, bounded resource reads, host tests, and board persistence acceptance are closed. |
-| M15 | USB diagnostic/log/resource protocol | Not started; existing CDC diagnostics are not the atomic resource protocol. |
+| M15 | USB diagnostic/log/resource protocol | Complete; fixed MWRP framing, ACK/NACK, CRC32, SHA-256, bounded paths, LittleFS temporary writes, atomic rename, and board acceptance are closed. |
 | M16 | KT6368 SPP transport | Not started. |
 | M17 | YModem candidate download and package verification | Not started. |
 | M18 | Backup, install, and power-loss recovery | Not started. |
 | M19 | Trial confirmation and rollback | Not started. |
 | M20 | Final configurations, simulator, fault injection, budgets, regression report | Not started. |
 
-## Current round: M14 littlefs and resource streaming
+## Current round: M15 USB atomic resource transfer
 
-M14 fixes the W25Q128 raw map: metadata `0x000000-0x00FFFF`, candidate
-`0x010000-0x08FFFF`, rollback `0x090000-0x10FFFF`, and littlefs
-`0x110000-0xFFFFFF`. App-only littlefs uses vendored upstream v2.11.3 with its
-license and upstream record retained. Its W25 block adapter cannot address any
-OTA partition; Bootloader does not link or mount littlefs. `fs-test` formats
-only the littlefs partition, writes image, font, and long-text fixtures, then
-reads them through a 256 B bounded consumer callback. CDC `fs` reports mount
-state and partition bounds. The resource diagnostic task has a 4 KiB stack to
-accommodate the W25 and littlefs call path.
+M15 keeps the M14 raw map and adds the fixed little-endian `MWRP` frame contract:
+`MWRP/version/type/flags/sequence/payload-length/CRC32`, with a 512-byte maximum
+payload. `BEGIN` carries a bounded absolute littlefs path, size, and SHA-256;
+ordered `DATA` frames stream to a `*.upload` temporary file; `COMMIT` verifies
+the digest and atomically renames; `ABORT`, CRC errors, sequence/offset errors,
+storage failures, and digest mismatches remove the temporary file. Existing
+ASCII CDC diagnostics remain available when the binary protocol is idle. No
+MSC mode and no OTA partition access were added.
 
-## Next round: M15 USB atomic resource transfer
+## Next round: M16 KT6368 SPP transport
 
-M15 will extend CDC with the fixed little-endian resource frame protocol,
-SHA-256 validation, temporary writes, atomic rename, ACK/NACK, and ABORT. It
-does not add MSC and does not access OTA partitions.
+M16 will verify KT6368 enable polarity, SPP pairing, USART1 DMA+IDLE ring
+transport, and recovery from disconnects. It will carry the same signed-package
+bytes only after the board facts are established; no unsupported AT command or
+phone application is planned.
 
 ## Risks and blockers
 
@@ -126,17 +126,17 @@ does not add MSC and does not access OTA partitions.
   and verified only the App slot, and the Bootloader executable prefix still
   matches the local build, but a reliable whole-region hash procedure remains
   an open debug-tooling issue.
-- Atomic resource transfer, KT6368 transport, OTA metadata, install recovery,
-  and rollback are not implemented. M14 does not provide them implicitly.
+- KT6368 transport, OTA metadata, install recovery, and rollback are not
+  implemented. M15 does not provide them implicitly.
 
 ## Latest verification
 
 - Debug, Diagnostic, and Release App builds passed. Debug format-check and
-  Cppcheck passed; Host CTest passed `14/14` and the 240x280 simulator smoke
+  Cppcheck passed; Host CTest passed `15/15` and the 240x280 simulator smoke
   test passed `1/1`.
 - Current App budgets remain within the 400 KiB practical Flash budget:
-  Debug Flash `325,556 B` / RAM `90,272 B`; Diagnostic Flash `335,096 B` /
-  RAM `90,272 B`; Release Flash `177,776 B` / RAM `90,256 B`. Bootloader is
+  Debug Flash `333,872 B` / RAM `91,572 B`; Diagnostic Flash `343,412 B` /
+  RAM `91,572 B`; Release Flash `182,132 B` / RAM `91,560 B`. Bootloader is
   `6,564 B` Flash / `1,056 B` RAM.
 - M10b host tests cover Sensor Hub bank selection, LIS2MDL address/configuration,
   `sensor_hub_end_op` timeout, NACK handling, identity, sample decoding,
@@ -153,7 +153,9 @@ does not add MSC and does not access OTA partitions.
   sector-alignment/range validation, write-enable sequencing, ready timeout,
   and bus-error recovery. LittleFS host tests cover the fixed partition map,
   format/mount persistence, bounded image/font/text reads, and unmounted and
-  invalid-reader paths. Host CTest passed `14/14`.
+  invalid-reader paths. M15 protocol tests cover split input, valid multi-frame
+  transfer, CRC/version/flags/path/sequence/offset/state rejection, digest
+  mismatch, and ABORT. Host CTest passed `15/15`.
 - After dynamic CDC re-enumeration, `ping`, `info`, `eeprom`, `health`,
   `stats`, `diag`, `sensor`, and `power` were valid. Health was stage 3 with
   app, UI, USB, and sensor services healthy; the queue was `2` during the read,
@@ -164,13 +166,16 @@ does not add MSC and does not access OTA partitions.
   ready with part `0x15`, revision `0x03`, and finger detection active. CW2015
   and LIS2MDL remained explicitly degraded with no valid samples; these are
   hardware facts, not false acceptance.
-- The signed Debug version `18`/counter `18` package was host-verified and
-  written and verified only at App slot `0x08010000`. With IWDG debug-freeze
-  enabled for programming, the new App dynamically re-enumerated and returned
-  `health stage=3` with app, UI, USB, and sensor services healthy plus
-  `diag=none`.
 - On the connected W25Q128, `fs-test` returned `result=ok`, `mounted=1`, and
   image/font/long-text chunk counts `3/3/8` for the fixed
   `0x110000-0xFFFFFF` partition. After a board reset, `fs` returned
   `mounted=1 result=ok mount=ok`, proving persistent remount without accessing
   OTA partitions.
+- The M15 Debug App was packed as signed firmware version/counter `19` and
+  host-verified with the external signing key; the derived public key matched
+  the Bootloader constant. ST-Link/OpenOCD wrote and verified the complete App
+  slot at `0x08010000`. Dynamic USB CDC probing found the target and accepted a
+  733-byte resource in two DATA frames, followed by COMMIT. A corrupted CRC
+  received NACK error `4`; a wrong SHA-256 received NACK error `12`. After a
+  reset, `ping`, `info`, `fs`, and `stats` were valid; `fs` remounted the fixed
+  littlefs partition and `stats` showed zero CDC drops.

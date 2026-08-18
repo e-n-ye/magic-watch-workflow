@@ -5,8 +5,10 @@ set(WATCH_SENSOR_SOURCE_DIR "${CMAKE_SOURCE_DIR}/../../../products/f411_watch/se
 set(WATCH_STORAGE_SOURCE_DIR "${CMAKE_SOURCE_DIR}/../../../products/f411_watch/storage")
 set(WATCH_POWER_SOURCE_DIR "${CMAKE_SOURCE_DIR}/../../../products/f411_watch/power")
 set(WATCH_TIME_SOURCE_DIR "${CMAKE_SOURCE_DIR}/../../../products/f411_watch/time")
+set(WATCH_TRANSPORT_SOURCE_DIR "${CMAKE_SOURCE_DIR}/../../../products/f411_watch/transport")
 set(WATCH_LVGL_SOURCE_DIR "${CMAKE_SOURCE_DIR}/third_party/lvgl")
 set(WATCH_LITTLEFS_SOURCE_DIR "${CMAKE_SOURCE_DIR}/third_party/littlefs")
+set(WATCH_TINYCRYPT_SOURCE_DIR "${CMAKE_SOURCE_DIR}/third_party/tinycrypt")
 
 file(GLOB_RECURSE WATCH_LVGL_SOURCES CONFIGURE_DEPENDS
     "${WATCH_LVGL_SOURCE_DIR}/src/*.c"
@@ -72,6 +74,9 @@ add_library(f411_watch_user OBJECT
     ${WATCH_POWER_SOURCE_DIR}/watch_power_state.c
     ${WATCH_POWER_SOURCE_DIR}/watch_watchdog.c
     ${WATCH_TIME_SOURCE_DIR}/watch_time.c
+    ${WATCH_TRANSPORT_SOURCE_DIR}/watch_resource_protocol.c
+    ${WATCH_TINYCRYPT_SOURCE_DIR}/lib/source/sha256.c
+    ${WATCH_TINYCRYPT_SOURCE_DIR}/lib/source/utils.c
 )
 
 target_include_directories(f411_watch_user
@@ -84,7 +89,9 @@ target_include_directories(f411_watch_user
         ${WATCH_STORAGE_SOURCE_DIR}
         ${WATCH_POWER_SOURCE_DIR}
         ${WATCH_TIME_SOURCE_DIR}
+        ${WATCH_TRANSPORT_SOURCE_DIR}
         ${WATCH_LITTLEFS_SOURCE_DIR}
+        ${WATCH_TINYCRYPT_SOURCE_DIR}/lib/include
         ${CMAKE_SOURCE_DIR}/../../../products/f411_watch/ui
 )
 
@@ -119,6 +126,7 @@ add_custom_target(format
         -DFORMAT_STORAGE_ROOT=${WATCH_STORAGE_SOURCE_DIR}
         -DFORMAT_POWER_ROOT=${WATCH_POWER_SOURCE_DIR}
         -DFORMAT_TIME_ROOT=${WATCH_TIME_SOURCE_DIR}
+        -DFORMAT_TRANSPORT_ROOT=${WATCH_TRANSPORT_SOURCE_DIR}
         -DFORMAT_MODE=fix
         -DCLANG_FORMAT_EXECUTABLE=${WATCH_CLANG_FORMAT_EXECUTABLE}
         -P ${CMAKE_SOURCE_DIR}/cmake/run_clang_format.cmake
@@ -137,6 +145,7 @@ add_custom_target(format-check
         -DFORMAT_STORAGE_ROOT=${WATCH_STORAGE_SOURCE_DIR}
         -DFORMAT_POWER_ROOT=${WATCH_POWER_SOURCE_DIR}
         -DFORMAT_TIME_ROOT=${WATCH_TIME_SOURCE_DIR}
+        -DFORMAT_TRANSPORT_ROOT=${WATCH_TRANSPORT_SOURCE_DIR}
         -DFORMAT_MODE=check
         -DCLANG_FORMAT_EXECUTABLE=${WATCH_CLANG_FORMAT_EXECUTABLE}
         -P ${CMAKE_SOURCE_DIR}/cmake/run_clang_format.cmake

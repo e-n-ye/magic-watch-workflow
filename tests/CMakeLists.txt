@@ -169,6 +169,21 @@ if(BUILD_TESTING)
 
     add_test(NAME watch_littlefs COMMAND watch_littlefs_tests)
 
+    add_executable(watch_resource_protocol_tests
+        ${CMAKE_CURRENT_LIST_DIR}/watch_resource_protocol_test.c
+        ${CMAKE_CURRENT_LIST_DIR}/../products/f411_watch/transport/watch_resource_protocol.c
+        ${CMAKE_CURRENT_LIST_DIR}/../firmware/stm32/f411_watch/third_party/tinycrypt/lib/source/sha256.c
+        ${CMAKE_CURRENT_LIST_DIR}/../firmware/stm32/f411_watch/third_party/tinycrypt/lib/source/utils.c
+    )
+
+    target_include_directories(watch_resource_protocol_tests
+        PRIVATE
+            ${CMAKE_CURRENT_LIST_DIR}/../products/f411_watch/transport
+            ${CMAKE_CURRENT_LIST_DIR}/../firmware/stm32/f411_watch/third_party/tinycrypt/lib/include
+    )
+
+    add_test(NAME watch_resource_protocol COMMAND watch_resource_protocol_tests)
+
     add_executable(watch_max30102_tests
         ${CMAKE_CURRENT_LIST_DIR}/watch_max30102_test.c
         ${CMAKE_CURRENT_LIST_DIR}/../products/f411_watch/sensors/watch_max30102.c

@@ -19,6 +19,7 @@
 #include "watch_app.h"
 #include "watch_diagnostic.h"
 #include "watch_runtime.h"
+#include "watch_resource_protocol.h"
 
 #define WATCH_USB_DIAGNOSTIC_COMMAND_SIZE 96U
 #define WATCH_USB_DIAGNOSTIC_READ_SIZE 32U
@@ -46,6 +47,33 @@ typedef enum {
 static char s_command[WATCH_USB_DIAGNOSTIC_COMMAND_SIZE];
 static size_t s_command_length;
 static bool s_command_overflow;
+static watch_resource_protocol_t s_resource_protocol;
+static bool s_resource_protocol_initialized;
+static bool s_resource_mode;
+
+static bool resource_emit(void *context, const uint8_t *data, size_t length)
+{
+    (void)context;
+    return watch_usb_cdc_write(data, length) == length;
+}
+
+static void resource_protocol_init(void)
+{
+    watch_resource_sink_t sink;
+
+    if (s_resource_protocol_initialized) {
+        return;
+    }
+    sink = (watch_resource_sink_t) {
+        .begin = watch_littlefs_board_upload_begin,
+        .data = watch_littlefs_board_upload_data,
+        .commit = watch_littlefs_board_upload_commit,
+        .abort = watch_littlefs_board_upload_abort,
+        .context = NULL,
+    };
+    watch_resource_protocol_init(&s_resource_protocol, &sink, resource_emit, NULL);
+    s_resource_protocol_initialized = true;
+}
 
 static void send_text(const char *text)
 {
@@ -103,12 +131,17 @@ static void send_diag(void)
 
 static void send_stats(void)
 {
-    char response[128];
+    char response[192];
     int length = snprintf(response, sizeof(response),
-                          "stats rx_pending=%lu rx_drop=%lu tx_drop=%lu\r\n",
+                          "stats rx_pending=%lu rx_drop=%lu tx_drop=%lu resource_active=%u "
+                          "resource_errors=%lu resource_frames=%lu resource_emit_fail=%lu\r\n",
                           (unsigned long)watch_usb_cdc_rx_pending(),
                           (unsigned long)watch_usb_cdc_rx_dropped(),
-                          (unsigned long)watch_usb_cdc_tx_dropped());
+                          (unsigned long)watch_usb_cdc_tx_dropped(),
+                          watch_resource_protocol_is_active(&s_resource_protocol) ? 1U : 0U,
+                          (unsigned long)watch_resource_protocol_frame_errors(&s_resource_protocol),
+                          (unsigned long)watch_resource_protocol_accepted_frames(&s_resource_protocol),
+                          (unsigned long)watch_resource_protocol_emit_failures(&s_resource_protocol));
     if ((length > 0) && ((size_t)length < sizeof(response))) {
         watch_usb_cdc_write((const uint8_t *)response, (size_t)length);
     }
@@ -578,6 +611,8 @@ void watch_usb_diagnostic_process(void)
     size_t length = watch_usb_cdc_read(input, sizeof(input));
     uint32_t now_ms = HAL_GetTick();
 
+    resource_protocol_init();
+
     watch_lsm6ds3_board_process(now_ms);
     watch_lis2mdl_board_process(now_ms);
     watch_aht20_board_process(now_ms);
@@ -589,7 +624,17 @@ void watch_usb_diagnostic_process(void)
     (void)watch_runtime_heartbeat(WATCH_RUNTIME_SERVICE_USB, now_ms);
 
     for (size_t index = 0U; index < length; ++index) {
-        consume_byte(input[index]);
+        if (s_resource_mode) {
+            (void)watch_resource_protocol_feed(&s_resource_protocol, &input[index], 1U);
+            if (!watch_resource_protocol_is_active(&s_resource_protocol)) {
+                s_resource_mode = false;
+            }
+        } else if (!s_command_overflow && s_command_length == 0U && input[index] == 'M') {
+            s_resource_mode = true;
+            (void)watch_resource_protocol_feed(&s_resource_protocol, &input[index], 1U);
+        } else {
+            consume_byte(input[index]);
+        }
     }
 
     watch_power_board_process(HAL_GetTick());

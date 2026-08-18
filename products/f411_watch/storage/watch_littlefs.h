@@ -15,6 +15,7 @@
 #define WATCH_LITTLEFS_CACHE_SIZE WATCH_W25Q128_PAGE_SIZE
 #define WATCH_LITTLEFS_LOOKAHEAD_SIZE 32U
 #define WATCH_LITTLEFS_RESOURCE_CHUNK_SIZE WATCH_W25Q128_PAGE_SIZE
+#define WATCH_LITTLEFS_UPLOAD_PATH_SIZE 160U
 
 typedef bool (*watch_littlefs_read_fn)(void *context, uint32_t address, uint8_t *data,
                                        size_t length);
@@ -57,6 +58,16 @@ typedef struct
     uint8_t lookahead[WATCH_LITTLEFS_LOOKAHEAD_SIZE];
 } watch_littlefs_t;
 
+typedef struct
+{
+    watch_littlefs_t *filesystem;
+    lfs_file_t file;
+    bool active;
+    char temporary_path[WATCH_LITTLEFS_UPLOAD_PATH_SIZE];
+    char final_path[WATCH_LITTLEFS_UPLOAD_PATH_SIZE];
+    size_t written;
+} watch_littlefs_upload_t;
+
 bool watch_littlefs_init(watch_littlefs_t *filesystem, const watch_littlefs_backend_t *backend);
 watch_littlefs_result_t watch_littlefs_mount(watch_littlefs_t *filesystem);
 watch_littlefs_result_t watch_littlefs_format(watch_littlefs_t *filesystem);
@@ -68,6 +79,13 @@ watch_littlefs_result_t watch_littlefs_read_file_chunks(watch_littlefs_t *filesy
                                                         size_t buffer_size,
                                                         watch_littlefs_chunk_fn on_chunk,
                                                         void *context, size_t *total_length);
+watch_littlefs_result_t watch_littlefs_upload_begin(watch_littlefs_t *filesystem,
+                                                    watch_littlefs_upload_t *upload,
+                                                    const char *path);
+watch_littlefs_result_t watch_littlefs_upload_write(watch_littlefs_upload_t *upload, size_t offset,
+                                                    const uint8_t *data, size_t length);
+watch_littlefs_result_t watch_littlefs_upload_commit(watch_littlefs_upload_t *upload);
+void watch_littlefs_upload_abort(watch_littlefs_upload_t *upload);
 bool watch_littlefs_is_mounted(const watch_littlefs_t *filesystem);
 const char *watch_littlefs_result_name(watch_littlefs_result_t result);
 
