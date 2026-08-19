@@ -80,6 +80,7 @@ watch_ymodem_result_t watch_ymodem_start(watch_ymodem_t *protocol);
 size_t watch_ymodem_feed(watch_ymodem_t *protocol, const uint8_t *data, size_t length);
 watch_ymodem_state_t watch_ymodem_state(const watch_ymodem_t *protocol);
 watch_ymodem_result_t watch_ymodem_result(const watch_ymodem_t *protocol);
+const char *watch_ymodem_state_name(watch_ymodem_state_t state);
 const char *watch_ymodem_result_name(watch_ymodem_result_t result);
 
 #endif /* WATCH_YMODEM_H */

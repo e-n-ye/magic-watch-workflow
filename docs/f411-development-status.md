@@ -27,18 +27,20 @@ UI/resources, power, then secure OTA. No empty placeholder modules are added.
 
 ## Baseline and completion
 
-- This M18a OTA transaction-model update began from the merged M17b baseline
-  `0e716c7` (M17a metadata journal plus M17b YModem/package verification).
+- This M17 board candidate bridge update is based on `144d7b9` (App-side OTA
+  preflight diagnostics) and retains the merged M17a/M17b metadata and
+  YModem/package contracts. The branch was created from the then-current
+  `origin/main` baseline `3e578b5`.
 - The original pre-relocation Debug App reference was Flash `64,340 B` and RAM
   `30,208 B`. The current practical App budget remains 400 KiB Flash and 128 KiB
   RAM.
-- Fifteen of 21 numbered milestones are fully closed: M0-M9, M11, and M13-M16. M10b LIS2MDL,
+- Sixteen of 21 numbered milestones are fully closed: M0-M9, M11, and M13-M17. M10b LIS2MDL,
   M10c AHT20-compatible, M10d MAX30102, and M10e CW2015 driver/service paths
   plus the M10f aggregation path are implemented. M10 remains partial because
   the board still lacks independent LIS2MDL and CW2015 physical acceptance.
-  This is about 71% by strict numbered scope. The current artifact is a
-  runnable, diagnosable vertical slice; upgrade, power-loss recovery, and
-  rollback are not present.
+  This is about 76% by strict numbered scope. The current artifact is a
+  runnable, diagnosable vertical slice; destructive installation, power-loss
+  recovery, and rollback are not present.
 - Current hardware facts include STM32F411, 24 MHz HSE, ST-Link-compatible SWD,
   ST7789, CST816, W25Q128, KT6368, and a schematic EEPROM candidate
   `BL24C02F-RRRC`. A read-only scan saw ACK at `0x50` and `0x57`; the exact
@@ -65,28 +67,30 @@ UI/resources, power, then secure OTA. No empty placeholder modules are added.
 | M14 | littlefs and resource streaming | Complete. Fixed raw partitions, App-only littlefs, bounded resource reads, host tests, and board persistence acceptance are closed. |
 | M15 | USB diagnostic/log/resource protocol | Complete; fixed MWRP framing, ACK/NACK, CRC32, SHA-256, bounded paths, LittleFS temporary writes, atomic rename, and board acceptance are closed. |
 | M16 | KT6368 SPP transport | Complete; USART1 115200 8N1, PB14 active-low enable, RX DMA+IDLE, TX DMA, bounded rings, timeout/error recovery, and board SPP RX/TX acceptance are closed. |
-| M17 | YModem candidate download and package verification | Partial; the pure-C receiver, candidate sink contract, fixed manifest reader, package verification, and App-side W25 candidate verifier/status preflight are complete. USART1/W25 candidate bridging and a trusted board candidate are still open. |
+| M17 | YModem candidate download and package verification | Complete for the USB CDC candidate path; the board accepted a full signed package, verified SHA-256/ECDSA, and persisted `candidate-ready`. The KT6368 path is wired to the same bridge but has not had an end-to-end board transfer. |
 | M18 | Backup, install, and power-loss recovery | Partial; M18a pure-C block transaction and host fault model are complete. The App now exposes non-destructive candidate verification/staging diagnostics, but Bootloader W25-to-internal-Flash installation and power-loss injection remain open. |
 | M19 | Trial confirmation and rollback | Not started. |
 | M20 | Final configurations, simulator, fault injection, budgets, regression report | Not started. |
 
-## Current round: M18b board candidate verification preflight
+## Current round: M17 board candidate bridge acceptance
 
 M18a's pure-C transaction contract remains the only destructive-install model:
 each step copies one 256-byte block, erases at sector boundaries, reads back the
-destination, and advances metadata only through a persistence callback. M18b
-adds an App-side W25 candidate reader, fixed-public-key package verification,
-metadata candidate staging, and read-only CDC commands `ota`, `ota-verify`, and
-`ota-stage`. These commands do not erase internal Flash and do not claim that
-Bootloader installation or rollback is implemented.
+destination, and advances metadata only through a persistence callback. The
+App-side bridge now accepts USB CDC YModem input, writes the W25 candidate
+partition in page-sized chunks after asynchronous sector erasure, persists
+download progress, verifies the fixed manifest with the Bootloader public key,
+and stages `candidate-ready`. The diagnostic commands `ota`, `ota-verify`,
+`ota-stage`, `ota-reset`, and `ota-download-usb` remain non-destructive to
+internal Flash.
 
-## Next round: M17 board candidate bridge, then M18b Bootloader installation
+## Next round: M18b Bootloader installation and recovery
 
-First complete the USART1/YModem-to-W25 candidate bridge so a verified package
-can be placed in the candidate partition. Then move the destructive transaction
-into the standalone Bootloader, connect W25 metadata/rollback to the F411 sector
-map, and resume `backing-up`/`installing` from the last valid record. Only after
-host fault injection and connected-board power-loss tests will M18 be closed.
+Move the destructive transaction into the standalone Bootloader, connect W25
+metadata/rollback to the F411 sector map, and resume `backing-up`/`installing`
+from the last valid record. Keep the USB candidate bridge as the source of
+trusted packages. Only after host fault injection and connected-board
+power-loss tests will M18 be closed.
 
 ## Risks and blockers
 
@@ -125,12 +129,13 @@ host fault injection and connected-board power-loss tests will M18 be closed.
   and verified only the App slot, and the Bootloader executable prefix still
   matches the local build, but a reliable whole-region hash procedure remains
   an open debug-tooling issue.
-- The connected board's W25 JEDEC read returned `0xef4018`, while the existing
-  metadata area decoded as `corrupt`. The `ota-verify` preflight therefore
-  returned `io` without changing metadata or Flash; no candidate image was
-  treated as trusted. M18b still needs the USART1 candidate bridge, standalone
-  Bootloader transaction, and repeatable power-loss injection. M19 trial
-  confirmation and rollback are not implemented.
+- The connected board's W25 JEDEC read returned `0xef4018`. A previously
+  corrupt metadata area was reset through the diagnostic command, then a full
+  signed candidate was downloaded over USB CDC and decoded as `candidate-ready`.
+  The tested package reported version/counter `24` and image length `358600`;
+  `ota-verify` returned `ok`. The KT6368 bridge and standalone Bootloader
+  transaction still need independent acceptance. M19 trial confirmation and
+  rollback are not implemented.
 
 ## Latest verification
 
@@ -138,8 +143,8 @@ host fault injection and connected-board power-loss tests will M18 be closed.
   Cppcheck passed; Host CTest passed `19/19` and the 240x280 simulator smoke
   test passed `1/1`.
 - Current App budgets remain within the 400 KiB practical Flash budget:
-  Debug Flash `353,360 B` / RAM `94,000 B`; Diagnostic Flash `362,900 B` /
-  RAM `94,000 B`; Release Flash `191,908 B` / RAM `93,984 B`. Bootloader is
+  Debug Flash `358,600 B` / RAM `96,304 B`; Diagnostic Flash `368,140 B` /
+  RAM `96,304 B`; Release Flash `194,656 B` / RAM `96,288 B`. Bootloader is
   `6,564 B` Flash / `1,056 B` RAM.
 - M10b host tests cover Sensor Hub bank selection, LIS2MDL address/configuration,
   `sensor_hub_end_op` timeout, NACK handling, identity, sample decoding,
@@ -201,3 +206,9 @@ host fault injection and connected-board power-loss tests will M18 be closed.
   verifier and CDC diagnostics. The connected board accepted the signed App
   slot, dynamically re-enumerated CDC, and returned valid `ping`, `info`,
   `ota`, `stats`, and `health` responses without a reset.
+- The USB CDC YModem bridge was board-tested with a complete 448 KiB package:
+  all `448/448` data blocks were acknowledged, EOT was acknowledged, and the
+  resulting metadata was `candidate-ready` with `candidate=24`, `version=24`,
+  and `image=358600`. `ota-verify` returned `ok`. Increasing the CDC RX ring
+  from 1 KiB to 2 KiB was then rebuilt, flashed, and re-tested with an
+  unthrottled host transfer; the same `448/448` transfer completed successfully.

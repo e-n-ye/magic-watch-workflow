@@ -39,6 +39,9 @@ typedef enum {
     WATCH_USB_COMMAND_OTA,
     WATCH_USB_COMMAND_OTA_VERIFY,
     WATCH_USB_COMMAND_OTA_STAGE,
+    WATCH_USB_COMMAND_OTA_RESET,
+    WATCH_USB_COMMAND_OTA_DOWNLOAD_USB,
+    WATCH_USB_COMMAND_OTA_DOWNLOAD_BLE,
     WATCH_USB_COMMAND_FS,
     WATCH_USB_COMMAND_FS_TEST,
     WATCH_USB_COMMAND_BLE,
@@ -57,6 +60,38 @@ static bool s_command_overflow;
 static watch_resource_protocol_t s_resource_protocol;
 static bool s_resource_protocol_initialized;
 static bool s_resource_mode;
+
+static size_t ota_usb_read(void *context, uint8_t *data, size_t length)
+{
+    (void)context;
+    return watch_usb_cdc_read(data, length);
+}
+
+static size_t ota_usb_write(void *context, const uint8_t *data, size_t length)
+{
+    (void)context;
+    return watch_usb_cdc_write(data, length);
+}
+
+static size_t ota_bluetooth_read(void *context, uint8_t *data, size_t length)
+{
+    (void)context;
+    return watch_kt6368_board_read(data, length);
+}
+
+static size_t ota_bluetooth_write(void *context, const uint8_t *data, size_t length)
+{
+    (void)context;
+    return watch_kt6368_board_write(data, length);
+}
+
+static bool start_ota_download(watch_ota_download_channel_t channel)
+{
+    if (channel == WATCH_OTA_DOWNLOAD_USB) {
+        return watch_ota_board_start_download(channel, ota_usb_read, ota_usb_write, NULL);
+    }
+    return watch_ota_board_start_download(channel, ota_bluetooth_read, ota_bluetooth_write, NULL);
+}
 
 static bool resource_emit(void *context, const uint8_t *data, size_t length)
 {
@@ -96,7 +131,8 @@ static void send_info(void)
     int length;
 
     if (!watch_app_read_snapshot(&snapshot)) {
-        send_text("watch=f411 usb=cdc protocol=1 display=240x280 page=unavailable time=unavailable\r\n");
+        send_text(
+            "watch=f411 usb=cdc protocol=1 display=240x280 page=unavailable time=unavailable\r\n");
         return;
     }
 
@@ -139,16 +175,16 @@ static void send_diag(void)
 static void send_stats(void)
 {
     char response[192];
-    int length = snprintf(response, sizeof(response),
-                          "stats rx_pending=%lu rx_drop=%lu tx_drop=%lu resource_active=%u "
-                          "resource_errors=%lu resource_frames=%lu resource_emit_fail=%lu\r\n",
-                          (unsigned long)watch_usb_cdc_rx_pending(),
-                          (unsigned long)watch_usb_cdc_rx_dropped(),
-                          (unsigned long)watch_usb_cdc_tx_dropped(),
-                          watch_resource_protocol_is_active(&s_resource_protocol) ? 1U : 0U,
-                          (unsigned long)watch_resource_protocol_frame_errors(&s_resource_protocol),
-                          (unsigned long)watch_resource_protocol_accepted_frames(&s_resource_protocol),
-                          (unsigned long)watch_resource_protocol_emit_failures(&s_resource_protocol));
+    int length = snprintf(
+        response, sizeof(response),
+        "stats rx_pending=%lu rx_drop=%lu tx_drop=%lu resource_active=%u "
+        "resource_errors=%lu resource_frames=%lu resource_emit_fail=%lu\r\n",
+        (unsigned long)watch_usb_cdc_rx_pending(), (unsigned long)watch_usb_cdc_rx_dropped(),
+        (unsigned long)watch_usb_cdc_tx_dropped(),
+        watch_resource_protocol_is_active(&s_resource_protocol) ? 1U : 0U,
+        (unsigned long)watch_resource_protocol_frame_errors(&s_resource_protocol),
+        (unsigned long)watch_resource_protocol_accepted_frames(&s_resource_protocol),
+        (unsigned long)watch_resource_protocol_emit_failures(&s_resource_protocol));
     if ((length > 0) && ((size_t)length < sizeof(response))) {
         watch_usb_cdc_write((const uint8_t *)response, (size_t)length);
     }
@@ -188,14 +224,14 @@ static void send_health(void)
         return;
     }
 
-    length = snprintf(response, sizeof(response),
-                      "health stage=%u app=%s/%lu ui=%s/%lu usb=%s/%lu sensor=%s/%lu queue=%u\r\n",
-                      (unsigned int)watch_runtime_init_stage(), health_state_name(app_health.state),
-                      (unsigned long)app_health.heartbeat_count, health_state_name(ui_health.state),
-                      (unsigned long)ui_health.heartbeat_count, health_state_name(usb_health.state),
-                      (unsigned long)usb_health.heartbeat_count, health_state_name(sensor_health.state),
-                      (unsigned long)sensor_health.heartbeat_count,
-                      (unsigned int)watch_runtime_ui_event_count());
+    length = snprintf(
+        response, sizeof(response),
+        "health stage=%u app=%s/%lu ui=%s/%lu usb=%s/%lu sensor=%s/%lu queue=%u\r\n",
+        (unsigned int)watch_runtime_init_stage(), health_state_name(app_health.state),
+        (unsigned long)app_health.heartbeat_count, health_state_name(ui_health.state),
+        (unsigned long)ui_health.heartbeat_count, health_state_name(usb_health.state),
+        (unsigned long)usb_health.heartbeat_count, health_state_name(sensor_health.state),
+        (unsigned long)sensor_health.heartbeat_count, (unsigned int)watch_runtime_ui_event_count());
     if ((length > 0) && ((size_t)length < sizeof(response))) {
         watch_usb_cdc_write((const uint8_t *)response, (size_t)length);
     }
@@ -224,14 +260,14 @@ static void send_sensor(void)
     }
 
     sample_valid = watch_lsm6ds3_board_read_latest(&sample);
-    length = snprintf(response, sizeof(response),
-                      "sensor lsm6ds3=%u id=0x%02x sample=%u count=%lu errors=%lu drop=%lu "
-                      "accel=%d,%d,%d gyro=%d,%d,%d\r\n",
-                      status.ready ? 1U : 0U, status.who_am_i, sample_valid ? 1U : 0U,
-                      (unsigned long)status.sample_count, (unsigned long)status.read_error_count,
-                      (unsigned long)status.event_drop_count, (int)sample.accel_x,
-                      (int)sample.accel_y, (int)sample.accel_z, (int)sample.gyro_x,
-                      (int)sample.gyro_y, (int)sample.gyro_z);
+    length =
+        snprintf(response, sizeof(response),
+                 "sensor lsm6ds3=%u id=0x%02x sample=%u count=%lu errors=%lu drop=%lu "
+                 "accel=%d,%d,%d gyro=%d,%d,%d\r\n",
+                 status.ready ? 1U : 0U, status.who_am_i, sample_valid ? 1U : 0U,
+                 (unsigned long)status.sample_count, (unsigned long)status.read_error_count,
+                 (unsigned long)status.event_drop_count, (int)sample.accel_x, (int)sample.accel_y,
+                 (int)sample.accel_z, (int)sample.gyro_x, (int)sample.gyro_y, (int)sample.gyro_z);
     if ((length > 0) && ((size_t)length < sizeof(response))) {
         watch_usb_cdc_write((const uint8_t *)response, (size_t)length);
     }
@@ -242,18 +278,16 @@ static void send_sensor(void)
     }
 
     aht20_sample_valid = watch_aht20_board_read_latest(&aht20_sample);
-    length = snprintf(response, sizeof(response),
-                      "sensor aht20=%u cal=%u sample=%u count=%lu errors=%lu crc=%lu "
-                      "timeout=%lu drop=%lu temp_x100=%d humidity_x100=%u state=%u status=0x%02x\r\n",
-                      aht20_status.ready ? 1U : 0U, aht20_status.calibrated ? 1U : 0U,
-                      aht20_sample_valid ? 1U : 0U, (unsigned long)aht20_status.sample_count,
-                      (unsigned long)aht20_status.read_error_count,
-                      (unsigned long)aht20_status.crc_error_count,
-                      (unsigned long)aht20_status.timeout_count,
-                      (unsigned long)aht20_status.event_drop_count,
-                      (int)aht20_sample.temperature_centi_c,
-                      (unsigned int)aht20_sample.humidity_centi_percent,
-                      (unsigned int)aht20_status.state, aht20_status.status_byte);
+    length = snprintf(
+        response, sizeof(response),
+        "sensor aht20=%u cal=%u sample=%u count=%lu errors=%lu crc=%lu "
+        "timeout=%lu drop=%lu temp_x100=%d humidity_x100=%u state=%u status=0x%02x\r\n",
+        aht20_status.ready ? 1U : 0U, aht20_status.calibrated ? 1U : 0U,
+        aht20_sample_valid ? 1U : 0U, (unsigned long)aht20_status.sample_count,
+        (unsigned long)aht20_status.read_error_count, (unsigned long)aht20_status.crc_error_count,
+        (unsigned long)aht20_status.timeout_count, (unsigned long)aht20_status.event_drop_count,
+        (int)aht20_sample.temperature_centi_c, (unsigned int)aht20_sample.humidity_centi_percent,
+        (unsigned int)aht20_status.state, aht20_status.status_byte);
     if ((length > 0) && ((size_t)length < sizeof(response))) {
         watch_usb_cdc_write((const uint8_t *)response, (size_t)length);
     }
@@ -268,18 +302,16 @@ static void send_sensor(void)
             "sensor max30102=%u part=0x%02x rev=0x%02x sample=%u count=%lu errors=%lu "
             "id_errors=%lu reset_timeouts=%lu no_data=%lu fifo_overflow=%lu drop=%lu "
             "red=%lu ir=%lu finger=%u state=%u mode=0x%02x\r\n",
-            max30102_status.ready ? 1U : 0U, max30102_status.part_id,
-            max30102_status.revision_id, max30102_sample_valid ? 1U : 0U,
-            (unsigned long)max30102_status.sample_count,
+            max30102_status.ready ? 1U : 0U, max30102_status.part_id, max30102_status.revision_id,
+            max30102_sample_valid ? 1U : 0U, (unsigned long)max30102_status.sample_count,
             (unsigned long)max30102_status.read_error_count,
             (unsigned long)max30102_status.id_error_count,
             (unsigned long)max30102_status.reset_timeout_count,
             (unsigned long)max30102_status.no_data_count,
             (unsigned long)max30102_status.fifo_overflow_count,
-            (unsigned long)max30102_status.event_drop_count,
-            (unsigned long)max30102_sample.red_raw, (unsigned long)max30102_sample.ir_raw,
-            max30102_sample.finger_on ? 1U : 0U, (unsigned int)max30102_status.state,
-            max30102_status.mode_config);
+            (unsigned long)max30102_status.event_drop_count, (unsigned long)max30102_sample.red_raw,
+            (unsigned long)max30102_sample.ir_raw, max30102_sample.finger_on ? 1U : 0U,
+            (unsigned int)max30102_status.state, max30102_status.mode_config);
         if ((length > 0) && ((size_t)length < sizeof(response))) {
             watch_usb_cdc_write((const uint8_t *)response, (size_t)length);
         }
@@ -294,13 +326,13 @@ static void send_sensor(void)
             response, sizeof(response),
             "sensor cw2015=%u version=0x%02x sample=%u count=%lu errors=%lu "
             "invalid_soc=%lu drop=%lu voltage_mv=%u soc=%u fraction=%u state=%u\r\n",
-            cw2015_status.ready ? 1U : 0U, cw2015_status.version,
-            cw2015_sample_valid ? 1U : 0U, (unsigned long)cw2015_status.sample_count,
+            cw2015_status.ready ? 1U : 0U, cw2015_status.version, cw2015_sample_valid ? 1U : 0U,
+            (unsigned long)cw2015_status.sample_count,
             (unsigned long)cw2015_status.read_error_count,
             (unsigned long)cw2015_status.invalid_soc_count,
-            (unsigned long)cw2015_status.event_drop_count,
-            (unsigned int)cw2015_sample.voltage_mv, (unsigned int)cw2015_sample.soc_percent,
-            (unsigned int)cw2015_sample.soc_fraction, (unsigned int)cw2015_status.state);
+            (unsigned long)cw2015_status.event_drop_count, (unsigned int)cw2015_sample.voltage_mv,
+            (unsigned int)cw2015_sample.soc_percent, (unsigned int)cw2015_sample.soc_fraction,
+            (unsigned int)cw2015_status.state);
         if ((length > 0) && ((size_t)length < sizeof(response))) {
             watch_usb_cdc_write((const uint8_t *)response, (size_t)length);
         }
@@ -311,17 +343,17 @@ static void send_sensor(void)
     } else {
         bool lis2mdl_sample_valid = watch_lis2mdl_board_read_latest(&lis2mdl_sample);
 
-        length = snprintf(response, sizeof(response),
-                          "sensor lis2mdl=%u id=0x%02x sample=%u count=%lu errors=%lu nack=%lu "
-                          "drop=%lu mag=%d,%d,%d state=%u\r\n",
-                          lis2mdl_status.ready ? 1U : 0U, lis2mdl_status.who_am_i,
-                          lis2mdl_sample_valid ? 1U : 0U,
-                          (unsigned long)lis2mdl_status.sample_count,
-                          (unsigned long)lis2mdl_status.read_error_count,
-                          (unsigned long)lis2mdl_status.nack_count,
-                          (unsigned long)lis2mdl_status.event_drop_count,
-                          (int)lis2mdl_sample.magnetic_x, (int)lis2mdl_sample.magnetic_y,
-                          (int)lis2mdl_sample.magnetic_z, (unsigned int)lis2mdl_status.state);
+        length =
+            snprintf(response, sizeof(response),
+                     "sensor lis2mdl=%u id=0x%02x sample=%u count=%lu errors=%lu nack=%lu "
+                     "drop=%lu mag=%d,%d,%d state=%u\r\n",
+                     lis2mdl_status.ready ? 1U : 0U, lis2mdl_status.who_am_i,
+                     lis2mdl_sample_valid ? 1U : 0U, (unsigned long)lis2mdl_status.sample_count,
+                     (unsigned long)lis2mdl_status.read_error_count,
+                     (unsigned long)lis2mdl_status.nack_count,
+                     (unsigned long)lis2mdl_status.event_drop_count, (int)lis2mdl_sample.magnetic_x,
+                     (int)lis2mdl_sample.magnetic_y, (int)lis2mdl_sample.magnetic_z,
+                     (unsigned int)lis2mdl_status.state);
         if ((length > 0) && ((size_t)length < sizeof(response))) {
             watch_usb_cdc_write((const uint8_t *)response, (size_t)length);
         }
@@ -375,17 +407,15 @@ static void send_power(void)
         return;
     }
 
-    length = snprintf(response, sizeof(response),
-                      "power state=%s wake=%s transitions=%lu stops=%lu wakes=%lu "
-                      "watchdog=%u refresh=%lu blocked=%lu fail=%lu\r\n",
-                      power_state_name(status.power.state),
-                      power_wake_source_name(status.power.wake_source),
-                      (unsigned long)status.power.transition_count,
-                      (unsigned long)status.stop_count, (unsigned long)status.wake_count,
-                      status.watchdog_enabled ? 1U : 0U,
-                      (unsigned long)status.watchdog_refresh_count,
-                      (unsigned long)status.watchdog_blocked_count,
-                      (unsigned long)status.watchdog_refresh_failure_count);
+    length = snprintf(
+        response, sizeof(response),
+        "power state=%s wake=%s transitions=%lu stops=%lu wakes=%lu "
+        "watchdog=%u refresh=%lu blocked=%lu fail=%lu\r\n",
+        power_state_name(status.power.state), power_wake_source_name(status.power.wake_source),
+        (unsigned long)status.power.transition_count, (unsigned long)status.stop_count,
+        (unsigned long)status.wake_count, status.watchdog_enabled ? 1U : 0U,
+        (unsigned long)status.watchdog_refresh_count, (unsigned long)status.watchdog_blocked_count,
+        (unsigned long)status.watchdog_refresh_failure_count);
     if ((length > 0) && ((size_t)length < sizeof(response))) {
         watch_usb_cdc_write((const uint8_t *)response, (size_t)length);
     }
@@ -420,8 +450,7 @@ static void send_w25(void)
     watch_w25q128_result_t id_result = watch_w25q128_board_read_id(&jedec_id);
     watch_w25q128_result_t ready_result =
         watch_w25q128_board_wait_ready(WATCH_W25Q128_BOARD_DEFAULT_TIMEOUT_MS);
-    int length = snprintf(response, sizeof(response),
-                          "w25 id=0x%06lx id_result=%s ready=%s\r\n",
+    int length = snprintf(response, sizeof(response), "w25 id=0x%06lx id_result=%s ready=%s\r\n",
                           (unsigned long)jedec_id, watch_w25q128_result_name(id_result),
                           watch_w25q128_result_name(ready_result));
 
@@ -442,13 +471,14 @@ static void send_fs(void)
         return;
     }
 
-    length = snprintf(response, sizeof(response),
-                      "fs mounted=%u result=%s mount=%s partition=0x%06lx-0x%06lx "
-                      "chunks=%lu,%lu,%lu\r\n",
-                      status.mounted ? 1U : 0U, watch_littlefs_result_name(status.last_result),
-                      watch_littlefs_result_name(mount_result), (unsigned long)WATCH_W25_LITTLEFS_OFFSET,
-                      (unsigned long)WATCH_W25_LITTLEFS_END, (unsigned long)status.image_chunks,
-                      (unsigned long)status.font_chunks, (unsigned long)status.text_chunks);
+    length =
+        snprintf(response, sizeof(response),
+                 "fs mounted=%u result=%s mount=%s partition=0x%06lx-0x%06lx "
+                 "chunks=%lu,%lu,%lu\r\n",
+                 status.mounted ? 1U : 0U, watch_littlefs_result_name(status.last_result),
+                 watch_littlefs_result_name(mount_result), (unsigned long)WATCH_W25_LITTLEFS_OFFSET,
+                 (unsigned long)WATCH_W25_LITTLEFS_END, (unsigned long)status.image_chunks,
+                 (unsigned long)status.font_chunks, (unsigned long)status.text_chunks);
     if ((length > 0) && ((size_t)length < sizeof(response))) {
         watch_usb_cdc_write((const uint8_t *)response, (size_t)length);
     }
@@ -465,16 +495,20 @@ static void send_ota(void)
         return;
     }
     if (!status.record_valid) {
-        length = snprintf(response, sizeof(response),
-                          "ota flash=0x%06lx flash_result=%s metadata=%s record=none\r\n",
-                          (unsigned long)status.jedec_id,
-                          watch_w25q128_result_name(status.flash_result),
-                          watch_ota_metadata_result_name(status.metadata_result));
+        length = snprintf(
+            response, sizeof(response),
+            "ota flash=0x%06lx flash_result=%s metadata=%s record=none "
+            "download=%u state=%s result=%s\r\n",
+            (unsigned long)status.jedec_id, watch_w25q128_result_name(status.flash_result),
+            watch_ota_metadata_result_name(status.metadata_result),
+            status.download_active ? 1U : 0U, watch_ymodem_state_name(status.download_state),
+            watch_ymodem_result_name(status.download_result));
     } else {
         length = snprintf(
             response, sizeof(response),
             "ota flash=0x%06lx flash_result=%s metadata=%s state=%s seq=%lu "
-            "confirmed=%lu candidate=%lu version=%lu image=%lu progress=%lu trial=%lu error=%lu\r\n",
+            "confirmed=%lu candidate=%lu version=%lu image=%lu progress=%lu trial=%lu error=%lu "
+            "download=%u ymodem=%s/%s\r\n",
             (unsigned long)status.jedec_id, watch_w25q128_result_name(status.flash_result),
             watch_ota_metadata_result_name(status.metadata_result),
             watch_ota_metadata_state_name(status.record.state),
@@ -482,7 +516,9 @@ static void send_ota(void)
             (unsigned long)status.record.candidate_counter,
             (unsigned long)status.record.candidate_version,
             (unsigned long)status.record.image_length, (unsigned long)status.record.progress,
-            (unsigned long)status.record.trial_count, (unsigned long)status.record.error_code);
+            (unsigned long)status.record.trial_count, (unsigned long)status.record.error_code,
+            status.download_active ? 1U : 0U, watch_ymodem_state_name(status.download_state),
+            watch_ymodem_result_name(status.download_result));
     }
     if ((length > 0) && ((size_t)length < sizeof(response))) {
         watch_usb_cdc_write((const uint8_t *)response, (size_t)length);
@@ -497,11 +533,12 @@ static void send_ota_verify(void)
     int length;
 
     if (result == WATCH_OTA_PACKAGE_RESULT_OK) {
-        length = snprintf(response, sizeof(response), "ota-verify result=%s version=%lu counter=%lu "
-                                                   "image=%lu\r\n",
-                          watch_ota_package_result_name(result),
-                          (unsigned long)info.firmware_version,
-                          (unsigned long)info.security_counter, (unsigned long)info.image_length);
+        length =
+            snprintf(response, sizeof(response),
+                     "ota-verify result=%s version=%lu counter=%lu "
+                     "image=%lu\r\n",
+                     watch_ota_package_result_name(result), (unsigned long)info.firmware_version,
+                     (unsigned long)info.security_counter, (unsigned long)info.image_length);
     } else {
         length = snprintf(response, sizeof(response), "ota-verify result=%s\r\n",
                           watch_ota_package_result_name(result));
@@ -521,6 +558,18 @@ static void send_ota_stage(void)
     if ((length > 0) && ((size_t)length < sizeof(response))) {
         watch_usb_cdc_write((const uint8_t *)response, (size_t)length);
     }
+}
+
+static void send_ota_reset(void)
+{
+    send_text(watch_ota_board_reset_metadata() ? "ota-reset result=ok\r\n"
+                                               : "ota-reset result=error\r\n");
+}
+
+static void send_ota_download(watch_ota_download_channel_t channel)
+{
+    bool started = start_ota_download(channel);
+    send_text(started ? "ota-download result=started\r\n" : "ota-download result=error\r\n");
 }
 
 static const char *spp_state_name(watch_spp_state_t state)
@@ -552,26 +601,21 @@ static void send_ble(void)
         return;
     }
 
-    length = snprintf(response, sizeof(response),
-                      "ble state=%s enabled=%u active_low=%u armed=%u rx=%lu tx=%lu "
-                      "rx_drop=%lu tx_drop=%lu idle=%lu rx_err=%lu tx_err=%lu "
-                      "disconnects=%lu recoveries=%lu recovery_pending=%u uart_err=%lu "
-                      "tx_busy=%lu last_error=%lu\r\n",
-                      spp_state_name(status.transport.state), status.transport.enabled ? 1U : 0U,
-                      status.enable_active_low ? 1U : 0U, status.transport.rx_armed ? 1U : 0U,
-                      (unsigned long)status.transport.rx_bytes,
-                      (unsigned long)status.transport.tx_bytes,
-                      (unsigned long)status.transport.rx_dropped,
-                      (unsigned long)status.transport.tx_dropped,
-                      (unsigned long)status.transport.idle_events,
-                      (unsigned long)status.transport.rx_errors,
-                      (unsigned long)status.transport.tx_errors,
-                      (unsigned long)status.transport.disconnects,
-                      (unsigned long)status.transport.recovery_count,
-                      status.recovery_pending ? 1U : 0U,
-                      (unsigned long)status.uart_error_count,
-                      (unsigned long)status.tx_busy_count,
-                      (unsigned long)status.last_error_ms);
+    length = snprintf(
+        response, sizeof(response),
+        "ble state=%s enabled=%u active_low=%u armed=%u rx=%lu tx=%lu "
+        "rx_drop=%lu tx_drop=%lu idle=%lu rx_err=%lu tx_err=%lu "
+        "disconnects=%lu recoveries=%lu recovery_pending=%u uart_err=%lu "
+        "tx_busy=%lu last_error=%lu\r\n",
+        spp_state_name(status.transport.state), status.transport.enabled ? 1U : 0U,
+        status.enable_active_low ? 1U : 0U, status.transport.rx_armed ? 1U : 0U,
+        (unsigned long)status.transport.rx_bytes, (unsigned long)status.transport.tx_bytes,
+        (unsigned long)status.transport.rx_dropped, (unsigned long)status.transport.tx_dropped,
+        (unsigned long)status.transport.idle_events, (unsigned long)status.transport.rx_errors,
+        (unsigned long)status.transport.tx_errors, (unsigned long)status.transport.disconnects,
+        (unsigned long)status.transport.recovery_count, status.recovery_pending ? 1U : 0U,
+        (unsigned long)status.uart_error_count, (unsigned long)status.tx_busy_count,
+        (unsigned long)status.last_error_ms);
     if ((length > 0) && ((size_t)length < sizeof(response))) {
         watch_usb_cdc_write((const uint8_t *)response, (size_t)length);
     }
@@ -619,7 +663,8 @@ static void handle_command(watch_usb_command_t command)
     switch (command) {
     case WATCH_USB_COMMAND_HELP:
         send_text("commands: help ping info diag stats health sensor eeprom w25 ota ota-verify "
-                  "ota-stage fs fs-test power ble ble-probe display-off sleep shutdown\r\n");
+                  "ota-stage ota-reset ota-download-usb ota-download-ble fs fs-test power ble "
+                  "ble-probe display-off sleep shutdown\r\n");
         break;
     case WATCH_USB_COMMAND_PING:
         send_text("pong\r\n");
@@ -653,6 +698,15 @@ static void handle_command(watch_usb_command_t command)
         break;
     case WATCH_USB_COMMAND_OTA_STAGE:
         send_ota_stage();
+        break;
+    case WATCH_USB_COMMAND_OTA_RESET:
+        send_ota_reset();
+        break;
+    case WATCH_USB_COMMAND_OTA_DOWNLOAD_USB:
+        send_ota_download(WATCH_OTA_DOWNLOAD_USB);
+        break;
+    case WATCH_USB_COMMAND_OTA_DOWNLOAD_BLE:
+        send_ota_download(WATCH_OTA_DOWNLOAD_BLUETOOTH);
         break;
     case WATCH_USB_COMMAND_FS:
         send_fs();
@@ -726,6 +780,12 @@ static watch_usb_command_t parse_command(void)
         return WATCH_USB_COMMAND_OTA_VERIFY;
     } else if (strcmp(s_command, "ota-stage") == 0) {
         return WATCH_USB_COMMAND_OTA_STAGE;
+    } else if (strcmp(s_command, "ota-reset") == 0) {
+        return WATCH_USB_COMMAND_OTA_RESET;
+    } else if (strcmp(s_command, "ota-download-usb") == 0) {
+        return WATCH_USB_COMMAND_OTA_DOWNLOAD_USB;
+    } else if (strcmp(s_command, "ota-download-ble") == 0) {
+        return WATCH_USB_COMMAND_OTA_DOWNLOAD_BLE;
     } else if (strcmp(s_command, "fs") == 0) {
         return WATCH_USB_COMMAND_FS;
     } else if (strcmp(s_command, "fs-test") == 0) {
@@ -776,7 +836,7 @@ static void consume_byte(uint8_t byte)
 void watch_usb_diagnostic_process(void)
 {
     uint8_t input[WATCH_USB_DIAGNOSTIC_READ_SIZE];
-    size_t length = watch_usb_cdc_read(input, sizeof(input));
+    size_t length;
     uint32_t now_ms = HAL_GetTick();
 
     resource_protocol_init();
@@ -790,6 +850,16 @@ void watch_usb_diagnostic_process(void)
     watch_eeprom_probe_board_process(now_ms);
     (void)watch_runtime_start_service(WATCH_RUNTIME_SERVICE_USB, now_ms);
     (void)watch_runtime_heartbeat(WATCH_RUNTIME_SERVICE_USB, now_ms);
+
+    if (watch_ota_board_download_active()) {
+        (void)watch_ota_board_process_download();
+        watch_power_board_process(HAL_GetTick());
+        watch_kt6368_board_process(HAL_GetTick());
+        watch_usb_cdc_process();
+        return;
+    }
+
+    length = watch_usb_cdc_read(input, sizeof(input));
 
     for (size_t index = 0U; index < length; ++index) {
         if (s_resource_mode) {

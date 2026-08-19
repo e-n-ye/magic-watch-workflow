@@ -281,6 +281,25 @@ watch_ymodem_result_t watch_ymodem_result(const watch_ymodem_t *protocol)
     return protocol == NULL ? WATCH_YMODEM_RESULT_INVALID_ARGUMENT : protocol->result;
 }
 
+const char *watch_ymodem_state_name(watch_ymodem_state_t state)
+{
+    switch (state) {
+    case WATCH_YMODEM_STATE_IDLE:
+        return "idle";
+    case WATCH_YMODEM_STATE_HEADER:
+        return "header";
+    case WATCH_YMODEM_STATE_DATA:
+        return "data";
+    case WATCH_YMODEM_STATE_COMPLETE:
+        return "complete";
+    case WATCH_YMODEM_STATE_ERROR:
+        return "error";
+    case WATCH_YMODEM_STATE_COUNT:
+        return "invalid";
+    }
+    return "invalid";
+}
+
 const char *watch_ymodem_result_name(watch_ymodem_result_t result)
 {
     switch (result) {

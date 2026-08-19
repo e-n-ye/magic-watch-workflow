@@ -82,6 +82,7 @@ add_library(f411_watch_user OBJECT
     ${WATCH_TIME_SOURCE_DIR}/watch_time.c
     ${WATCH_TRANSPORT_SOURCE_DIR}/watch_resource_protocol.c
     ${WATCH_TRANSPORT_SOURCE_DIR}/watch_spp_transport.c
+    ${WATCH_TRANSPORT_SOURCE_DIR}/watch_ymodem.c
     ${WATCH_TINYCRYPT_SOURCE_DIR}/lib/source/sha256.c
     ${WATCH_TINYCRYPT_SOURCE_DIR}/lib/source/ecc.c
     ${WATCH_TINYCRYPT_SOURCE_DIR}/lib/source/ecc_dsa.c
