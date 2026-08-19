@@ -65,30 +65,28 @@ UI/resources, power, then secure OTA. No empty placeholder modules are added.
 | M14 | littlefs and resource streaming | Complete. Fixed raw partitions, App-only littlefs, bounded resource reads, host tests, and board persistence acceptance are closed. |
 | M15 | USB diagnostic/log/resource protocol | Complete; fixed MWRP framing, ACK/NACK, CRC32, SHA-256, bounded paths, LittleFS temporary writes, atomic rename, and board acceptance are closed. |
 | M16 | KT6368 SPP transport | Complete; USART1 115200 8N1, PB14 active-low enable, RX DMA+IDLE, TX DMA, bounded rings, timeout/error recovery, and board SPP RX/TX acceptance are closed. |
-| M17 | YModem candidate download and package verification | Partial; the pure-C receiver, candidate sink contract, fixed manifest reader, and package verification are complete in host tests. USART1/W25 candidate bridging and board acceptance remain open. |
-| M18 | Backup, install, and power-loss recovery | Partial; M18a pure-C block transaction and host fault model are complete. Board W25-to-internal-Flash installation and power-loss injection remain open. |
+| M17 | YModem candidate download and package verification | Partial; the pure-C receiver, candidate sink contract, fixed manifest reader, package verification, and App-side W25 candidate verifier/status preflight are complete. USART1/W25 candidate bridging and a trusted board candidate are still open. |
+| M18 | Backup, install, and power-loss recovery | Partial; M18a pure-C block transaction and host fault model are complete. The App now exposes non-destructive candidate verification/staging diagnostics, but Bootloader W25-to-internal-Flash installation and power-loss injection remain open. |
 | M19 | Trial confirmation and rollback | Not started. |
 | M20 | Final configurations, simulator, fault injection, budgets, regression report | Not started. |
 
-## Current round: M18a OTA backup/install transaction model
+## Current round: M18b board candidate verification preflight
 
-M18a adds a pure-C transaction contract for the two destructive phases of OTA.
-Each step copies one 256-byte block, erases only at sector boundaries, reads
-back the destination, and advances metadata only through a persistence callback.
-The backup phase copies the full signed App slot to rollback; the install phase
-copies the verified candidate slot to the App region and enters `trial` only
-after the last block is durable. A failed erase, write, read-back, or metadata
-commit leaves the last committed state unchanged, so retrying the current block
-is idempotent. This round is a host model and does not claim board installation.
+M18a's pure-C transaction contract remains the only destructive-install model:
+each step copies one 256-byte block, erases at sector boundaries, reads back the
+destination, and advances metadata only through a persistence callback. M18b
+adds an App-side W25 candidate reader, fixed-public-key package verification,
+metadata candidate staging, and read-only CDC commands `ota`, `ota-verify`, and
+`ota-stage`. These commands do not erase internal Flash and do not claim that
+Bootloader installation or rollback is implemented.
 
-## Next round: M18b board installation and power-loss recovery
+## Next round: M17 board candidate bridge, then M18b Bootloader installation
 
-M18b will connect the M17 candidate verifier and M17a metadata journal to the
-W25Q128 board adapter and STM32 internal-Flash erase/program operations. It will
-resume `backing-up` and `installing` from the last valid metadata record after
-selected erase/write interruptions, verify the rollback and App contents, and
-perform the agreed host-model plus connected-board power-loss injection before
-M18 is closed.
+First complete the USART1/YModem-to-W25 candidate bridge so a verified package
+can be placed in the candidate partition. Then move the destructive transaction
+into the standalone Bootloader, connect W25 metadata/rollback to the F411 sector
+map, and resume `backing-up`/`installing` from the last valid record. Only after
+host fault injection and connected-board power-loss tests will M18 be closed.
 
 ## Risks and blockers
 
@@ -127,9 +125,12 @@ M18 is closed.
   and verified only the App slot, and the Bootloader executable prefix still
   matches the local build, but a reliable whole-region hash procedure remains
   an open debug-tooling issue.
-- M18b still needs the board-side candidate bridge, internal-Flash transaction,
-  and repeatable power-loss injection. M19 trial confirmation and rollback are
-  not implemented.
+- The connected board's W25 JEDEC read returned `0xef4018`, while the existing
+  metadata area decoded as `corrupt`. The `ota-verify` preflight therefore
+  returned `io` without changing metadata or Flash; no candidate image was
+  treated as trusted. M18b still needs the USART1 candidate bridge, standalone
+  Bootloader transaction, and repeatable power-loss injection. M19 trial
+  confirmation and rollback are not implemented.
 
 ## Latest verification
 
@@ -137,8 +138,8 @@ M18 is closed.
   Cppcheck passed; Host CTest passed `19/19` and the 240x280 simulator smoke
   test passed `1/1`.
 - Current App budgets remain within the 400 KiB practical Flash budget:
-  Debug Flash `339,640 B` / RAM `93,988 B`; Diagnostic Flash `349,180 B` /
-  RAM `93,988 B`; Release Flash `185,108 B` / RAM `93,976 B`. Bootloader is
+  Debug Flash `353,360 B` / RAM `94,000 B`; Diagnostic Flash `362,900 B` /
+  RAM `94,000 B`; Release Flash `191,908 B` / RAM `93,984 B`. Bootloader is
   `6,564 B` Flash / `1,056 B` RAM.
 - M10b host tests cover Sensor Hub bank selection, LIS2MDL address/configuration,
   `sensor_hub_end_op` timeout, NACK handling, identity, sample decoding,
@@ -195,4 +196,8 @@ M18 is closed.
   cover fragmented YModem input, duplicate blocks, CRC/EOT handling, and
   manifest board/address/padding/hash/signature/security rejection. M18a host
   tests cover successful full-slot backup/install plus erase, write, read-back,
-  and metadata-persistence fault recovery; Host CTest passed `19/19`.
+  and metadata-persistence fault recovery; Host CTest passed `19/19`. Debug
+  App build, format-check, and Cppcheck passed after adding the W25 candidate
+  verifier and CDC diagnostics. The connected board accepted the signed App
+  slot, dynamically re-enumerated CDC, and returned valid `ping`, `info`,
+  `ota`, `stats`, and `health` responses without a reset.

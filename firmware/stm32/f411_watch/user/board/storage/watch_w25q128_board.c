@@ -55,6 +55,11 @@ bool watch_w25q128_board_init(void)
     return s_initialized;
 }
 
+watch_w25q128_t *watch_w25q128_board_device(void)
+{
+    return watch_w25q128_board_init() ? &s_device : NULL;
+}
+
 watch_w25q128_result_t watch_w25q128_board_read_id(uint32_t *jedec_id)
 {
     if (!watch_w25q128_board_init()) {

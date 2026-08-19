@@ -46,6 +46,8 @@ set(FORMAT_FILES
     "${FORMAT_ROOT}/board/storage/watch_eeprom_probe_board.h"
     "${FORMAT_ROOT}/board/storage/watch_littlefs_board.c"
     "${FORMAT_ROOT}/board/storage/watch_littlefs_board.h"
+    "${FORMAT_ROOT}/board/storage/watch_ota_board.c"
+    "${FORMAT_ROOT}/board/storage/watch_ota_board.h"
     "${FORMAT_ROOT}/board/storage/watch_w25q128_board.c"
     "${FORMAT_ROOT}/board/storage/watch_w25q128_board.h"
     "${FORMAT_ROOT}/board/time/watch_rtc_board.c"

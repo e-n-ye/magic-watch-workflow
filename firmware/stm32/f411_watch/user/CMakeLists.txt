@@ -44,6 +44,7 @@ add_library(f411_watch_user OBJECT
     board/sensors/watch_sensor_aggregate_board.c
     board/storage/watch_eeprom_probe_board.c
     board/storage/watch_littlefs_board.c
+    board/storage/watch_ota_board.c
     board/storage/watch_w25q128_board.c
     board/time/watch_rtc_board.c
     board/bluetooth/watch_kt6368_board.c
@@ -70,7 +71,9 @@ add_library(f411_watch_user OBJECT
     ${WATCH_SENSOR_SOURCE_DIR}/watch_sensor_aggregate.c
     ${WATCH_STORAGE_SOURCE_DIR}/watch_eeprom_probe.c
     ${WATCH_STORAGE_SOURCE_DIR}/watch_littlefs.c
+    ${WATCH_STORAGE_SOURCE_DIR}/watch_ota_metadata.c
     ${WATCH_STORAGE_SOURCE_DIR}/watch_ota_install.c
+    ${WATCH_STORAGE_SOURCE_DIR}/watch_ota_package.c
     ${WATCH_STORAGE_SOURCE_DIR}/watch_w25q128.c
     ${WATCH_LITTLEFS_SOURCE_DIR}/lfs.c
     ${WATCH_LITTLEFS_SOURCE_DIR}/lfs_util.c
@@ -80,6 +83,8 @@ add_library(f411_watch_user OBJECT
     ${WATCH_TRANSPORT_SOURCE_DIR}/watch_resource_protocol.c
     ${WATCH_TRANSPORT_SOURCE_DIR}/watch_spp_transport.c
     ${WATCH_TINYCRYPT_SOURCE_DIR}/lib/source/sha256.c
+    ${WATCH_TINYCRYPT_SOURCE_DIR}/lib/source/ecc.c
+    ${WATCH_TINYCRYPT_SOURCE_DIR}/lib/source/ecc_dsa.c
     ${WATCH_TINYCRYPT_SOURCE_DIR}/lib/source/utils.c
 )
 
