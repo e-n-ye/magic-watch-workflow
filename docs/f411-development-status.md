@@ -28,7 +28,7 @@ UI/resources, power, then secure OTA. No empty placeholder modules are added.
 ## Baseline and completion
 
 - This M18b review is based on the merged M17 board candidate bridge and the
-  current project baseline `origin/main=ea34509`. The branch adds the standalone
+  current project baseline `origin/main=71d4bba`. The branch adds the standalone
   Bootloader W25/internal-Flash transaction path and the F411 variable-sector
   host model; board acceptance remains explicitly open.
 - The original pre-relocation Debug App reference was Flash `64,340 B` and RAM
@@ -166,7 +166,7 @@ candidate and App backups; do not mark M18 complete until `trial` is observed.
   transfer, CRC/version/flags/path/sequence/offset/state rejection, digest
   mismatch, and ABORT. M16 transport tests cover ring wrap, bounded TX
   chunks, overflow accounting, timeout state, and recovery. Host CTest passed
-  `19/19`.
+  `20/20`.
 - After dynamic CDC re-enumeration, `ping`, `info`, `eeprom`, `health`,
   `stats`, `diag`, `sensor`, and `power` were valid. Health was stage 3 with
   app, UI, USB, and sensor services healthy; the queue was `2` during the read,
@@ -202,17 +202,11 @@ candidate and App backups; do not mark M18 complete until `trial` is observed.
   cover fragmented YModem input, duplicate blocks, CRC/EOT handling, and
   manifest board/address/padding/hash/signature/security rejection. M18a host
   tests cover successful full-slot backup/install plus erase, write, read-back,
-  and metadata-persistence fault recovery; Host CTest passed `19/19`. Debug
+  and metadata-persistence fault recovery; Host CTest passed `20/20`. Debug
   App build, format-check, and Cppcheck passed after adding the W25 candidate
   verifier and CDC diagnostics. The connected board accepted the signed App
   slot, dynamically re-enumerated CDC, and returned valid `ping`, `info`,
   `ota`, `stats`, and `health` responses without a reset.
-- M18b board attempt: the standalone Bootloader was built and verified with
-  ST-Link connect-under-reset. The board remained reachable through CDC, but
-  metadata stayed `backing-up` at progress `356608`, error `0`, without reaching
-  `trial`. A 458,752-byte App-slot readback was byte-identical to the pre-test
-  backup, including the valid vector table and manifest trailer. The remaining
-  blocker is the W25 rollback transaction/progress boundary, not App corruption.
 - M18b board attempt: the standalone Bootloader was built and verified with
   ST-Link connect-under-reset. The board remained reachable through CDC, but
   metadata stayed `backing-up` at progress `356608`, error `0`, without reaching
