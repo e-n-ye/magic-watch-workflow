@@ -2,6 +2,8 @@
 
 #include <string.h>
 
+__attribute__((weak)) void watch_ota_install_progress(void) { }
+
 static bool install_valid(const watch_ota_install_t *install)
 {
     return install != NULL && install->initialized && install->config.read != NULL
@@ -111,6 +113,8 @@ watch_ota_install_result_t watch_ota_install_step(watch_ota_install_t *install,
     uint32_t remaining;
     size_t length;
     watch_ota_install_result_t result;
+
+    watch_ota_install_progress();
 
     if (!record_valid_for_install(install, record)) {
         return WATCH_OTA_INSTALL_RESULT_INVALID_ARGUMENT;

@@ -53,6 +53,11 @@ typedef struct
     uint8_t key_id;
 } watch_ota_package_info_t;
 
+/* Optional platform hook for long-running readers (e.g. a bare-metal
+ * bootloader with an independent watchdog). Host and App builds leave it
+ * as a no-op. */
+void watch_ota_package_progress(void);
+
 watch_ota_package_result_t
 watch_ota_package_verify(const watch_ota_package_reader_t *reader, uint32_t expected_board,
                          uint32_t minimum_security_counter,

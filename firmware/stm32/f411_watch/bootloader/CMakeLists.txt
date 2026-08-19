@@ -3,8 +3,14 @@ set(BOOTLOADER_TARGET f411_bootloader)
 add_executable(${BOOTLOADER_TARGET}
     main.c
     manifest.c
+    ota.c
+    storage.c
     system.c
     ${CMAKE_SOURCE_DIR}/startup_stm32f411xe.s
+    ${CMAKE_SOURCE_DIR}/../../../products/f411_watch/storage/watch_ota_install.c
+    ${CMAKE_SOURCE_DIR}/../../../products/f411_watch/storage/watch_ota_metadata.c
+    ${CMAKE_SOURCE_DIR}/../../../products/f411_watch/storage/watch_ota_package.c
+    ${CMAKE_SOURCE_DIR}/../../../products/f411_watch/storage/watch_w25q128.c
 )
 
 add_library(f411_tinycrypt STATIC
@@ -33,12 +39,14 @@ target_include_directories(${BOOTLOADER_TARGET}
     PRIVATE
         ${CMAKE_SOURCE_DIR}/Drivers/CMSIS/Device/ST/STM32F4xx/Include
         ${CMAKE_SOURCE_DIR}/Drivers/CMSIS/Include
+        ${CMAKE_SOURCE_DIR}/../../../products/f411_watch/storage
         ${CMAKE_SOURCE_DIR}/third_party/tinycrypt/lib/include
 )
 
 target_compile_definitions(${BOOTLOADER_TARGET}
     PRIVATE
         STM32F411xE
+        WATCH_OTA_PACKAGE_NO_DEFAULT_CSPRNG
 )
 
 target_link_options(${BOOTLOADER_TARGET}

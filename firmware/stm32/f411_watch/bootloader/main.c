@@ -2,6 +2,7 @@
 
 #include "stm32f411xe.h"
 #include "manifest.h"
+#include "ota.h"
 
 typedef void (*bootloader_reset_handler_t)(void);
 
@@ -48,6 +49,7 @@ __attribute__((noreturn)) static void bootloader_jump_to_application(void)
 
 int main(void)
 {
+    (void)f411_bootloader_process_ota();
     if (bootloader_application_is_valid()) {
         bootloader_jump_to_application();
     }
