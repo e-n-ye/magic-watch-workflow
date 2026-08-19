@@ -15,6 +15,7 @@
 #include "board/power/watch_power.h"
 #include "board/storage/watch_eeprom_probe_board.h"
 #include "board/storage/watch_littlefs_board.h"
+#include "board/storage/watch_ota_board.h"
 #include "board/storage/watch_w25q128_board.h"
 #include "main.h"
 #include "watch_app.h"
@@ -35,6 +36,9 @@ typedef enum {
     WATCH_USB_COMMAND_SENSOR,
     WATCH_USB_COMMAND_EEPROM,
     WATCH_USB_COMMAND_W25,
+    WATCH_USB_COMMAND_OTA,
+    WATCH_USB_COMMAND_OTA_VERIFY,
+    WATCH_USB_COMMAND_OTA_STAGE,
     WATCH_USB_COMMAND_FS,
     WATCH_USB_COMMAND_FS_TEST,
     WATCH_USB_COMMAND_BLE,
@@ -450,6 +454,75 @@ static void send_fs(void)
     }
 }
 
+static void send_ota(void)
+{
+    char response[320];
+    watch_ota_board_status_t status;
+    int length;
+
+    if (!watch_ota_board_read_status(&status)) {
+        send_text("ota=unavailable\r\n");
+        return;
+    }
+    if (!status.record_valid) {
+        length = snprintf(response, sizeof(response),
+                          "ota flash=0x%06lx flash_result=%s metadata=%s record=none\r\n",
+                          (unsigned long)status.jedec_id,
+                          watch_w25q128_result_name(status.flash_result),
+                          watch_ota_metadata_result_name(status.metadata_result));
+    } else {
+        length = snprintf(
+            response, sizeof(response),
+            "ota flash=0x%06lx flash_result=%s metadata=%s state=%s seq=%lu "
+            "confirmed=%lu candidate=%lu version=%lu image=%lu progress=%lu trial=%lu error=%lu\r\n",
+            (unsigned long)status.jedec_id, watch_w25q128_result_name(status.flash_result),
+            watch_ota_metadata_result_name(status.metadata_result),
+            watch_ota_metadata_state_name(status.record.state),
+            (unsigned long)status.record.sequence, (unsigned long)status.record.confirmed_counter,
+            (unsigned long)status.record.candidate_counter,
+            (unsigned long)status.record.candidate_version,
+            (unsigned long)status.record.image_length, (unsigned long)status.record.progress,
+            (unsigned long)status.record.trial_count, (unsigned long)status.record.error_code);
+    }
+    if ((length > 0) && ((size_t)length < sizeof(response))) {
+        watch_usb_cdc_write((const uint8_t *)response, (size_t)length);
+    }
+}
+
+static void send_ota_verify(void)
+{
+    char response[192];
+    watch_ota_package_info_t info;
+    watch_ota_package_result_t result = watch_ota_board_verify_candidate(&info);
+    int length;
+
+    if (result == WATCH_OTA_PACKAGE_RESULT_OK) {
+        length = snprintf(response, sizeof(response), "ota-verify result=%s version=%lu counter=%lu "
+                                                   "image=%lu\r\n",
+                          watch_ota_package_result_name(result),
+                          (unsigned long)info.firmware_version,
+                          (unsigned long)info.security_counter, (unsigned long)info.image_length);
+    } else {
+        length = snprintf(response, sizeof(response), "ota-verify result=%s\r\n",
+                          watch_ota_package_result_name(result));
+    }
+    if ((length > 0) && ((size_t)length < sizeof(response))) {
+        watch_usb_cdc_write((const uint8_t *)response, (size_t)length);
+    }
+}
+
+static void send_ota_stage(void)
+{
+    watch_ota_metadata_result_t result = watch_ota_board_stage_candidate();
+    char response[96];
+    int length = snprintf(response, sizeof(response), "ota-stage result=%s\r\n",
+                          watch_ota_metadata_result_name(result));
+
+    if ((length > 0) && ((size_t)length < sizeof(response))) {
+        watch_usb_cdc_write((const uint8_t *)response, (size_t)length);
+    }
+}
+
 static const char *spp_state_name(watch_spp_state_t state)
 {
     switch (state) {
@@ -545,8 +618,8 @@ static void handle_command(watch_usb_command_t command)
 {
     switch (command) {
     case WATCH_USB_COMMAND_HELP:
-        send_text("commands: help ping info diag stats health sensor eeprom w25 fs fs-test power "
-                  "ble ble-probe display-off sleep shutdown\r\n");
+        send_text("commands: help ping info diag stats health sensor eeprom w25 ota ota-verify "
+                  "ota-stage fs fs-test power ble ble-probe display-off sleep shutdown\r\n");
         break;
     case WATCH_USB_COMMAND_PING:
         send_text("pong\r\n");
@@ -571,6 +644,15 @@ static void handle_command(watch_usb_command_t command)
         break;
     case WATCH_USB_COMMAND_W25:
         send_w25();
+        break;
+    case WATCH_USB_COMMAND_OTA:
+        send_ota();
+        break;
+    case WATCH_USB_COMMAND_OTA_VERIFY:
+        send_ota_verify();
+        break;
+    case WATCH_USB_COMMAND_OTA_STAGE:
+        send_ota_stage();
         break;
     case WATCH_USB_COMMAND_FS:
         send_fs();
@@ -638,6 +720,12 @@ static watch_usb_command_t parse_command(void)
         return WATCH_USB_COMMAND_EEPROM;
     } else if (strcmp(s_command, "w25") == 0) {
         return WATCH_USB_COMMAND_W25;
+    } else if (strcmp(s_command, "ota") == 0) {
+        return WATCH_USB_COMMAND_OTA;
+    } else if (strcmp(s_command, "ota-verify") == 0) {
+        return WATCH_USB_COMMAND_OTA_VERIFY;
+    } else if (strcmp(s_command, "ota-stage") == 0) {
+        return WATCH_USB_COMMAND_OTA_STAGE;
     } else if (strcmp(s_command, "fs") == 0) {
         return WATCH_USB_COMMAND_FS;
     } else if (strcmp(s_command, "fs-test") == 0) {

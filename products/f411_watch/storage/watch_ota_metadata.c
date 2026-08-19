@@ -240,7 +240,6 @@ watch_ota_metadata_result_t watch_ota_metadata_commit(watch_ota_metadata_t *meta
     watch_ota_metadata_record_t stored;
     uint8_t raw[WATCH_OTA_METADATA_RECORD_SIZE];
     watch_ota_metadata_result_t current_result;
-    watch_ota_metadata_result_t policy_result;
     unsigned int target_slot = 0U;
     uint32_t sequence = 1U;
     watch_w25q128_result_t flash_result;
@@ -256,7 +255,7 @@ watch_ota_metadata_result_t watch_ota_metadata_commit(watch_ota_metadata_t *meta
 
     current_result = scan_metadata(metadata, &scan);
     if (current_result == WATCH_OTA_METADATA_RESULT_OK) {
-        policy_result = security_policy(&scan.record, record);
+        watch_ota_metadata_result_t policy_result = security_policy(&scan.record, record);
         if (policy_result != WATCH_OTA_METADATA_RESULT_OK) {
             return policy_result;
         }
