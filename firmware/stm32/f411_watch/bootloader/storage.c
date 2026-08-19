@@ -330,25 +330,13 @@ bool f411_bootloader_storage_erase(void *context, watch_ota_install_region_t reg
         }
         return flash_erase_app_sector(offset);
     case WATCH_OTA_INSTALL_REGION_ROLLBACK:
-        for (uint32_t address = F411_BOOTLOADER_ROLLBACK_BASE;
-             address < F411_BOOTLOADER_ROLLBACK_BASE + F411_BOOTLOADER_APP_SIZE;
-             address += WATCH_W25Q128_SECTOR_SIZE) {
-            if (watch_w25q128_sector_erase(&s_w25, address, BOOTLOADER_W25_TIMEOUT_MS)
-                != WATCH_W25Q128_RESULT_OK) {
-                return false;
-            }
-        }
-        return true;
+        return watch_w25q128_sector_erase(
+                   &s_w25, F411_BOOTLOADER_ROLLBACK_BASE + offset, BOOTLOADER_W25_TIMEOUT_MS)
+            == WATCH_W25Q128_RESULT_OK;
     case WATCH_OTA_INSTALL_REGION_CANDIDATE:
-        for (uint32_t address = F411_BOOTLOADER_CANDIDATE_BASE;
-             address < F411_BOOTLOADER_CANDIDATE_BASE + F411_BOOTLOADER_APP_SIZE;
-             address += WATCH_W25Q128_SECTOR_SIZE) {
-            if (watch_w25q128_sector_erase(&s_w25, address, BOOTLOADER_W25_TIMEOUT_MS)
-                != WATCH_W25Q128_RESULT_OK) {
-                return false;
-            }
-        }
-        return true;
+        return watch_w25q128_sector_erase(
+                   &s_w25, F411_BOOTLOADER_CANDIDATE_BASE + offset, BOOTLOADER_W25_TIMEOUT_MS)
+            == WATCH_W25Q128_RESULT_OK;
     case WATCH_OTA_INSTALL_REGION_COUNT:
         break;
     }
