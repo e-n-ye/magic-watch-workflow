@@ -27,10 +27,10 @@ UI/resources, power, then secure OTA. No empty placeholder modules are added.
 
 ## Baseline and completion
 
-- This M17 board candidate bridge update is based on `144d7b9` (App-side OTA
-  preflight diagnostics) and retains the merged M17a/M17b metadata and
-  YModem/package contracts. The branch was created from the then-current
-  `origin/main` baseline `3e578b5`.
+- This M18b review is based on the merged M17 board candidate bridge and the
+  current project baseline `origin/main=ea34509`. The branch adds the standalone
+  Bootloader W25/internal-Flash transaction path and the F411 variable-sector
+  host model; board acceptance remains explicitly open.
 - The original pre-relocation Debug App reference was Flash `64,340 B` and RAM
   `30,208 B`. The current practical App budget remains 400 KiB Flash and 128 KiB
   RAM.
@@ -68,11 +68,11 @@ UI/resources, power, then secure OTA. No empty placeholder modules are added.
 | M15 | USB diagnostic/log/resource protocol | Complete; fixed MWRP framing, ACK/NACK, CRC32, SHA-256, bounded paths, LittleFS temporary writes, atomic rename, and board acceptance are closed. |
 | M16 | KT6368 SPP transport | Complete; USART1 115200 8N1, PB14 active-low enable, RX DMA+IDLE, TX DMA, bounded rings, timeout/error recovery, and board SPP RX/TX acceptance are closed. |
 | M17 | YModem candidate download and package verification | Complete for the USB CDC candidate path; the board accepted a full signed package, verified SHA-256/ECDSA, and persisted `candidate-ready`. The KT6368 path is wired to the same bridge but has not had an end-to-end board transfer. |
-| M18 | Backup, install, and power-loss recovery | Partial; M18a pure-C block transaction and host fault model are complete. The App now exposes non-destructive candidate verification/staging diagnostics, but Bootloader W25-to-internal-Flash installation and power-loss injection remain open. |
+| M18 | Backup, install, and power-loss recovery | Partial; M18a pure-C block transaction, F411 variable-sector host model, Bootloader W25/SPI/internal-Flash path, watchdog extension, and resume boundary logic are implemented. Board testing reached a real `backing-up` record at progress `356608`, but did not reach `trial`; App contents remained byte-identical to the pre-test backup. Power-loss injection and a successful board install remain open. |
 | M19 | Trial confirmation and rollback | Not started. |
 | M20 | Final configurations, simulator, fault injection, budgets, regression report | Not started. |
 
-## Current round: M17 board candidate bridge acceptance
+## Current round: M18b Bootloader install and recovery (board blocked)
 
 M18a's pure-C transaction contract remains the only destructive-install model:
 each step copies one 256-byte block, erases at sector boundaries, reads back the
@@ -84,13 +84,14 @@ and stages `candidate-ready`. The diagnostic commands `ota`, `ota-verify`,
 `ota-stage`, `ota-reset`, and `ota-download-usb` remain non-destructive to
 internal Flash.
 
-## Next round: M18b Bootloader installation and recovery
+## Next round: M18b follow-up: isolate W25 backup stall, then resume board acceptance
 
-Move the destructive transaction into the standalone Bootloader, connect W25
-metadata/rollback to the F411 sector map, and resume `backing-up`/`installing`
-from the last valid record. Keep the USB candidate bridge as the source of
-trusted packages. Only after host fault injection and connected-board
-power-loss tests will M18 be closed.
+The standalone Bootloader path is present and host-tested, but the connected
+board remains in `backing-up` at progress `356608` after repeated runs. The App
+slot readback is byte-identical to the pre-test image, so no corruption was
+observed. Next isolate the W25 rollback write/read/ready stall with a bounded
+board diagnostic or SWD trace before another destructive run. Keep the current
+candidate and App backups; do not mark M18 complete until `trial` is observed.
 
 ## Risks and blockers
 
@@ -140,12 +141,12 @@ power-loss tests will M18 be closed.
 ## Latest verification
 
 - Debug, Diagnostic, and Release App builds passed. Debug format-check and
-  Cppcheck passed; Host CTest passed `19/19` and the 240x280 simulator smoke
+  Cppcheck passed; Host CTest passed `20/20` and the 240x280 simulator smoke
   test passed `1/1`.
 - Current App budgets remain within the 400 KiB practical Flash budget:
   Debug Flash `358,600 B` / RAM `96,304 B`; Diagnostic Flash `368,140 B` /
-  RAM `96,304 B`; Release Flash `194,656 B` / RAM `96,288 B`. Bootloader is
-  `6,564 B` Flash / `1,056 B` RAM.
+  RAM `96,304 B`; Release Flash `194,656 B` / RAM `96,288 B`. M18b
+  Bootloader is `17,976 B` Flash / `1,208 B` RAM.
 - M10b host tests cover Sensor Hub bank selection, LIS2MDL address/configuration,
   `sensor_hub_end_op` timeout, NACK handling, identity, sample decoding,
   periodic service behavior, and event-drop accounting.
@@ -206,6 +207,18 @@ power-loss tests will M18 be closed.
   verifier and CDC diagnostics. The connected board accepted the signed App
   slot, dynamically re-enumerated CDC, and returned valid `ping`, `info`,
   `ota`, `stats`, and `health` responses without a reset.
+- M18b board attempt: the standalone Bootloader was built and verified with
+  ST-Link connect-under-reset. The board remained reachable through CDC, but
+  metadata stayed `backing-up` at progress `356608`, error `0`, without reaching
+  `trial`. A 458,752-byte App-slot readback was byte-identical to the pre-test
+  backup, including the valid vector table and manifest trailer. The remaining
+  blocker is the W25 rollback transaction/progress boundary, not App corruption.
+- M18b board attempt: the standalone Bootloader was built and verified with
+  ST-Link connect-under-reset. The board remained reachable through CDC, but
+  metadata stayed `backing-up` at progress `356608`, error `0`, without reaching
+  `trial`. A 458,752-byte App-slot readback was byte-identical to the pre-test
+  backup, including the valid vector table and manifest trailer. The remaining
+  blocker is the W25 rollback transaction/progress boundary, not App corruption.
 - The USB CDC YModem bridge was board-tested with a complete 448 KiB package:
   all `448/448` data blocks were acknowledged, EOT was acknowledged, and the
   resulting metadata was `candidate-ready` with `candidate=24`, `version=24`,

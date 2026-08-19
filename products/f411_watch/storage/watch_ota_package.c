@@ -8,12 +8,16 @@
 
 #define WATCH_OTA_PACKAGE_CHUNK_SIZE 256U
 
+#ifndef WATCH_OTA_PACKAGE_NO_DEFAULT_CSPRNG
 int default_CSPRNG(uint8_t *destination, unsigned int size)
 {
     (void)destination;
     (void)size;
     return 0;
 }
+#endif
+
+__attribute__((weak)) void watch_ota_package_progress(void) { }
 
 static uint16_t read_u16(const uint8_t *data)
 {
@@ -42,6 +46,7 @@ static watch_ota_package_result_t check_padding(const watch_ota_package_reader_t
     uint8_t buffer[WATCH_OTA_PACKAGE_CHUNK_SIZE];
 
     while (length > 0U) {
+        watch_ota_package_progress();
         size_t chunk = length > sizeof(buffer) ? sizeof(buffer) : length;
         if (!reader->read(reader->context, offset, buffer, chunk)) {
             return WATCH_OTA_PACKAGE_RESULT_IO;
@@ -116,6 +121,7 @@ watch_ota_package_verify(const watch_ota_package_reader_t *reader, uint32_t expe
     }
     offset = 0U;
     while (offset < image_length) {
+        watch_ota_package_progress();
         size_t chunk =
             image_length - offset > sizeof(buffer) ? sizeof(buffer) : image_length - offset;
         if (!reader->read(reader->context, offset, buffer, chunk)

@@ -38,6 +38,8 @@ typedef bool (*watch_ota_install_write_fn)(void *context, watch_ota_install_regi
 typedef bool (*watch_ota_install_persist_fn)(void *context,
                                              const watch_ota_metadata_record_t *record);
 
+void watch_ota_install_progress(void);
+
 typedef struct
 {
     watch_ota_install_read_fn read;
