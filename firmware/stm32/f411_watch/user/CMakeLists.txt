@@ -70,6 +70,7 @@ add_library(f411_watch_user OBJECT
     ${WATCH_SENSOR_SOURCE_DIR}/watch_sensor_aggregate.c
     ${WATCH_STORAGE_SOURCE_DIR}/watch_eeprom_probe.c
     ${WATCH_STORAGE_SOURCE_DIR}/watch_littlefs.c
+    ${WATCH_STORAGE_SOURCE_DIR}/watch_ota_install.c
     ${WATCH_STORAGE_SOURCE_DIR}/watch_w25q128.c
     ${WATCH_LITTLEFS_SOURCE_DIR}/lfs.c
     ${WATCH_LITTLEFS_SOURCE_DIR}/lfs_util.c

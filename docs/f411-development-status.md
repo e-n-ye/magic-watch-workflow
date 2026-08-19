@@ -27,8 +27,8 @@ UI/resources, power, then secure OTA. No empty placeholder modules are added.
 
 ## Baseline and completion
 
-- This M16 KT6368 update began from clean `origin/main` at `80c415e`
-  (the merged M15 USB resource-transfer baseline).
+- This M18a OTA transaction-model update began from the merged M17b baseline
+  `0e716c7` (M17a metadata journal plus M17b YModem/package verification).
 - The original pre-relocation Debug App reference was Flash `64,340 B` and RAM
   `30,208 B`. The current practical App budget remains 400 KiB Flash and 128 KiB
   RAM.
@@ -65,35 +65,35 @@ UI/resources, power, then secure OTA. No empty placeholder modules are added.
 | M14 | littlefs and resource streaming | Complete. Fixed raw partitions, App-only littlefs, bounded resource reads, host tests, and board persistence acceptance are closed. |
 | M15 | USB diagnostic/log/resource protocol | Complete; fixed MWRP framing, ACK/NACK, CRC32, SHA-256, bounded paths, LittleFS temporary writes, atomic rename, and board acceptance are closed. |
 | M16 | KT6368 SPP transport | Complete; USART1 115200 8N1, PB14 active-low enable, RX DMA+IDLE, TX DMA, bounded rings, timeout/error recovery, and board SPP RX/TX acceptance are closed. |
-| M17 | YModem candidate download and package verification | Not started. |
-| M18 | Backup, install, and power-loss recovery | Not started. |
+| M17 | YModem candidate download and package verification | Partial; the pure-C receiver, candidate sink contract, fixed manifest reader, and package verification are complete in host tests. USART1/W25 candidate bridging and board acceptance remain open. |
+| M18 | Backup, install, and power-loss recovery | Partial; M18a pure-C block transaction and host fault model are complete. Board W25-to-internal-Flash installation and power-loss injection remain open. |
 | M19 | Trial confirmation and rollback | Not started. |
 | M20 | Final configurations, simulator, fault injection, budgets, regression report | Not started. |
 
-## Current round: M16 KT6368 SPP transport
+## Current round: M18a OTA backup/install transaction model
 
-M16 adds a pure-C SPP transport contract and a F411 board adapter for KT6368.
-USART1 is fixed at 115200 8N1 on PA9/PA10; PB14 is treated as active-low
-enable. RX uses DMA2 Stream5 with IDLE callbacks and TX uses DMA2 Stream7 in
-bounded chunks. RX/TX overflow counters, link timeout, UART-error recovery,
-and USB read-only `ble`/`ble-probe` diagnostics are exposed without relying on
-unverified AT commands. The connected board accepted a signed v21 App, sent a
-14-byte probe with `tx_err=0`, and after a Bluetooth SPP send reported an RX
-increase from 129 to 147 bytes with `rx_drop=0` and `tx_drop=0`. The transport
-does not consume OTA packages yet; YModem begins in M17.
+M18a adds a pure-C transaction contract for the two destructive phases of OTA.
+Each step copies one 256-byte block, erases only at sector boundaries, reads
+back the destination, and advances metadata only through a persistence callback.
+The backup phase copies the full signed App slot to rollback; the install phase
+copies the verified candidate slot to the App region and enters `trial` only
+after the last block is durable. A failed erase, write, read-back, or metadata
+commit leaves the last committed state unchanged, so retrying the current block
+is idempotent. This round is a host model and does not claim board installation.
 
-## Next round: M17 YModem candidate download and package verification
+## Next round: M18b board installation and power-loss recovery
 
-M17 will add the persistent dual-copy metadata log and YModem candidate
-download. It will verify the fixed manifest, SHA-256, signature, board type, and
-security counter before any internal App write; failed downloads will leave the
-current App untouched.
+M18b will connect the M17 candidate verifier and M17a metadata journal to the
+W25Q128 board adapter and STM32 internal-Flash erase/program operations. It will
+resume `backing-up` and `installing` from the last valid metadata record after
+selected erase/write interruptions, verify the rollback and App contents, and
+perform the agreed host-model plus connected-board power-loss injection before
+M18 is closed.
 
 ## Risks and blockers
 
-- The signed M2 `security_counter` is not yet persisted or compared with a
-  confirmed value. Metadata, trial confirmation, and replay rejection begin in
-  M17-M19.
+- The signed M2 `security_counter` is persisted and compared by the M17a
+  metadata policy; trial confirmation and replay handling continue in M19.
 - Editor regeneration remains a manual LVGL Pro Editor operation. CI builds the
   committed generated C and does not replace the generator.
 - The UI task previously overflowed its 4 KiB stack during Diagnostic work. It
@@ -127,13 +127,14 @@ current App untouched.
   and verified only the App slot, and the Bootloader executable prefix still
   matches the local build, but a reliable whole-region hash procedure remains
   an open debug-tooling issue.
-- OTA metadata, candidate download, install recovery, and rollback are not
-  implemented. M16 only provides the transparent transport and diagnostics.
+- M18b still needs the board-side candidate bridge, internal-Flash transaction,
+  and repeatable power-loss injection. M19 trial confirmation and rollback are
+  not implemented.
 
 ## Latest verification
 
 - Debug, Diagnostic, and Release App builds passed. Debug format-check and
-  Cppcheck passed; Host CTest passed `16/16` and the 240x280 simulator smoke
+  Cppcheck passed; Host CTest passed `19/19` and the 240x280 simulator smoke
   test passed `1/1`.
 - Current App budgets remain within the 400 KiB practical Flash budget:
   Debug Flash `339,640 B` / RAM `93,988 B`; Diagnostic Flash `349,180 B` /
@@ -158,7 +159,7 @@ current App untouched.
   transfer, CRC/version/flags/path/sequence/offset/state rejection, digest
   mismatch, and ABORT. M16 transport tests cover ring wrap, bounded TX
   chunks, overflow accounting, timeout state, and recovery. Host CTest passed
-  `16/16`.
+  `19/19`.
 - After dynamic CDC re-enumeration, `ping`, `info`, `eeprom`, `health`,
   `stats`, `diag`, `sensor`, and `power` were valid. Health was stage 3 with
   app, UI, USB, and sensor services healthy; the queue was `2` during the read,
@@ -189,3 +190,9 @@ current App untouched.
   Bluetooth SPP test send, RX increased from `129` to `147` bytes, with
   `idle=5`, `rx_drop=0`, and `tx_drop=0`; the queued probe completed with
   `tx=14` and `tx_err=0`.
+- M17a host tests cover dual-copy metadata sequence selection, CRC fallback,
+  write failures, and security-counter conflict/replay policy. M17b host tests
+  cover fragmented YModem input, duplicate blocks, CRC/EOT handling, and
+  manifest board/address/padding/hash/signature/security rejection. M18a host
+  tests cover successful full-slot backup/install plus erase, write, read-back,
+  and metadata-persistence fault recovery; Host CTest passed `19/19`.
