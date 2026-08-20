@@ -122,9 +122,18 @@ static bool spi_transfer(void *context, const uint8_t *tx, uint8_t *rx, size_t l
 
 static void configure_gpio_spi(void)
 {
-    RCC->AHB1ENR |= RCC_AHB1ENR_GPIOAEN | RCC_AHB1ENR_GPIOBEN;
+    /* PC13 is the board power latch for the W25Q128. The App initializes it
+     * through CubeMX GPIO setup; the standalone Bootloader must do it before
+     * the first SPI transaction as well. */
+    RCC->AHB1ENR |= RCC_AHB1ENR_GPIOAEN | RCC_AHB1ENR_GPIOBEN | RCC_AHB1ENR_GPIOCEN;
     RCC->APB1ENR |= RCC_APB1ENR_SPI3EN;
     (void)RCC->AHB1ENR;
+
+    GPIOC->MODER = (GPIOC->MODER & ~(3UL << (13U * 2U))) | (1UL << (13U * 2U));
+    GPIOC->OTYPER &= ~(1UL << 13U);
+    GPIOC->OSPEEDR |= 3UL << (13U * 2U);
+    GPIOC->PUPDR &= ~(3UL << (13U * 2U));
+    GPIOC->BSRR = GPIO_BSRR_BS13;
 
     GPIOA->MODER = (GPIOA->MODER & ~(3UL << (15U * 2U))) | (1UL << (15U * 2U));
     GPIOA->OTYPER &= ~(1UL << 15U);
