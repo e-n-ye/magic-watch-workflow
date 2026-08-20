@@ -68,11 +68,11 @@ UI/resources, power, then secure OTA. No empty placeholder modules are added.
 | M15 | USB diagnostic/log/resource protocol | Complete; fixed MWRP framing, ACK/NACK, CRC32, SHA-256, bounded paths, LittleFS temporary writes, atomic rename, and board acceptance are closed. |
 | M16 | KT6368 SPP transport | Complete; USART1 115200 8N1, PB14 active-low enable, RX DMA+IDLE, TX DMA, bounded rings, timeout/error recovery, and board SPP RX/TX acceptance are closed. |
 | M17 | YModem candidate download and package verification | Complete for the USB CDC candidate path; the board accepted a full signed package, verified SHA-256/ECDSA, and persisted `candidate-ready`. The KT6368 path is wired to the same bridge but has not had an end-to-end board transfer. |
-| M18 | Backup, install, and power-loss recovery | Partial; M18a pure-C block transaction, F411 variable-sector host model, Bootloader W25/SPI/internal-Flash path, watchdog extension, and resume boundary logic are implemented. Board testing reached a real `backing-up` record at progress `356608`, but did not reach `trial`; App contents remained byte-identical to the pre-test backup. Power-loss injection and a successful board install remain open. |
+| M18 | Backup, install, and power-loss recovery | Partial; M18a pure-C block transaction, F411 variable-sector host model, Bootloader W25/SPI/internal-Flash path, watchdog extension, and resume boundary logic are implemented. Board tracing reached the first checkpoint beyond the 358600-byte image and found the metadata contract rejecting the valid full-slot progress `360704`; the focused fix is now host-tested. Power-loss injection and a successful board install remain open. |
 | M19 | Trial confirmation and rollback | Not started. |
 | M20 | Final configurations, simulator, fault injection, budgets, regression report | Not started. |
 
-## Current round: M18b Bootloader install and recovery (board blocked)
+## Current round: M18b Bootloader install and recovery (metadata checkpoint fix pending board retest)
 
 M18a's pure-C transaction contract remains the only destructive-install model:
 each step copies one 256-byte block, erases at sector boundaries, reads back the
@@ -84,14 +84,16 @@ and stages `candidate-ready`. The diagnostic commands `ota`, `ota-verify`,
 `ota-stage`, `ota-reset`, and `ota-download-usb` remain non-destructive to
 internal Flash.
 
-## Next round: M18b follow-up: isolate W25 backup stall, then resume board acceptance
+## Next round: M18b follow-up: flash the metadata checkpoint fix, then resume board acceptance
 
-The standalone Bootloader path is present and host-tested, but the connected
-board remains in `backing-up` at progress `356608` after repeated runs. The App
-slot readback is byte-identical to the pre-test image, so no corruption was
-observed. Next isolate the W25 rollback write/read/ready stall with a bounded
-board diagnostic or SWD trace before another destructive run. Keep the current
-candidate and App backups; do not mark M18 complete until `trial` is observed.
+The standalone Bootloader path is present and host-tested. SWD tracing showed
+that rollback page programming and read-back returned `ok` through `0xE8000`,
+then the first metadata checkpoint at progress `360704` was rejected because
+the shared validator compared install progress with the shorter `image_length`
+of `358600`. Install states now accept full-slot progress while download and
+candidate states retain the image-length bound. Flash the new Bootloader only,
+keep the current candidate and App backups, and do not mark M18 complete until
+`trial` is observed.
 
 ## Risks and blockers
 
@@ -143,6 +145,10 @@ candidate and App backups; do not mark M18 complete until `trial` is observed.
 - Debug, Diagnostic, and Release App builds passed. Debug format-check and
   Cppcheck passed; Host CTest passed `20/20` and the 240x280 simulator smoke
   test passed `1/1`.
+- The metadata progress-window regression test accepts full-slot install
+  checkpoints beyond `image_length` and continues to reject the same value in
+  `candidate-ready`; Debug build, format-check, Cppcheck, and Host CTest
+  passed `20/20` after the fix.
 - Current App budgets remain within the 400 KiB practical Flash budget:
   Debug Flash `358,600 B` / RAM `96,304 B`; Diagnostic Flash `368,140 B` /
   RAM `96,304 B`; Release Flash `194,656 B` / RAM `96,288 B`. M18b

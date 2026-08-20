@@ -194,6 +194,27 @@ static void test_security_policy(void)
            == WATCH_OTA_METADATA_RESULT_INVALID_RECORD);
 }
 
+static void test_install_progress_window(void)
+{
+    fake_flash_t flash;
+    watch_w25q128_t device;
+    watch_ota_metadata_t metadata;
+    watch_ota_metadata_record_t record = make_record(1U, 0x66U);
+    watch_ota_metadata_record_t output;
+
+    assert(setup(&flash, &device, &metadata));
+    record.state = WATCH_OTA_METADATA_BACKING_UP;
+    record.progress = WATCH_W25_CANDIDATE_SIZE;
+    assert(watch_ota_metadata_commit(&metadata, &record) == WATCH_OTA_METADATA_RESULT_OK);
+    assert(watch_ota_metadata_load(&metadata, &output) == WATCH_OTA_METADATA_RESULT_OK);
+    assert(output.state == WATCH_OTA_METADATA_BACKING_UP
+           && output.progress == WATCH_W25_CANDIDATE_SIZE);
+
+    record.state = WATCH_OTA_METADATA_CANDIDATE_READY;
+    assert(watch_ota_metadata_commit(&metadata, &record)
+           == WATCH_OTA_METADATA_RESULT_INVALID_RECORD);
+}
+
 static void test_write_failure_and_invalid_copies(void)
 {
     fake_flash_t flash;
@@ -226,6 +247,7 @@ int main(void)
     test_empty_and_round_trip();
     test_sequence_and_crc_fallback();
     test_security_policy();
+    test_install_progress_window();
     test_write_failure_and_invalid_copies();
     assert(strcmp(watch_ota_metadata_state_name(WATCH_OTA_METADATA_TRIAL), "trial") == 0);
     assert(strcmp(watch_ota_metadata_result_name(WATCH_OTA_METADATA_RESULT_SECURITY_REJECTED),

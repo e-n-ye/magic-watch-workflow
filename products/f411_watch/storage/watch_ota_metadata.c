@@ -61,12 +61,34 @@ static bool state_valid(watch_ota_metadata_state_t state)
     return state >= WATCH_OTA_METADATA_DOWNLOADING && state <= WATCH_OTA_METADATA_ERROR;
 }
 
+static bool progress_valid(const watch_ota_metadata_record_t *record)
+{
+    if (record == NULL) {
+        return false;
+    }
+
+    /* Install checkpoints cover the complete slot, including erased padding. */
+    switch (record->state) {
+    case WATCH_OTA_METADATA_BACKING_UP:
+    case WATCH_OTA_METADATA_INSTALLING:
+    case WATCH_OTA_METADATA_TRIAL:
+    case WATCH_OTA_METADATA_CONFIRMED:
+    case WATCH_OTA_METADATA_PENDING_ROLLBACK:
+    case WATCH_OTA_METADATA_ROLLING_BACK:
+    case WATCH_OTA_METADATA_ERROR:
+        return record->progress <= WATCH_W25_CANDIDATE_SIZE;
+    case WATCH_OTA_METADATA_DOWNLOADING:
+    case WATCH_OTA_METADATA_CANDIDATE_READY:
+        return record->progress <= record->image_length;
+    }
+    return false;
+}
+
 static bool record_fields_valid(const watch_ota_metadata_record_t *record)
 {
     return record != NULL && record->sequence != 0U && state_valid(record->state)
         && record->candidate_counter >= record->confirmed_counter
-        && record->image_length <= WATCH_W25_CANDIDATE_SIZE
-        && record->progress <= record->image_length;
+        && record->image_length <= WATCH_W25_CANDIDATE_SIZE && progress_valid(record);
 }
 
 static void encode_record(const watch_ota_metadata_record_t *record,
@@ -248,8 +270,7 @@ watch_ota_metadata_result_t watch_ota_metadata_commit(watch_ota_metadata_t *meta
         return WATCH_OTA_METADATA_RESULT_INVALID_ARGUMENT;
     }
     if (!state_valid(record->state) || record->candidate_counter < record->confirmed_counter
-        || record->image_length > WATCH_W25_CANDIDATE_SIZE
-        || record->progress > record->image_length) {
+        || record->image_length > WATCH_W25_CANDIDATE_SIZE || !progress_valid(record)) {
         return WATCH_OTA_METADATA_RESULT_INVALID_RECORD;
     }
 
