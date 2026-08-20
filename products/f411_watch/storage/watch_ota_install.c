@@ -91,12 +91,15 @@ watch_ota_install_result_t watch_ota_install_start(watch_ota_install_t *install,
     if (!record_valid_for_install(install, record)) {
         return WATCH_OTA_INSTALL_RESULT_INVALID_ARGUMENT;
     }
-    if (record->state != WATCH_OTA_METADATA_CANDIDATE_READY) {
+    if (record->state != WATCH_OTA_METADATA_CANDIDATE_READY
+        && record->state != WATCH_OTA_METADATA_PENDING_ROLLBACK) {
         return WATCH_OTA_INSTALL_RESULT_INVALID_STATE;
     }
 
     next = *record;
-    next.state = WATCH_OTA_METADATA_BACKING_UP;
+    next.state = record->state == WATCH_OTA_METADATA_PENDING_ROLLBACK
+        ? WATCH_OTA_METADATA_ROLLING_BACK
+        : WATCH_OTA_METADATA_BACKING_UP;
     next.progress = 0U;
     next.error_code = 0U;
     return persist_record(install, record, &next) ? WATCH_OTA_INSTALL_RESULT_OK
@@ -129,6 +132,9 @@ watch_ota_install_result_t watch_ota_install_step(watch_ota_install_t *install,
     } else if (record->state == WATCH_OTA_METADATA_INSTALLING) {
         source = WATCH_OTA_INSTALL_REGION_CANDIDATE;
         destination = WATCH_OTA_INSTALL_REGION_APP;
+    } else if (record->state == WATCH_OTA_METADATA_ROLLING_BACK) {
+        source = WATCH_OTA_INSTALL_REGION_ROLLBACK;
+        destination = WATCH_OTA_INSTALL_REGION_APP;
     } else {
         return WATCH_OTA_INSTALL_RESULT_INVALID_STATE;
     }
@@ -150,10 +156,15 @@ watch_ota_install_result_t watch_ota_install_step(watch_ota_install_t *install,
         if (record->state == WATCH_OTA_METADATA_BACKING_UP) {
             next.state = WATCH_OTA_METADATA_INSTALLING;
             next.progress = 0U;
-        } else {
+        } else if (record->state == WATCH_OTA_METADATA_INSTALLING) {
             next.state = WATCH_OTA_METADATA_TRIAL;
             next.progress = install->config.app_size;
             next.trial_count = 0U;
+        } else {
+            next.state = WATCH_OTA_METADATA_CONFIRMED;
+            next.progress = install->config.app_size;
+            next.trial_count = 0U;
+            next.error_code = 0U;
         }
     } else {
         next.progress = offset + (uint32_t)length;

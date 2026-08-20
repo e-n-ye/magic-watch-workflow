@@ -27,14 +27,15 @@ UI/resources, power, then secure OTA. No empty placeholder modules are added.
 
 ## Baseline and completion
 
-- The current baseline is `origin/main=bb3cc13`, confirmed before the M18b
-  board-acceptance branch was created. The worktree keeps the pre-existing
+- The current baseline is `origin/main=90c34c3`, confirmed before the M19
+  trial/rollback branch was created. The worktree keeps the pre-existing
   local stash untouched.
-- Sixteen of 21 numbered milestones are fully closed: M0-M9, M11, and M13-M17.
-  M10, M12, and M18 remain partial; M19 and M20 are not started. This is about
-  76% by strict numbered scope. The artifact is a runnable and diagnosable
-  vertical slice with a board-accepted candidate install, but trial confirmation,
-  rollback, and deliberate power-loss recovery are still absent.
+- Seventeen of 21 numbered milestones are fully closed: M0-M9, M11, M13-M17,
+  and M19. M10, M12, and M18 remain partial; M20 is not started. This is about
+  81% by strict numbered scope. The artifact is a runnable and diagnosable
+  vertical slice with board-accepted signed install, trial confirmation, and
+  automatic-reset rollback flow; deliberate power-loss recovery and final
+  regression remain open.
 - Current hardware facts include STM32F411, 24 MHz HSE, ST-Link-compatible SWD,
   ST7789, CST816, W25Q128, KT6368, and the schematic EEPROM candidate
   `BL24C02F-RRRC`. The read-only probe saw responses at `0x50` and `0x57`; the
@@ -63,41 +64,38 @@ UI/resources, power, then secure OTA. No empty placeholder modules are added.
 | M16 | KT6368 SPP transport | Complete for the USART1 DMA+IDLE bridge and recovery paths; an independent long-run Bluetooth transfer remains limited evidence. |
 | M17 | YModem candidate download and package verification | Complete for USB CDC; the board accepted a full signed package and persisted `candidate-ready`. |
 | M18 | Backup, install, and power-loss recovery | Partial; M18a host/fault model and M18b board backup/install are accepted. Deliberate interruption at erase/write boundaries and resume-after-power-loss remain open. |
-| M19 | Trial confirmation and rollback | Not started; the Bootloader now reaches `trial`, but the 30-second App confirmation and three-failure/fourth-boot rollback policy are not implemented. |
+| M19 | Trial confirmation and rollback | Complete for the pure-C transition model and connected-board healthy confirmation/automatic-reset sequence. HardFault capsule-to-pending-rollback is covered by code and host tests; deliberate HardFault injection is not claimed. |
 | M20 | Final configurations, simulator, fault injection, budgets, regression report | Not started. |
 
-## Current round: M18b board install and recovery
+## Current round: M19 trial confirmation and rollback
 
-M18b is accepted for the connected board. The Bootloader-only flash updated the
-metadata-progress validator without writing the App slot. A newly signed
-candidate (version/counter `25`, image length `358708`) was downloaded over the
-dynamic USB CDC path with all `448/448` 1 KiB data blocks acknowledged. After a
-reset, the Bootloader completed the full-slot backup and installation and the
-App reported:
+M19 is accepted for the connected board. A signed candidate (version/counter
+`26`, image length `360084`) was downloaded over dynamic USB CDC with all
+`448/448` 1 KiB data blocks acknowledged. After installation, the App reported
+`encoder=1`, `touch=1`, `chip=0xb5`, and healthy runtime stage 3. After more than
+30 seconds, metadata reached:
 
 ```text
-state=trial candidate=25 version=25 image=358708 progress=458752 trial=0 error=0
+state=confirmed confirmed=26 candidate=26 version=26 image=360084 trial=0 error=0
 ```
 
-The App slot readback SHA-256 matched the candidate package exactly. The
-Bootloader readback matched the local executable prefix (`18124` bytes); the
-remaining erased-sector bytes are not used as an acceptance hash. After a
-further 35 seconds, CDC remained enumerated, health stayed at stage 3, and
-`rx_drop=0` / `tx_drop=0` remained reported. This closes the M18b board
-install transaction but does not claim M19 confirmation or power-loss recovery.
+The same candidate was staged again and the board was reset three times before
+the 30-second confirmation window. The next startup completed the automatic
+rollback flow and returned to `state=confirmed`, with `trial=0` and the
+confirmed counter intact. This board run does not claim a forced HardFault or
+power-loss injection: the HardFault capsule path and watchdog policy are
+covered by code and host tests. Missing/degraded sensors remained non-blocking.
 
-## Next round: M19 trial confirmation and rollback
+## Next round: M20 final regression and reference report
 
-Implement the pure-C trial/confirmation contract and its host fault model, then
-wire the Bootloader/App metadata transitions and diagnostic error states. The
-acceptance must cover a healthy confirmation, three unconfirmed boots, the
-fourth-boot rollback, watchdog/HardFault recovery, and a degraded sensor state
-that does not block confirmation.
+Run the final Debug/Diagnostic/Release, simulator, resource-budget, fault-model,
+and whole-device regression matrix. Deliberate M18 erase/write power-loss
+injection remains a known open acceptance item.
 
 ## Risks and blockers
 
-- The signed `security_counter` policy is persisted and compared; confirmation,
-  replay handling, and rollback remain the next OTA scope.
+- The signed `security_counter` policy is persisted and compared; replay and
+  rollback are now covered by the M19 transition model and board run.
 - The no-battery board cannot establish KEY_WAKE, physical cutoff, external
   watchdog wiring, or a measured current target.
 - LIS2MDL is routed through the LSM6DS3 auxiliary Sensor Hub and currently
@@ -109,16 +107,17 @@ that does not block confirmation.
   committed generated C and does not replace the generator.
 - CDC diagnostic output can drop when no host reader is attached; the accepted
   board checks used an active reader and observed zero drops.
-- M18 power-loss injection and M19 trial/rollback are not yet implemented, so
-  the firmware is not presented as a complete secure OTA product.
+- M18 power-loss injection and the M20 final regression report are not yet
+  complete, so the firmware is not presented as a complete secure OTA product.
 
 ## Latest verification
 
-- Debug configure/build, `format-check`, and `cppcheck` passed on the M18b
-  branch. The current Debug App image is `358708 B`; the Bootloader executable
-  is `18124 B` with `1208 B` static RAM usage.
-- Host CTest passed `20/20`; the 240x280 simulator smoke test passed `1/1`.
-- The M18b board run used dynamic USB CDC discovery, verified W25Q128 JEDEC
-  `0xef4018`, accepted the signed candidate, reached `trial`, and kept the App
-  healthy after the readback reset. No private key, device path, temporary
-  image, dump, or complete serial log is part of the repository.
+- Debug configure/build, `format-check`, and `cppcheck` passed. The current
+  Debug App image is `360044 B`; the Bootloader executable is `18664 B` with
+  `1208 B` static RAM usage.
+- Host CTest passed `21/21`; the 240x280 simulator smoke test remains `1/1`.
+- The M19 board run used dynamic USB CDC discovery, verified W25Q128 JEDEC
+  `0xef4018`, accepted the signed candidate, confirmed it after 30 seconds,
+  and completed the forced three-reset rollback sequence. No private key,
+  device path, temporary image, dump, or complete serial log is part of the
+  repository.

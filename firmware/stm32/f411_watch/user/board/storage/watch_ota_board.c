@@ -384,3 +384,39 @@ watch_ota_metadata_result_t watch_ota_board_stage_candidate(void)
     memcpy(next.candidate_digest, info.digest, sizeof(next.candidate_digest));
     return watch_ota_metadata_commit(&s_metadata, &next);
 }
+
+watch_ota_metadata_result_t watch_ota_board_confirm_trial(void)
+{
+    watch_ota_metadata_record_t record;
+    watch_ota_metadata_result_t metadata_result;
+
+    if (!watch_ota_board_init()) {
+        return WATCH_OTA_METADATA_RESULT_IO;
+    }
+    metadata_result = watch_ota_metadata_load(&s_metadata, &record);
+    if (metadata_result != WATCH_OTA_METADATA_RESULT_OK) {
+        return metadata_result;
+    }
+    if (watch_ota_trial_confirm(&record) != WATCH_OTA_TRIAL_RESULT_OK) {
+        return WATCH_OTA_METADATA_RESULT_INVALID_RECORD;
+    }
+    return watch_ota_metadata_commit(&s_metadata, &record);
+}
+
+watch_ota_metadata_result_t watch_ota_board_mark_trial_fault(uint32_t error_code)
+{
+    watch_ota_metadata_record_t record;
+    watch_ota_metadata_result_t metadata_result;
+
+    if (!watch_ota_board_init()) {
+        return WATCH_OTA_METADATA_RESULT_IO;
+    }
+    metadata_result = watch_ota_metadata_load(&s_metadata, &record);
+    if (metadata_result != WATCH_OTA_METADATA_RESULT_OK) {
+        return metadata_result;
+    }
+    if (watch_ota_trial_mark_fault(&record, error_code) != WATCH_OTA_TRIAL_RESULT_OK) {
+        return WATCH_OTA_METADATA_RESULT_INVALID_RECORD;
+    }
+    return watch_ota_metadata_commit(&s_metadata, &record);
+}

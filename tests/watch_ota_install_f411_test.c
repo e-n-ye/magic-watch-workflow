@@ -1,4 +1,5 @@
 #include "watch_ota_install.h"
+#include "watch_ota_trial.h"
 
 #include <assert.h>
 #include <stddef.h>
@@ -143,6 +144,19 @@ int main(void)
     for (size_t index = 0U; index < F411_APP_SIZE; ++index) {
         assert(storage.rollback[index] == (uint8_t)(index * 5U + 1U));
         assert(storage.app[index] == storage.candidate[index]);
+    }
+
+    memset(storage.app, 0xA5, sizeof(storage.app));
+    record.state = WATCH_OTA_METADATA_PENDING_ROLLBACK;
+    record.progress = 0U;
+    record.trial_count = 3U;
+    record.error_code = WATCH_OTA_TRIAL_ERROR_BOOT_LIMIT;
+    assert(watch_ota_install_start(&install, &record) == WATCH_OTA_INSTALL_RESULT_OK);
+    while (record.state != WATCH_OTA_METADATA_CONFIRMED) {
+        assert(watch_ota_install_step(&install, &record) == WATCH_OTA_INSTALL_RESULT_OK);
+    }
+    for (size_t index = 0U; index < F411_APP_SIZE; ++index) {
+        assert(storage.app[index] == (uint8_t)(index * 5U + 1U));
     }
     return 0;
 }

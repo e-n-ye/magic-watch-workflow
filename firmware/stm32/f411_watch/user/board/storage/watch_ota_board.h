@@ -6,6 +6,7 @@
 
 #include "watch_ota_metadata.h"
 #include "watch_ota_package.h"
+#include "watch_ota_trial.h"
 #include "watch_ymodem.h"
 
 typedef enum {
@@ -35,6 +36,8 @@ bool watch_ota_board_init(void);
 bool watch_ota_board_read_status(watch_ota_board_status_t *status);
 watch_ota_package_result_t watch_ota_board_verify_candidate(watch_ota_package_info_t *info);
 watch_ota_metadata_result_t watch_ota_board_stage_candidate(void);
+watch_ota_metadata_result_t watch_ota_board_confirm_trial(void);
+watch_ota_metadata_result_t watch_ota_board_mark_trial_fault(uint32_t error_code);
 bool watch_ota_board_reset_metadata(void);
 bool watch_ota_board_start_download(watch_ota_download_channel_t channel,
                                     watch_ota_download_read_fn read,

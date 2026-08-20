@@ -73,6 +73,7 @@ add_library(f411_watch_user OBJECT
     ${WATCH_STORAGE_SOURCE_DIR}/watch_littlefs.c
     ${WATCH_STORAGE_SOURCE_DIR}/watch_ota_metadata.c
     ${WATCH_STORAGE_SOURCE_DIR}/watch_ota_install.c
+    ${WATCH_STORAGE_SOURCE_DIR}/watch_ota_trial.c
     ${WATCH_STORAGE_SOURCE_DIR}/watch_ota_package.c
     ${WATCH_STORAGE_SOURCE_DIR}/watch_w25q128.c
     ${WATCH_LITTLEFS_SOURCE_DIR}/lfs.c

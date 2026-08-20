@@ -157,6 +157,7 @@ if(BUILD_TESTING)
     add_executable(watch_ota_metadata_tests
         ${CMAKE_CURRENT_LIST_DIR}/watch_ota_metadata_test.c
         ${CMAKE_CURRENT_LIST_DIR}/../products/f411_watch/storage/watch_ota_metadata.c
+        ${CMAKE_CURRENT_LIST_DIR}/../products/f411_watch/storage/watch_ota_trial.c
         ${CMAKE_CURRENT_LIST_DIR}/../products/f411_watch/storage/watch_w25q128.c
     )
 
@@ -190,6 +191,18 @@ if(BUILD_TESTING)
     )
 
     add_test(NAME watch_ota_install_f411 COMMAND watch_ota_install_f411_tests)
+
+    add_executable(watch_ota_trial_tests
+        ${CMAKE_CURRENT_LIST_DIR}/watch_ota_trial_test.c
+        ${CMAKE_CURRENT_LIST_DIR}/../products/f411_watch/storage/watch_ota_trial.c
+    )
+
+    target_include_directories(watch_ota_trial_tests
+        PRIVATE
+            ${CMAKE_CURRENT_LIST_DIR}/../products/f411_watch/storage
+    )
+
+    add_test(NAME watch_ota_trial COMMAND watch_ota_trial_tests)
 
     add_executable(watch_littlefs_tests
         ${CMAKE_CURRENT_LIST_DIR}/watch_littlefs_test.c
