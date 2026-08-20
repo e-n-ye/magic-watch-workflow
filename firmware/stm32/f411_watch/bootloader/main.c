@@ -49,7 +49,11 @@ __attribute__((noreturn)) static void bootloader_jump_to_application(void)
 
 int main(void)
 {
-    (void)f411_bootloader_process_ota();
+    int ota_result = f411_bootloader_process_ota();
+
+    if (ota_result < 0) {
+        bootloader_halt();
+    }
     if (bootloader_application_is_valid()) {
         bootloader_jump_to_application();
     }

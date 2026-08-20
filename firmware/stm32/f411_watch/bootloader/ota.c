@@ -7,9 +7,11 @@
 
 #include "watch_ota_metadata.h"
 #include "watch_ota_package.h"
+#include "watch_ota_trial.h"
 
 #define BOOTLOADER_OTA_ERROR_VERIFY 1U
 #define BOOTLOADER_OTA_ERROR_INSTALL 2U
+#define BOOTLOADER_OTA_ERROR_ROLLBACK 3U
 #define BOOTLOADER_OTA_PERSIST_STRIDE 16U
 
 static watch_ota_metadata_t *s_metadata;
@@ -105,13 +107,57 @@ int f411_bootloader_process_ota(void)
     if (metadata_result != WATCH_OTA_METADATA_RESULT_OK) {
         return 0;
     }
-    if (record.state != WATCH_OTA_METADATA_CANDIDATE_READY
-        && record.state != WATCH_OTA_METADATA_BACKING_UP
-        && record.state != WATCH_OTA_METADATA_INSTALLING) {
+
+    if (record.state == WATCH_OTA_METADATA_TRIAL) {
+        watch_ota_trial_boot_result_t boot_result = watch_ota_trial_prepare_boot(&record);
+
+        if (boot_result == WATCH_OTA_TRIAL_BOOT_INVALID
+            || watch_ota_metadata_commit(s_metadata, &record) != WATCH_OTA_METADATA_RESULT_OK) {
+            return -1;
+        }
+        if (boot_result == WATCH_OTA_TRIAL_BOOT_JUMP) {
+            return 1;
+        }
+    }
+
+    if (record.state == WATCH_OTA_METADATA_CONFIRMED) {
         return 0;
     }
-    if (!verify_candidate(&record)) {
-        (void)mark_error(&record, BOOTLOADER_OTA_ERROR_VERIFY);
+
+    if (record.state == WATCH_OTA_METADATA_CANDIDATE_READY
+        || record.state == WATCH_OTA_METADATA_BACKING_UP
+        || record.state == WATCH_OTA_METADATA_INSTALLING) {
+        if (!verify_candidate(&record)) {
+            (void)mark_error(&record, BOOTLOADER_OTA_ERROR_VERIFY);
+            return -1;
+        }
+    } else if (record.state != WATCH_OTA_METADATA_PENDING_ROLLBACK
+               && record.state != WATCH_OTA_METADATA_ROLLING_BACK) {
+        return 0;
+    }
+
+    if (record.state == WATCH_OTA_METADATA_PENDING_ROLLBACK) {
+        if (watch_ota_trial_start_rollback(&record) != WATCH_OTA_TRIAL_RESULT_OK
+            || watch_ota_metadata_commit(s_metadata, &record) != WATCH_OTA_METADATA_RESULT_OK) {
+            (void)mark_error(&record, BOOTLOADER_OTA_ERROR_ROLLBACK);
+            return -1;
+        }
+    }
+
+    if (record.state == WATCH_OTA_METADATA_ROLLING_BACK
+        && !f411_bootloader_storage_prepare_resume(WATCH_OTA_INSTALL_REGION_APP,
+                                                    &record.progress)) {
+        (void)mark_error(&record, BOOTLOADER_OTA_ERROR_ROLLBACK);
+        return -1;
+    }
+
+    if (!watch_ota_install_init(&install, &config)) {
+        (void)mark_error(&record, BOOTLOADER_OTA_ERROR_INSTALL);
+        return -1;
+    }
+    if (record.state == WATCH_OTA_METADATA_CANDIDATE_READY
+        && watch_ota_install_start(&install, &record) != WATCH_OTA_INSTALL_RESULT_OK) {
+        (void)mark_error(&record, BOOTLOADER_OTA_ERROR_INSTALL);
         return -1;
     }
     if (record.state == WATCH_OTA_METADATA_BACKING_UP) {
@@ -127,22 +173,25 @@ int f411_bootloader_process_ota(void)
             return -1;
         }
     }
-    if (!watch_ota_install_init(&install, &config)) {
-        (void)mark_error(&record, BOOTLOADER_OTA_ERROR_INSTALL);
-        return -1;
-    }
-    if (record.state == WATCH_OTA_METADATA_CANDIDATE_READY
-        && watch_ota_install_start(&install, &record) != WATCH_OTA_INSTALL_RESULT_OK) {
-        (void)mark_error(&record, BOOTLOADER_OTA_ERROR_INSTALL);
-        return -1;
-    }
-
     while (record.state == WATCH_OTA_METADATA_BACKING_UP
-           || record.state == WATCH_OTA_METADATA_INSTALLING) {
+           || record.state == WATCH_OTA_METADATA_INSTALLING
+           || record.state == WATCH_OTA_METADATA_ROLLING_BACK) {
         if (watch_ota_install_step(&install, &record) != WATCH_OTA_INSTALL_RESULT_OK) {
-            (void)mark_error(&record, BOOTLOADER_OTA_ERROR_INSTALL);
+            (void)mark_error(&record, record.state == WATCH_OTA_METADATA_ROLLING_BACK
+                                         ? BOOTLOADER_OTA_ERROR_ROLLBACK
+                                         : BOOTLOADER_OTA_ERROR_INSTALL);
             return -1;
         }
     }
-    return record.state == WATCH_OTA_METADATA_TRIAL ? 1 : -1;
+    if (record.state == WATCH_OTA_METADATA_TRIAL) {
+        watch_ota_trial_boot_result_t boot_result = watch_ota_trial_prepare_boot(&record);
+
+        if (boot_result != WATCH_OTA_TRIAL_BOOT_JUMP
+            || watch_ota_metadata_commit(s_metadata, &record) != WATCH_OTA_METADATA_RESULT_OK) {
+            (void)mark_error(&record, BOOTLOADER_OTA_ERROR_INSTALL);
+            return -1;
+        }
+        return 1;
+    }
+    return record.state == WATCH_OTA_METADATA_CONFIRMED ? 0 : -1;
 }

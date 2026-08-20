@@ -142,6 +142,8 @@ if(DEFINED FORMAT_STORAGE_ROOT AND NOT FORMAT_STORAGE_ROOT STREQUAL "")
         "${FORMAT_STORAGE_ROOT}/watch_ota_metadata.h"
         "${FORMAT_STORAGE_ROOT}/watch_ota_install.c"
         "${FORMAT_STORAGE_ROOT}/watch_ota_install.h"
+        "${FORMAT_STORAGE_ROOT}/watch_ota_trial.c"
+        "${FORMAT_STORAGE_ROOT}/watch_ota_trial.h"
         "${FORMAT_STORAGE_ROOT}/watch_ota_package.c"
         "${FORMAT_STORAGE_ROOT}/watch_ota_package.h"
         "${FORMAT_STORAGE_ROOT}/watch_w25q128.c"

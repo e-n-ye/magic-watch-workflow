@@ -13,6 +13,7 @@
 #include "board/sensors/watch_lis2mdl_board.h"
 #include "board/sensors/watch_lsm6ds3_board.h"
 #include "board/power/watch_power.h"
+#include "board/input/watch_input_hw.h"
 #include "board/storage/watch_eeprom_probe_board.h"
 #include "board/storage/watch_littlefs_board.h"
 #include "board/storage/watch_ota_board.h"
@@ -33,6 +34,7 @@ typedef enum {
     WATCH_USB_COMMAND_DIAG,
     WATCH_USB_COMMAND_STATS,
     WATCH_USB_COMMAND_HEALTH,
+    WATCH_USB_COMMAND_INPUT,
     WATCH_USB_COMMAND_SENSOR,
     WATCH_USB_COMMAND_EEPROM,
     WATCH_USB_COMMAND_W25,
@@ -421,6 +423,26 @@ static void send_power(void)
     }
 }
 
+static void send_input(void)
+{
+    char response[224];
+    watch_input_hw_status_t status;
+    int length;
+
+    watch_input_hw_read_status(&status);
+    length = snprintf(response, sizeof(response),
+                      "input encoder=%u touch=%u chip=0x%02x count=%u errors=%lu "
+                      "drop=%lu gesture=0x%02x event=%u seq=%lu\r\n",
+                      status.encoder_ready ? 1U : 0U, status.touch_ready ? 1U : 0U,
+                      status.touch_chip_id, status.encoder_count,
+                      (unsigned long)status.touch_errors, (unsigned long)status.event_dropped,
+                      status.touch_gesture, (unsigned int)status.touch_event,
+                      (unsigned long)status.touch_sequence);
+    if ((length > 0) && ((size_t)length < sizeof(response))) {
+        watch_usb_cdc_write((const uint8_t *)response, (size_t)length);
+    }
+}
+
 static void send_eeprom(void)
 {
     char response[192];
@@ -663,7 +685,7 @@ static void handle_command(watch_usb_command_t command)
     switch (command) {
     case WATCH_USB_COMMAND_HELP:
         send_text("commands: help ping info diag stats health sensor eeprom w25 ota ota-verify "
-                  "ota-stage ota-reset ota-download-usb ota-download-ble fs fs-test power ble "
+                  "ota-stage ota-reset ota-download-usb ota-download-ble fs fs-test input power ble "
                   "ble-probe display-off sleep shutdown\r\n");
         break;
     case WATCH_USB_COMMAND_PING:
@@ -680,6 +702,9 @@ static void handle_command(watch_usb_command_t command)
         break;
     case WATCH_USB_COMMAND_HEALTH:
         send_health();
+        break;
+    case WATCH_USB_COMMAND_INPUT:
+        send_input();
         break;
     case WATCH_USB_COMMAND_SENSOR:
         send_sensor();
@@ -768,6 +793,8 @@ static watch_usb_command_t parse_command(void)
         return WATCH_USB_COMMAND_STATS;
     } else if (strcmp(s_command, "health") == 0) {
         return WATCH_USB_COMMAND_HEALTH;
+    } else if (strcmp(s_command, "input") == 0) {
+        return WATCH_USB_COMMAND_INPUT;
     } else if (strcmp(s_command, "sensor") == 0) {
         return WATCH_USB_COMMAND_SENSOR;
     } else if (strcmp(s_command, "eeprom") == 0) {

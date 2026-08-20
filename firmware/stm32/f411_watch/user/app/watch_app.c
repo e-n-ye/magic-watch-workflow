@@ -5,6 +5,7 @@
 #include "board/display/watch_lcd.h"
 #include "board/input/watch_input_hw.h"
 #include "board/power/watch_power.h"
+#include "board/storage/watch_ota_board.h"
 #include "board/time/watch_rtc_board.h"
 #include "board/usb/watch_usb_cdc.h"
 #include "config/user_config.h"
@@ -17,6 +18,9 @@ static watch_core_t s_core;
 static bool s_app_ready;
 static bool s_status_reported;
 static uint32_t s_touch_reported_sequence;
+static bool s_trial_active;
+static uint32_t s_trial_started_ms;
+static uint32_t s_trial_last_check_ms;
 
 static const char *watch_app_event_name(watch_event_type_t type)
 {
@@ -145,6 +149,50 @@ static void watch_app_process_time(uint32_t now_ms)
     (void)watch_app_dispatch_event(&event, false);
 }
 
+static bool watch_app_service_healthy(watch_runtime_service_t service, uint32_t now_ms)
+{
+    watch_runtime_health_t health;
+
+    return watch_runtime_read_health(service, now_ms, &health)
+        && health.state == WATCH_RUNTIME_HEALTH_HEALTHY;
+}
+
+static void watch_app_process_trial(uint32_t now_ms)
+{
+    watch_input_hw_status_t input_status;
+    watch_power_board_status_t power_status;
+    watch_ota_board_status_t ota_status;
+    watch_ota_trial_health_t health;
+
+    if (!s_trial_active
+        || watch_runtime_elapsed_ms(now_ms, s_trial_started_ms) < WATCH_OTA_TRIAL_CONFIRMATION_MS
+        || watch_runtime_elapsed_ms(now_ms, s_trial_last_check_ms) < 500U
+        || !watch_ota_board_read_status(&ota_status)) {
+        return;
+    }
+    s_trial_last_check_ms = now_ms;
+    if (!ota_status.record_valid || ota_status.record.state != WATCH_OTA_METADATA_TRIAL) {
+        s_trial_active = false;
+        return;
+    }
+
+    watch_input_hw_read_status(&input_status);
+    health.input_healthy = input_status.encoder_ready && input_status.touch_ready;
+    health.ui_healthy = watch_app_service_healthy(WATCH_RUNTIME_SERVICE_UI, now_ms);
+    health.supervisor_healthy = watch_app_service_healthy(WATCH_RUNTIME_SERVICE_APP, now_ms)
+        && watch_app_service_healthy(WATCH_RUNTIME_SERVICE_USB, now_ms);
+    health.metadata_healthy = ota_status.flash_result == WATCH_W25Q128_RESULT_OK
+        && ota_status.metadata_result == WATCH_OTA_METADATA_RESULT_OK;
+    health.watchdog_healthy = watch_power_board_read_status(&power_status)
+        && power_status.watchdog_enabled && power_status.watchdog_refresh_count > 0U
+        && power_status.watchdog_refresh_failure_count == 0U;
+    if (watch_ota_trial_health_ready(&health, watch_runtime_elapsed_ms(now_ms, s_trial_started_ms))
+            == WATCH_OTA_TRIAL_RESULT_OK
+        && watch_ota_board_confirm_trial() == WATCH_OTA_METADATA_RESULT_OK) {
+        s_trial_active = false;
+    }
+}
+
 void watch_app_init(void)
 {
     watch_diagnostic_capsule_t capsule;
@@ -152,12 +200,16 @@ void watch_app_init(void)
     uint32_t now_ms = HAL_GetTick();
 
     s_app_ready = false;
+    s_trial_active = false;
+    s_trial_started_ms = now_ms;
+    s_trial_last_check_ms = now_ms;
     (void)watch_runtime_init(now_ms);
 
     watch_lcd_init();
     watch_lcd_backlight_on();
 
     if (watch_diagnostic_get(&capsule)) {
+        (void)watch_ota_board_mark_trial_fault(WATCH_OTA_TRIAL_ERROR_DIAGNOSTIC);
         watch_runtime_fail();
         watch_lcd_show_diagnostic_pattern(capsule.reason);
         watch_diagnostic_clear();
@@ -183,6 +235,16 @@ void watch_app_init(void)
 
     s_status_reported = false;
     s_touch_reported_sequence = 0U;
+    {
+        watch_ota_board_status_t ota_status;
+
+        if (watch_ota_board_read_status(&ota_status) && ota_status.record_valid
+            && ota_status.record.state == WATCH_OTA_METADATA_TRIAL) {
+            s_trial_active = true;
+            s_trial_started_ms = now_ms;
+            s_trial_last_check_ms = now_ms - 500U;
+        }
+    }
     s_app_ready = true;
     if (!watch_power_board_init(now_ms)) {
         s_app_ready = false;
@@ -208,6 +270,7 @@ void watch_app_process(void)
     (void)watch_runtime_heartbeat(WATCH_RUNTIME_SERVICE_APP, now_ms);
     watch_app_process_time(now_ms);
     watch_input_hw_process(now_ms);
+    watch_app_process_trial(now_ms);
     watch_app_report_touch_if_new();
     if (!s_status_reported) {
         watch_app_report_status();

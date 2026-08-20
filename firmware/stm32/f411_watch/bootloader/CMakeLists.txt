@@ -10,6 +10,7 @@ add_executable(${BOOTLOADER_TARGET}
     ${CMAKE_SOURCE_DIR}/../../../products/f411_watch/storage/watch_ota_install.c
     ${CMAKE_SOURCE_DIR}/../../../products/f411_watch/storage/watch_ota_metadata.c
     ${CMAKE_SOURCE_DIR}/../../../products/f411_watch/storage/watch_ota_package.c
+    ${CMAKE_SOURCE_DIR}/../../../products/f411_watch/storage/watch_ota_trial.c
     ${CMAKE_SOURCE_DIR}/../../../products/f411_watch/storage/watch_w25q128.c
 )
 
