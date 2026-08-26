@@ -27,15 +27,12 @@ UI/resources, power, then secure OTA. No empty placeholder modules are added.
 
 ## Baseline and completion
 
-- The current baseline is `origin/main=7fab1f5`, confirmed after the M19
-  trial/rollback PR was rebased and merged. The worktree keeps the pre-existing
-  local stash untouched.
-- Eighteen of 21 numbered milestones are fully closed: M0-M9, M11, M13-M17,
-  M19, and M20. M10, M12, and M18 remain partial. This is about 86% by strict
-  numbered scope. The artifact is a runnable and diagnosable reference
-  firmware with board-accepted signed install, trial confirmation, and
-  automatic-reset rollback flow; known hardware and power-loss limits remain
-  explicit below.
+- 本次审查的实现基线为 `origin/main=9bceb0e`，对应已合并的 M20 PR #58。
+  本文档自身未来的合并提交不作为新的实现基线。
+- Strict status is: M0-M9, M11, and M13-M17 are `完成`; M10 and M12 are
+  `按限制封板`; M18 and M19 are `待板测`; M20 is `条件通过`. The firmware is
+  runnable and diagnosable, but the final claim remains gated by the destructive
+  board evidence and the C2 final matrix.
 - Current hardware facts include STM32F411, 24 MHz HSE, ST-Link-compatible SWD,
   ST7789, CST816, W25Q128, KT6368, and the schematic EEPROM candidate
   `BL24C02F-RRRC`. The read-only probe saw responses at `0x50` and `0x57`; the
@@ -45,31 +42,32 @@ UI/resources, power, then secure OTA. No empty placeholder modules are added.
 
 | ID | Scope | Current status |
 | --- | --- | --- |
-| M0 | Rolling status page and baseline | Complete; this page is the current-state source and README links it. |
-| M1 | Bootloader, App relocation, VTOR, flash/debug flow | Complete. |
-| M2 | Manifest, trailer, host packaging, rejection paths | Complete for the signed factory-package contract and four board rejection paths. |
-| M3 | Budgets, assertions, reset capsule, CDC logs, Diagnostic | Complete. |
-| M4 | Pure-C core and host tests | Complete. |
-| M5 | CST816, encoder, button, normalized input | Complete. |
-| M6 | LVGL 9.5, DMA flush, UI task, 240x280 budget | Complete. |
-| M7 | Editor XML, generated C, PC simulator | Complete for the approved manual Editor export workflow. |
-| M8 | Six page categories, lifecycle, interaction, leak pressure | Complete; the core-driven Diagnostic popup and physical input path are accepted. |
-| M9 | RTC/time service, queues, heartbeats, init policy | Complete. |
-| M10 | Five sensor drivers and aggregation | Partial; LSM6DS3, AHT20-compatible, and MAX30102 are available on the board. LIS2MDL and CW2015 remain explicitly degraded; the LIS2MDL auxiliary-I2C instability is a known hardware limitation. |
-| M11 | EEPROM part/address facts | Complete as a read-only fact probe; the exact part and strap remain a documented risk. |
-| M12 | Power and watchdog | Partial; software Stop/wake, display-off, software-off, and IWDG paths have board evidence. KEY_WAKE, physical cutoff, watchdog wiring, and current remain unverified on the no-battery board. |
-| M13 | W25Q128 raw driver | Complete; JEDEC ID, page program, sector erase, timeout, and recovery paths are accepted. |
-| M14 | littlefs and resource streaming | Complete; fixed partitions and chunked image/font/text reads are accepted. |
-| M15 | USB diagnostic/log/resource protocol | Complete; MWRP framing, integrity checks, bounded paths, atomic rename, and board acceptance are closed. |
-| M16 | KT6368 SPP transport | Complete for the USART1 DMA+IDLE bridge and recovery paths; an independent long-run Bluetooth transfer remains limited evidence. |
-| M17 | YModem candidate download and package verification | Complete for USB CDC; the board accepted a full signed package and persisted `candidate-ready`. |
-| M18 | Backup, install, and power-loss recovery | Partial; M18a host/fault model and M18b board backup/install are accepted. Deliberate interruption at erase/write boundaries and resume-after-power-loss remain open. |
-| M19 | Trial confirmation and rollback | Complete for the pure-C transition model and connected-board healthy confirmation/automatic-reset sequence. HardFault capsule-to-pending-rollback is covered by code and host tests; deliberate HardFault injection is not claimed. |
-| M20 | Final configurations, simulator, fault injection, budgets, regression report | Complete as the final reference-firmware regression report. Debug/Diagnostic/Release, host tests, simulator, manifest, map/size budgets, host fault models, and connected-board CDC regression passed; deliberate M18 power-loss injection remains a documented limitation. |
+| M0 | Rolling status page and baseline | 完成：本页是当前状态来源，README 已链接。 |
+| M1 | Bootloader, App relocation, VTOR, flash/debug flow | 完成。 |
+| M2 | Manifest, trailer, host packaging, rejection paths | 完成：签名工厂包契约和四类板端拒绝路径已验证。 |
+| M3 | Budgets, assertions, reset capsule, CDC logs, Diagnostic | 完成。 |
+| M4 | Pure-C core and host tests | 完成。 |
+| M5 | CST816, encoder, button, normalized input | 完成。 |
+| M6 | LVGL 9.5, DMA flush, UI task, 240x280 budget | 完成。 |
+| M7 | Editor XML, generated C, PC simulator | 完成：采用已批准的手动 Editor 导出流程。 |
+| M8 | Six page categories, lifecycle, interaction, leak pressure | 完成：core 驱动的 Diagnostic 弹窗和物理输入路径已验收。 |
+| M9 | RTC/time service, queues, heartbeats, init policy | 完成。 |
+| M10 | Five sensor drivers and aggregation | 按限制封板：LSM6DS3、AHT20-compatible 和 MAX30102 可用；LIS2MDL、CW2015 保持明确降级。不新增改板、电池、电流指标或器件返修范围。 |
+| M11 | EEPROM part/address facts | 完成：只读事实探针已完成，具体型号和地址 strap 仍作为风险记录。 |
+| M12 | Power and watchdog | 按限制封板：软件 Stop/wake、息屏、软件关机和 IWDG 路径已有证据；不新增改板、电池、电流指标或器件返修范围。 |
+| M13 | W25Q128 raw driver | 完成：JEDEC ID、分页写、扇区擦除、超时和恢复路径已验收。 |
+| M14 | littlefs and resource streaming | 完成：固定分区和图片/字体/文本分块读取已验收。 |
+| M15 | USB diagnostic/log/resource protocol | 完成：MWRP 帧、完整性检查、有界路径、原子重命名和板端协议已闭合。 |
+| M16 | KT6368 SPP transport | 完成：USART1 DMA+IDLE 桥接及故障恢复路径已验收。 |
+| M17 | YModem candidate download and package verification | 完成：USB CDC 下载、包校验和 candidate-ready 持久化已验收。 |
+| M18 | Backup, install, and power-loss recovery | 待板测：主机故障模型和非破坏性板端路径已验收；真实擦写边界断电恢复待 C1。 |
+| M19 | Trial confirmation and rollback | 待板测：纯 C 状态模型和非破坏性板端健康确认路径已验收；主动 HardFault 板测待 C1。 |
+| M20 | Final configurations, simulator, fault injection, budgets, regression report | 条件通过：本地矩阵已通过；最终状态等待 C1 的 M18/M19 板测和 C2 再验收。 |
 
-## Current round: M20 final regression and reference report
+## Current round: C0 documentation realignment
 
-M20 is accepted for the current reference baseline. The final matrix passed:
+C0 aligns this page, the development plan, and README with implementation
+baseline `origin/main=9bceb0e`. The following local revalidation passed:
 
 ```text
 Debug/Diagnostic/Release build       pass
@@ -80,59 +78,48 @@ Signed manifest host tests           8/8
 ELF/map origin and budget checks     pass
 ```
 
-The connected board was checked through dynamically discovered USB CDC without
-writing a new image. It reported the frozen 240x280 profile, runtime health
-stage 3, `encoder=1`, `touch=1`, CST816 `0xb5`, W25Q128 `0xef4018`, mounted
-littlefs, and zero CDC RX/TX drops. The resource test completed with image/font
-and long-text chunk counts `3/3/8`; LSM6DS3, AHT20, and MAX30102 produced valid
-samples, while LIS2MDL and CW2015 remained the documented degraded devices.
-Health stayed at stage 3 for 30 seconds with increasing service heartbeats.
+The host and configuration evidence above is the C0 record. This round does not
+claim the unperformed destructive power-loss or active HardFault board tests.
 
-The accepted M19 candidate remains confirmed at security counter `26`:
+## Next round: C1 M18c/M19b destructive board acceptance
 
-```text
-state=confirmed confirmed=26 candidate=26 version=26 image=360084 trial=0 error=0
-```
+C1 is pending the hardware gate: target VDD must be physically cut, USB VBUS
+and ST-Link must not backfeed it, and both CDC and SWD must disappear during
+the cut and reconnect after recovery. The test must use the existing Debug
+symbols and state machine, with no permanent firmware test command or backdoor.
 
-The M19 automatic-reset rollback sequence, pure-C trial/fault model, and
-metadata/install failure-injection tests remain part of the accepted evidence.
-No forced HardFault or deliberate erase/write power-loss was claimed in the
-M20 board run.
-
-## Next round: maintenance only
-
-No numbered implementation round remains. Any future change must start from
-the latest `origin/main`, use a focused branch/PR, and rerun this final matrix.
+After C1 succeeds and merges, C2 M20b repeats the final matrix from the latest
+`origin/main`, adds a higher-counter no-fault OTA and the required SPP soak,
+and may close M20 only if every critical item passes.
 
 ## Risks and blockers
 
 - The signed `security_counter` policy is persisted and compared; replay and
-  rollback are now covered by the M19 transition model and board run.
-- The no-battery board cannot establish KEY_WAKE, physical cutoff, external
-  watchdog wiring, or a measured current target.
-- LIS2MDL is routed through the LSM6DS3 auxiliary Sensor Hub and currently
-  returns no valid identity/sample. It remains a degraded hardware fact, not a
-  software acceptance failure.
+  rollback are covered by the M19 transition model and existing non-destructive
+  evidence.
+- M10 and M12 are intentionally closed as hardware-limited scope. The available
+  board does not justify adding a board respin, battery, current target, or
+  component-repair task.
+- LIS2MDL is routed through the LSM6DS3 auxiliary Sensor Hub and remains a
+  documented degraded hardware fact, not a software acceptance failure.
 - The exact AHT20/AHT21 package marking, CW2015 population/routing, and EEPROM
-  part/strap are not proven by the available hardware evidence.
+  part/strap remain documented hardware risks.
 - Editor regeneration remains a manual LVGL Pro Editor operation. CI builds
   committed generated C and does not replace the generator.
-- CDC diagnostic output can drop when no host reader is attached; the accepted
-  board checks used an active reader and observed zero drops.
-- Deliberate M18 erase/write power-loss injection was not performed because the
-  connected workstation had no available ST-Link/OpenOCD/STM32 programmer CLI;
-  the host fault model and all non-power-loss board paths remain accepted.
+- CDC diagnostic output requires an active reader during acceptance; the C0
+  host and configuration results do not replace the C1 board gate.
+- Deliberate M18 erase/write power-loss and active M19 HardFault board tests are
+  pending; they must be run only after the stated power-isolation gate is met.
 - This remains a reference firmware, not a production secure-OTA product.
 
 ## Latest verification
 
-- Debug App: `360044 B` flash / `96308 B` RAM; Diagnostic App: `369584 B` /
-  `96308 B`; Release App: `195440 B` / `96296 B`.
-- Debug/Diagnostic Bootloader: `18664 B` flash / `1208 B` RAM; Release
-  Bootloader: `11740 B` flash / `1208 B` RAM. All are within the configured
-  400 KiB App and 64 KiB Bootloader flash budgets and 128 KiB RAM budget.
+- Debug App: `360,044 B` flash / `96,308 B` RAM; Diagnostic App: `369,584 B` /
+  `96,308 B`; Release App: `195,440 B` / `96,296 B`.
+- Debug/Diagnostic Bootloader: `18,664 B` flash / `1,208 B` RAM; Release
+  Bootloader: `11,740 B` / `1,208 B` RAM. All are within the configured
+  400 KiB App, 64 KiB Bootloader flash, and 128 KiB RAM budgets.
 - Host CTest passed `21/21`, the 240x280 simulator passed `1/1`, and signed
   manifest tests passed `8/8`.
-- M20 board checks used dynamic USB CDC and recorded only summarized facts; no
-  private key, device path, temporary image, dump, or complete serial log is in
-  the repository.
+- No private key, device path, temporary image, dump, or complete serial log is
+  part of this repository.

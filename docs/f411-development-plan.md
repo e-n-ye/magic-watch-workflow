@@ -27,6 +27,59 @@ Each numbered round is one focused branch, one themed commit, and one pull
 request. After merge, the next round starts from the latest `origin/main`. Every
 feature pull request updates the rolling status page.
 
+## Closure sequence
+
+The numbered history remains M0-M20. The remaining work is tracked in three
+closure rounds:
+
+| Round | Scope and gate |
+| --- | --- |
+| C0 | Calibrate the plan, status page, and README against implementation baseline `origin/main=9bceb0e`. This is documentation-only and may use documentation validation only. |
+| C1 | M18c/M19b destructive board acceptance. Start only after the target VDD can be physically cut without USB VBUS or ST-Link backfeed, and both CDC and SWD disappear during power loss. The current condition does not satisfy this gate, so C1 is pending. |
+| C2 | M20b final acceptance after C1 merges: repeat the final build, host, simulator, manifest, budget, and board matrix, including a higher-counter no-fault OTA and the SPP soak. |
+
+M10 and M12 are closed as hardware-limited scope by decision. No board respin,
+battery, current target, or component-repair work is added to this plan.
+
+### C1 acceptance protocol
+
+Before M18c/M19b, save a known-good signed App, Bootloader/App hashes, and the
+current metadata outside the repository. Prove that the App can be reflashed
+and that a debugger can start the App directly for `ota-reset` recovery when
+needed. Read the current confirmed counter `N` dynamically and create `N+1`
+and `N+2` packages with the external signing key; temporary images, dumps,
+logs, and key paths stay outside Git.
+
+Use the existing Debug Bootloader symbols `f411_bootloader_storage_write` and
+`persist_install_record`, together with the existing state machine, for three
+controlled cuts: after the rollback first sector is erased but before its first
+write, after the first App block is written and verified but before metadata
+commit, and after the first rolling-back block is written but before metadata
+commit. Resume each case from the last valid metadata boundary. Install `N+2`,
+trigger the existing HardFault path before confirmation, and verify that the
+reset capsule enters pending rollback. Do not add a permanent firmware fault
+command or test backdoor.
+
+The final C1 result must restore the `N+1` App hash and active digest with
+metadata `confirmed`, `trial=0`, and `error=0`; the Bootloader hash must be
+unchanged and the CDC health stage must be 3. Any defect requires restoring the
+known-good firmware and opening a separate single-defect fix before repeating
+all power-loss cases. After all C1 cases pass, create
+`codex/f411-m18c-power-loss-acceptance` only to record the evidence and follow
+the normal pull-request flow.
+
+### C2 acceptance protocol
+
+After C1 merges, create `codex/f411-m20b-final-acceptance` from the latest
+`origin/main`. Complete one higher-counter no-fault OTA, confirm after 30
+seconds, reboot normally, and prove that another upgrade remains possible.
+Repeat all three configurations, format and Cppcheck, host `ctest`, the 240x280
+simulator, manifest, ELF/map, and resource-budget checks. Board acceptance also
+covers UI/input, resource chunking, W25/littlefs, health heartbeats, IWDG, CDC
+zero-drop operation, and KT6368 recovery, plus at least 10 minutes and 1 MiB of
+deterministic SPP data. M10/M12 hardware limits remain non-failing; any failure
+of M18, M19, or a C2 critical item prevents restoring final completion.
+
 ## Frozen architecture
 
 - `watch_core` is a pure-C state machine with no HAL, FreeRTOS, or LVGL. Its
@@ -108,17 +161,17 @@ command is part of this plan.
 | M7 | Integrate LVGL Pro Editor XML and the PC simulator. XML is the formal source and generated C is committed. F411 keeps `LV_USE_XML=0`. The approved workflow is manual Editor Code/export; no Pro CLI, token, or local absolute path is required. |
 | M8 | Implement page lifetime, all six page categories, normalized-input-to-core-to-UI interaction, and repeated enter/leave leak tests. |
 | M9 | Implement RTC/time service, bounded event queues, task heartbeats, and centralized initialization order. |
-| M10 | Deliver one focused PR per LSM6DS3, LIS2MDL, AHT20, MAX30102, and CW2015, then add the sensor aggregation service. |
+| M10 | Deliver one focused PR per LSM6DS3, LIS2MDL, AHT20, MAX30102, and CW2015, then add the sensor aggregation service. Status: 按限制封板; degraded devices remain documented, with no added board respin, battery, current target, or component repair. |
 | M11 | Verify the EEPROM part number and address. If facts remain unclear, record the risk only; do not migrate the legacy 24LC32 driver. |
-| M12 | Implement display-off, WAKE/RTC wake, Stop recovery, software shutdown, and independent watchdog. There is no battery, so do not publish a fabricated current target. |
+| M12 | Implement display-off, WAKE/RTC wake, Stop recovery, software shutdown, and independent watchdog. Status: 按限制封板; no added board respin, battery, current target, or component repair. |
 | M13 | Implement a reusable W25Q128 protocol driver and verify JEDEC ID, page writes, 4 KiB erase, timeouts, and error recovery. |
 | M14 | Freeze partitions, mount littlefs, and prove chunked reads for images, fonts, and long text while keeping OTA partitions outside the filesystem. |
 | M15 | Extend USB CDC with diagnostics, logs, and atomic resource transfer. Do not implement online MSC. |
 | M16 | Verify KT6368 enable polarity, SPP pairing, sustained DMA+IDLE transfer, and recovery from link faults without assuming undocumented commands. |
 | M17 | Download by YModem into candidate with per-packet CRC16, then verify manifest, SHA-256, signature, and security counter; failures must not touch the internal App. |
-| M18 | Implement backup, installation, and power-loss recovery; inject faults at selected erase/write boundaries in the host model and on hardware. |
-| M19 | Implement trial confirmation, three-failure rollback, watchdog/HardFault rollback, and diagnostic error states. |
-| M20 | Complete Debug/Release/Diagnostic, host tests, simulator, resource budgets, and full-device regression, then publish the final reference-firmware acceptance report. |
+| M18 | Implement backup, installation, and power-loss recovery; inject faults at selected erase/write boundaries in the host model and on hardware. Status: 待板测; host model and non-destructive board paths are accepted, while destructive board testing is pending in C1. |
+| M19 | Implement trial confirmation, three-failure rollback, watchdog/HardFault rollback, and diagnostic error states. Status: 待板测; pure-C and non-destructive board evidence is accepted, while active HardFault board testing is pending in C1. |
+| M20 | Complete Debug/Release/Diagnostic, host tests, simulator, resource budgets, and full-device regression, then publish the final reference-firmware acceptance report. Status: 条件通过; final closure waits for C1 and C2. |
 
 ## Per-round validation
 
@@ -134,9 +187,10 @@ cmake --build --preset Debug --target cppcheck
 
 The relevant round additionally runs host `ctest`, simulator tests, ELF/map
 checks, and the stated cold-start, power-loss, or board acceptance. Results are
-written to the rolling status page. The documentation-only M0 correction may
-skip the F411 build, but its pull request must still finish with a successful
-`CI / CI Gate` and use Rebase and merge.
+written to the rolling status page. C0 is documentation-only and runs only
+`git diff --check`, a targeted suspicious-encoding scan, and a documentation
+diff review. Its pull request must still finish with a successful `CI / CI Gate`
+and use Rebase and merge.
 
 ## XML and simulator rules
 
