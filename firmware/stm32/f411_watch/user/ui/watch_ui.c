@@ -8,6 +8,7 @@
 #include "main.h"
 #include "app/watch_app.h"
 #include "board/display/watch_lcd.h"
+#include "board/input/watch_input_hw.h"
 #include "board/sensors/watch_lis2mdl_board.h"
 #include "board/sensors/watch_aht20_board.h"
 #include "board/sensors/watch_cw2015_board.h"
@@ -30,6 +31,26 @@ static watch_page_lifecycle_t s_page_lifecycle;
 static volatile uint8_t s_dma_callback_seen;
 static bool s_flush_pending;
 static uint32_t s_last_tick;
+
+static void watch_ui_touch_read(lv_indev_t *indev, lv_indev_data_t *data)
+{
+    uint16_t x = 0U;
+    uint16_t y = 0U;
+    bool pressed = false;
+
+    (void)indev;
+    if (data == NULL) {
+        return;
+    }
+    data->state = LV_INDEV_STATE_RELEASED;
+    if (!watch_input_hw_read_touch(&x, &y, &pressed)) {
+        return;
+    }
+
+    data->point.x = (lv_coord_t)x;
+    data->point.y = (lv_coord_t)y;
+    data->state = pressed ? LV_INDEV_STATE_PRESSED : LV_INDEV_STATE_RELEASED;
+}
 
 static void watch_ui_dma_done(void *context)
 {
@@ -73,8 +94,8 @@ static void watch_ui_flush(lv_display_t *display, const lv_area_t *area, uint8_t
     watch_lcd_transfer_result_t result;
 
     if ((area == NULL) || (px_map == NULL) || (area->x1 < 0) || (area->y1 < 0)
-        || (area->x2 < area->x1) || (area->y2 < area->y1)
-        || (area->x2 >= (int32_t)WATCH_LCD_WIDTH) || (area->y2 >= (int32_t)WATCH_LCD_HEIGHT)) {
+        || (area->x2 < area->x1) || (area->y2 < area->y1) || (area->x2 >= (int32_t)WATCH_LCD_WIDTH)
+        || (area->y2 >= (int32_t)WATCH_LCD_HEIGHT)) {
         lv_display_flush_ready(display);
         return;
     }
@@ -95,10 +116,9 @@ static void watch_ui_flush(lv_display_t *display, const lv_area_t *area, uint8_t
 
     s_dma_callback_seen = 0U;
     s_flush_pending = true;
-    result = watch_lcd_draw_rgb565_bytes((uint16_t)area->x1, (uint16_t)area->y1,
-                                         (uint16_t)width, (uint16_t)height, s_dma_buffer,
-                                         (uint16_t)(pixel_count * 2U), watch_ui_dma_done,
-                                         display);
+    result = watch_lcd_draw_rgb565_bytes((uint16_t)area->x1, (uint16_t)area->y1, (uint16_t)width,
+                                         (uint16_t)height, s_dma_buffer,
+                                         (uint16_t)(pixel_count * 2U), watch_ui_dma_done, display);
     if (result != WATCH_LCD_TRANSFER_DMA_STARTED) {
         s_flush_pending = false;
         s_dma_callback_seen = 0U;
@@ -120,10 +140,10 @@ static void watch_ui_process_events(void)
         if (event.type == WATCH_SENSOR_AGGREGATE_SERVICE_EVENT_STATUS) {
             (void)watch_app_dispatch_sensor_snapshot(&event.sensor_snapshot);
         } else if (event.type == WATCH_LSM6DS3_SERVICE_EVENT_SAMPLE
-            || event.type == WATCH_LIS2MDL_SERVICE_EVENT_SAMPLE
-            || event.type == WATCH_AHT20_SERVICE_EVENT_SAMPLE
-            || event.type == WATCH_CW2015_SERVICE_EVENT_SAMPLE
-            || event.type == WATCH_MAX30102_SERVICE_EVENT_SAMPLE) {
+                   || event.type == WATCH_LIS2MDL_SERVICE_EVENT_SAMPLE
+                   || event.type == WATCH_AHT20_SERVICE_EVENT_SAMPLE
+                   || event.type == WATCH_CW2015_SERVICE_EVENT_SAMPLE
+                   || event.type == WATCH_MAX30102_SERVICE_EVENT_SAMPLE) {
             /* The board service owns the latest sample; this is its UI notification. */
         }
     }
@@ -159,6 +179,14 @@ static void watch_ui_task(void *argument)
                            LV_DISPLAY_RENDER_MODE_PARTIAL);
     lv_display_set_flush_cb(s_display, watch_ui_flush);
     lv_display_set_flush_wait_cb(s_display, watch_ui_flush_wait);
+    {
+        lv_indev_t *touch_indev = lv_indev_create();
+        if (touch_indev != NULL) {
+            lv_indev_set_type(touch_indev, LV_INDEV_TYPE_POINTER);
+            lv_indev_set_read_cb(touch_indev, watch_ui_touch_read);
+            lv_indev_set_display(touch_indev, s_display);
+        }
+    }
     if (!watch_page_lifecycle_init(&s_page_lifecycle, s_display)) {
         for (;;) {
             osDelay(1000U);
@@ -192,10 +220,11 @@ bool watch_ui_start(void)
         return true;
     }
 
-    s_task_handle = osThreadNew(watch_ui_task, NULL, &(const osThreadAttr_t) {
-        .name = "watchUi",
-        .stack_size = WATCH_UI_TASK_STACK_SIZE,
-        .priority = (osPriority_t)osPriorityNormal,
-    });
+    s_task_handle = osThreadNew(watch_ui_task, NULL,
+                                &(const osThreadAttr_t) {
+                                    .name = "watchUi",
+                                    .stack_size = WATCH_UI_TASK_STACK_SIZE,
+                                    .priority = (osPriority_t)osPriorityNormal,
+                                });
     return s_task_handle != NULL;
 }

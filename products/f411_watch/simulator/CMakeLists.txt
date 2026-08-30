@@ -12,6 +12,7 @@ include(CTest)
 set(WATCH_LVGL_SOURCE_DIR "${CMAKE_CURRENT_LIST_DIR}/../../../firmware/stm32/f411_watch/third_party/lvgl")
 set(WATCH_UI_SOURCE_DIR "${CMAKE_CURRENT_LIST_DIR}/../ui")
 set(WATCH_CORE_SOURCE_DIR "${CMAKE_CURRENT_LIST_DIR}/../core")
+set(WATCH_INPUT_SOURCE_DIR "${CMAKE_CURRENT_LIST_DIR}/../input")
 set(WATCH_SENSOR_SOURCE_DIR "${CMAKE_CURRENT_LIST_DIR}/../sensors")
 set(WATCH_TIME_SOURCE_DIR "${CMAKE_CURRENT_LIST_DIR}/../time")
 
@@ -58,12 +59,14 @@ endif()
 add_executable(watch_ui_simulator
     main.c
     ${WATCH_CORE_SOURCE_DIR}/watch_core.c
+    ${WATCH_INPUT_SOURCE_DIR}/watch_input.c
     ${WATCH_SENSOR_SOURCE_DIR}/watch_sensor_aggregate.c
     ${WATCH_TIME_SOURCE_DIR}/watch_time.c
 )
 target_include_directories(watch_ui_simulator
     PRIVATE
         ${WATCH_CORE_SOURCE_DIR}
+        ${WATCH_INPUT_SOURCE_DIR}
         ${WATCH_SENSOR_SOURCE_DIR}
         ${WATCH_TIME_SOURCE_DIR}
         ${WATCH_UI_SOURCE_DIR}

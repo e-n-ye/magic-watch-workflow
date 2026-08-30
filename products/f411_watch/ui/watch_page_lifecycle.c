@@ -6,6 +6,7 @@
 #include "watch_page_lifecycle.h"
 
 #include <stddef.h>
+#include <string.h>
 
 #include "screens/launcher/screen_launcher_gen.h"
 #include "screens/diagnostics/screen_diagnostics_gen.h"
@@ -16,6 +17,8 @@
 
 static lv_obj_t *watch_page_create(watch_page_t page)
 {
+    lv_obj_t *screen;
+
     switch (page) {
     case WATCH_PAGE_WATCHFACE:
         return screen_watchface_create();
@@ -23,6 +26,42 @@ static lv_obj_t *watch_page_create(watch_page_t page)
         return screen_launcher_create();
     case WATCH_PAGE_STATUS:
         return screen_status_create();
+    case WATCH_PAGE_TIMER:
+    case WATCH_PAGE_CALENDAR:
+        /* P1 keeps navigation testable before the P2/P4 XML pages are exported. */
+        screen = lv_obj_create(NULL);
+        if (screen == NULL) {
+            return NULL;
+        }
+        lv_obj_set_name_static(screen,
+                               page == WATCH_PAGE_TIMER ? "screen_timer_#" : "screen_calendar_#");
+        lv_obj_set_style_bg_opa(screen, LV_OPA_COVER, LV_PART_MAIN);
+        lv_obj_set_style_bg_color(screen, lv_color_hex(0x101820), LV_PART_MAIN);
+        {
+            lv_obj_t *brand = lv_label_create(screen);
+            lv_obj_t *title = lv_label_create(screen);
+            lv_obj_t *hint = lv_label_create(screen);
+            if (brand == NULL || title == NULL || hint == NULL) {
+                lv_obj_del(screen);
+                return NULL;
+            }
+            lv_obj_set_name_static(brand, "page_brand");
+            lv_obj_set_name_static(title, "page_title");
+            lv_obj_set_name_static(hint, "page_hint");
+            lv_label_set_text(brand, "MAGIC WATCH");
+            lv_label_set_text(title, page == WATCH_PAGE_TIMER ? "TIMER" : "CALENDAR");
+            lv_label_set_text(hint, "BACK: RETURN");
+            lv_obj_set_align(brand, LV_ALIGN_TOP_MID);
+            lv_obj_set_y(brand, 22);
+            lv_obj_set_align(title, LV_ALIGN_CENTER);
+            lv_obj_set_y(title, -8);
+            lv_obj_set_align(hint, LV_ALIGN_BOTTOM_MID);
+            lv_obj_set_y(hint, -22);
+            lv_obj_set_style_text_color(brand, lv_color_hex(0xF4F7FA), LV_PART_MAIN);
+            lv_obj_set_style_text_color(title, lv_color_hex(0x64D2FF), LV_PART_MAIN);
+            lv_obj_set_style_text_color(hint, lv_color_hex(0xB8C7D9), LV_PART_MAIN);
+        }
+        return screen;
     case WATCH_PAGE_SETTINGS:
         return screen_settings_create();
     case WATCH_PAGE_RESOURCES:
@@ -39,12 +78,8 @@ static lv_obj_t *watch_page_create(watch_page_t page)
 static const char *watch_page_name(watch_page_t page)
 {
     static const char *const names[WATCH_PAGE_COUNT] = {
-        "WATCHFACE",
-        "LAUNCHER",
-        "STATUS",
-        "SETTINGS",
-        "RESOURCES",
-        "DIAGNOSTICS",
+        "WATCHFACE", "LAUNCHER", "STATUS",    "TIMER",
+        "CALENDAR",  "SETTINGS", "RESOURCES", "DIAGNOSTICS",
     };
 
     if (page >= WATCH_PAGE_COUNT) {
@@ -57,25 +92,52 @@ static const char *watch_page_name(watch_page_t page)
 static const char *watch_page_hint(const watch_snapshot_t *snapshot)
 {
     if (snapshot->page == WATCH_PAGE_WATCHFACE) {
-        return "SELECT: LAUNCHER";
+        return "ENCODER: LAUNCHER";
     }
 
     if (snapshot->page == WATCH_PAGE_LAUNCHER) {
-        if (snapshot->launcher_index == 0U) {
-            return "SELECT: STATUS";
+        const watch_app_entry_t *app = watch_core_get_launcher_app(snapshot->launcher_index);
+        if (app != NULL) {
+            static const char *const hints[WATCH_APP_COUNT] = {
+                "SELECT: STATUS",   "SELECT: TIMER",     "SELECT: CALENDAR",
+                "SELECT: SETTINGS", "SELECT: RESOURCES", "SELECT: DIAGNOSTICS",
+            };
+            return app->id < WATCH_APP_COUNT ? hints[app->id] : "SELECT: APP";
         }
-        if (snapshot->launcher_index == 1U) {
-            return "SELECT: SETTINGS";
-        }
-        return "SELECT: RESOURCES";
+        return "SELECT: APP";
     }
 
     return "BACK: RETURN";
 }
 
-static bool watch_page_set_label(lv_obj_t *screen, int32_t index, const char *text)
+static void watch_page_bind_labels(lv_obj_t *screen)
 {
-    lv_obj_t *label = lv_obj_get_child(screen, index);
+    uint32_t count = lv_obj_get_child_count(screen);
+    uint32_t index;
+
+    for (index = 0U; index < count; ++index) {
+        lv_obj_t *label = lv_obj_get_child(screen, (int32_t)index);
+        const char *text;
+
+        if (label == NULL || !lv_obj_check_type(label, &lv_label_class)
+            || lv_obj_get_name(label) != NULL) {
+            continue;
+        }
+
+        text = lv_label_get_text(label);
+        if (strcmp(text, "MAGIC WATCH") == 0) {
+            lv_obj_set_name_static(label, "page_brand");
+        } else if (strcmp(text, "BACK: RETURN") == 0 || strncmp(text, "SELECT:", 7U) == 0) {
+            lv_obj_set_name_static(label, "page_hint");
+        } else {
+            lv_obj_set_name_static(label, "page_title");
+        }
+    }
+}
+
+static bool watch_page_set_label(lv_obj_t *screen, const char *name, const char *text)
+{
+    lv_obj_t *label = lv_obj_find_by_name(screen, name);
 
     if (label == NULL || !lv_obj_check_type(label, &lv_label_class)) {
         return false;
@@ -98,9 +160,9 @@ static bool watch_page_render(lv_obj_t *screen, const watch_snapshot_t *snapshot
         }
     }
 
-    return watch_page_set_label(screen, 0, "MAGIC WATCH")
-        && watch_page_set_label(screen, 1, title)
-        && watch_page_set_label(screen, 2, watch_page_hint(snapshot));
+    return watch_page_set_label(screen, "page_brand", "MAGIC WATCH")
+        && watch_page_set_label(screen, "page_title", title)
+        && watch_page_set_label(screen, "page_hint", watch_page_hint(snapshot));
 }
 
 static bool watch_page_time_changed(const watch_page_lifecycle_t *lifecycle,
@@ -172,6 +234,9 @@ bool watch_page_lifecycle_show_popup(watch_page_lifecycle_t *lifecycle, const ch
 
     lv_obj_set_width(title_label, 184);
     lv_obj_set_width(message_label, 184);
+    lv_obj_set_name_static(popup, "page_popup");
+    lv_obj_set_name_static(title_label, "popup_title");
+    lv_obj_set_name_static(message_label, "popup_message");
     lv_label_set_text(title_label, title);
     lv_label_set_text(message_label, message);
     lv_obj_set_align(title_label, LV_ALIGN_TOP_MID);
@@ -208,7 +273,8 @@ bool watch_page_lifecycle_apply(watch_page_lifecycle_t *lifecycle, const watch_s
 
     if (lifecycle->active && lifecycle->active_page == snapshot->page
         && lifecycle->launcher_index == snapshot->launcher_index) {
-        if (snapshot->page == WATCH_PAGE_WATCHFACE && watch_page_time_changed(lifecycle, snapshot)) {
+        if (snapshot->page == WATCH_PAGE_WATCHFACE
+            && watch_page_time_changed(lifecycle, snapshot)) {
             lifecycle->time_valid = snapshot->time_valid;
             lifecycle->time = snapshot->time;
             return watch_page_render(lifecycle->active_screen, snapshot)
@@ -229,6 +295,9 @@ bool watch_page_lifecycle_apply(watch_page_lifecycle_t *lifecycle, const watch_s
     }
 
     next_screen = watch_page_create(snapshot->page);
+    if (next_screen != NULL) {
+        watch_page_bind_labels(next_screen);
+    }
     if (next_screen == NULL || !watch_page_render(next_screen, snapshot)) {
         if (next_screen != NULL) {
             lv_obj_del(next_screen);

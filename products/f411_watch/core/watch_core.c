@@ -2,11 +2,56 @@
 
 #include <stddef.h>
 
-static const watch_page_t s_launcher_pages[WATCH_CORE_LAUNCHER_ITEM_COUNT] = {
-    WATCH_PAGE_STATUS,
-    WATCH_PAGE_SETTINGS,
-    WATCH_PAGE_RESOURCES,
+static const watch_app_entry_t s_apps[WATCH_APP_COUNT] = {
+    { WATCH_APP_STATUS, WATCH_PAGE_STATUS, "app.status", "status", 0U, true },
+    { WATCH_APP_TIMER, WATCH_PAGE_TIMER, "app.timer", "timer", 0U, true },
+    { WATCH_APP_CALENDAR, WATCH_PAGE_CALENDAR, "app.calendar", "calendar", 0U, true },
+    { WATCH_APP_SETTINGS, WATCH_PAGE_SETTINGS, "app.settings", "settings", 0U, true },
+    { WATCH_APP_RESOURCES, WATCH_PAGE_RESOURCES, "app.resources", "resources",
+      WATCH_APP_CAPABILITY_SYSTEM | WATCH_APP_CAPABILITY_HIDDEN, false },
+    { WATCH_APP_DIAGNOSTICS, WATCH_PAGE_DIAGNOSTICS, "app.diagnostics", "diagnostics",
+      WATCH_APP_CAPABILITY_SYSTEM | WATCH_APP_CAPABILITY_HIDDEN, false },
 };
+
+const watch_app_entry_t *watch_core_get_app(watch_app_id_t app_id)
+{
+    if (app_id >= WATCH_APP_COUNT) {
+        return NULL;
+    }
+
+    return &s_apps[app_id];
+}
+
+const watch_app_entry_t *watch_core_get_launcher_app(uint8_t launcher_index)
+{
+    uint8_t visible_index = 0U;
+    uint8_t app_index;
+
+    for (app_index = 0U; app_index < WATCH_APP_COUNT; ++app_index) {
+        if (!s_apps[app_index].visible) {
+            continue;
+        }
+        if (visible_index == launcher_index) {
+            return &s_apps[app_index];
+        }
+        ++visible_index;
+    }
+
+    return NULL;
+}
+
+uint8_t watch_core_launcher_count(void)
+{
+    uint8_t count = 0U;
+    uint8_t app_index;
+
+    for (app_index = 0U; app_index < WATCH_APP_COUNT; ++app_index) {
+        if (s_apps[app_index].visible) {
+            ++count;
+        }
+    }
+    return count;
+}
 
 static bool watch_core_has_command_space(const watch_core_t *core)
 {
@@ -106,11 +151,13 @@ static bool watch_core_open_page(watch_core_t *core, watch_page_t page)
 
 static bool watch_core_select_launcher_item(watch_core_t *core)
 {
-    if (core->launcher_index >= WATCH_CORE_LAUNCHER_ITEM_COUNT) {
+    const watch_app_entry_t *app = watch_core_get_launcher_app(core->launcher_index);
+
+    if (app == NULL) {
         return false;
     }
 
-    return watch_core_open_page(core, s_launcher_pages[core->launcher_index]);
+    return watch_core_open_page(core, app->page);
 }
 
 static bool watch_core_move_selection(watch_core_t *core, int8_t direction)
@@ -122,9 +169,9 @@ static bool watch_core_move_selection(watch_core_t *core, int8_t direction)
     }
 
     if (direction > 0) {
-        next_index = (uint8_t)((core->launcher_index + 1U) % WATCH_CORE_LAUNCHER_ITEM_COUNT);
+        next_index = (uint8_t)((core->launcher_index + 1U) % watch_core_launcher_count());
     } else {
-        next_index = (core->launcher_index == 0U) ? (WATCH_CORE_LAUNCHER_ITEM_COUNT - 1U)
+        next_index = (core->launcher_index == 0U) ? (watch_core_launcher_count() - 1U)
                                                   : (uint8_t)(core->launcher_index - 1U);
     }
 
@@ -193,12 +240,21 @@ bool watch_core_dispatch_event(watch_core_t *core, const watch_event_t *event)
         if (core->page == WATCH_PAGE_DIAGNOSTICS) {
             return watch_core_set_popup_visible(core, true);
         }
-        if (core->page == WATCH_PAGE_WATCHFACE) {
-            return watch_core_open_page(core, WATCH_PAGE_LAUNCHER);
-        }
         if (core->page == WATCH_PAGE_LAUNCHER) {
             return watch_core_select_launcher_item(core);
         }
+        return true;
+    case WATCH_EVENT_ENCODER_PRESS:
+        if (core->page == WATCH_PAGE_WATCHFACE) {
+            return watch_core_open_page(core, WATCH_PAGE_LAUNCHER);
+        }
+        if (!watch_core_has_command_space(core)) {
+            return false;
+        }
+        core->popup_visible = false;
+        core->page_depth = 0U;
+        core->page = WATCH_PAGE_WATCHFACE;
+        watch_core_commit_change(core, WATCH_COMMAND_PAGE_CHANGED);
         return true;
     case WATCH_EVENT_UP:
         if (core->page != WATCH_PAGE_LAUNCHER) {
