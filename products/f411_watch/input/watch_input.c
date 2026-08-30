@@ -27,7 +27,7 @@ static watch_event_type_t watch_input_button_event(watch_input_button_t button)
     case WATCH_INPUT_BUTTON_WAKE:
         return WATCH_EVENT_WAKE;
     case WATCH_INPUT_BUTTON_ENCODER:
-        return WATCH_EVENT_SELECT;
+        return WATCH_EVENT_ENCODER_PRESS;
     case WATCH_INPUT_BUTTON_COUNT:
         return WATCH_EVENT_NONE;
     }

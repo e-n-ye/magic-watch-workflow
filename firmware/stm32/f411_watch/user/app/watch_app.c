@@ -31,6 +31,8 @@ static const char *watch_app_event_name(watch_event_type_t type)
         return "back";
     case WATCH_EVENT_SELECT:
         return "select";
+    case WATCH_EVENT_ENCODER_PRESS:
+        return "encoder_press";
     case WATCH_EVENT_UP:
         return "up";
     case WATCH_EVENT_DOWN:

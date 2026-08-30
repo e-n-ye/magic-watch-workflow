@@ -30,6 +30,7 @@ typedef struct
 bool watch_input_hw_init(void);
 void watch_input_hw_process(uint32_t now_ms);
 bool watch_input_hw_take_event(watch_event_t *event);
+bool watch_input_hw_read_touch(uint16_t *x, uint16_t *y, bool *pressed);
 void watch_input_hw_read_status(watch_input_hw_status_t *status);
 
 #endif /* WATCH_INPUT_HW_H */

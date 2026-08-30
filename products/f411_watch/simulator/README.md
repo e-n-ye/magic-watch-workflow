@@ -16,3 +16,7 @@ On Windows, running `build/host-m7/watch_ui_simulator.exe` opens a 240x280
 LVGL window. Pass `--smoke` to run the headless CTest path instead. The
 simulator does not parse XML at runtime; XML is the Editor source and the
 committed generated C is the build input.
+
+Interactive Windows input is bridged to the same core contract used by the
+firmware: `Enter` or `Space` presses the encoder, `Q`/`E` rotate it, mouse
+clicks emit touch select, and a drag beginning at the left edge emits back.

@@ -7,7 +7,7 @@
 
 static watch_event_t watch_test_event(watch_event_type_t type)
 {
-    return (watch_event_t){.type = type};
+    return (watch_event_t) { .type = type };
 }
 
 static bool watch_test_dispatch(watch_core_t *core, watch_event_type_t type)
@@ -49,7 +49,7 @@ static void test_initial_state(void)
     assert(snapshot.sensor_snapshot.degraded);
     assert(snapshot.sensor_snapshot.available_mask == 0U);
     assert(snapshot.revision == 0U);
-    assert(!watch_core_take_command(&core, &(watch_command_t){0}));
+    assert(!watch_core_take_command(&core, &(watch_command_t) { 0 }));
 }
 
 static void test_navigation_and_commands(void)
@@ -60,7 +60,7 @@ static void test_navigation_and_commands(void)
 
     assert(watch_core_init(&core));
 
-    assert(watch_test_dispatch(&core, WATCH_EVENT_SELECT));
+    assert(watch_test_dispatch(&core, WATCH_EVENT_ENCODER_PRESS));
     assert(watch_core_read_snapshot(&core, &snapshot));
     assert(snapshot.page == WATCH_PAGE_LAUNCHER);
     assert(snapshot.page_depth == 1U);
@@ -80,26 +80,42 @@ static void test_navigation_and_commands(void)
 
     assert(watch_test_dispatch(&core, WATCH_EVENT_SELECT));
     assert(watch_core_read_snapshot(&core, &snapshot));
-    assert(snapshot.page == WATCH_PAGE_SETTINGS);
+    assert(snapshot.page == WATCH_PAGE_TIMER);
     assert(snapshot.page_depth == 2U);
     assert(watch_core_take_command(&core, &command));
     assert(command.type == WATCH_COMMAND_PAGE_CHANGED);
 
-    assert(watch_test_dispatch(&core, WATCH_EVENT_BACK));
-    assert(watch_test_dispatch(&core, WATCH_EVENT_BACK));
+    assert(watch_test_dispatch(&core, WATCH_EVENT_ENCODER_PRESS));
     assert(watch_core_read_snapshot(&core, &snapshot));
     assert(snapshot.page == WATCH_PAGE_WATCHFACE);
     assert(snapshot.page_depth == 0U);
-    assert(snapshot.revision == 5U);
+    assert(snapshot.revision == 4U);
 }
 
-static void test_resource_navigation(void)
+static void test_app_registry_and_hidden_pages(void)
 {
     watch_core_t core;
     watch_snapshot_t snapshot;
+    const watch_app_entry_t *app;
 
     assert(watch_core_init(&core));
-    assert(watch_test_dispatch(&core, WATCH_EVENT_SELECT));
+    assert(watch_core_launcher_count() == 4U);
+    app = watch_core_get_launcher_app(0U);
+    assert(app != NULL && app->id == WATCH_APP_STATUS && app->visible);
+    app = watch_core_get_launcher_app(1U);
+    assert(app != NULL && app->id == WATCH_APP_TIMER && app->visible);
+    app = watch_core_get_launcher_app(2U);
+    assert(app != NULL && app->id == WATCH_APP_CALENDAR && app->visible);
+    app = watch_core_get_launcher_app(3U);
+    assert(app != NULL && app->id == WATCH_APP_SETTINGS && app->visible);
+    assert(watch_core_get_launcher_app(4U) == NULL);
+    app = watch_core_get_app(WATCH_APP_RESOURCES);
+    assert(app != NULL && !app->visible);
+    app = watch_core_get_app(WATCH_APP_DIAGNOSTICS);
+    assert(app != NULL && !app->visible);
+    assert(watch_core_get_app(WATCH_APP_COUNT) == NULL);
+
+    assert(watch_test_dispatch(&core, WATCH_EVENT_ENCODER_PRESS));
     assert(watch_test_dispatch(&core, WATCH_EVENT_DOWN));
     assert(watch_test_dispatch(&core, WATCH_EVENT_DOWN));
     assert(watch_core_read_snapshot(&core, &snapshot));
@@ -108,11 +124,10 @@ static void test_resource_navigation(void)
 
     assert(watch_test_dispatch(&core, WATCH_EVENT_SELECT));
     assert(watch_core_read_snapshot(&core, &snapshot));
-    assert(snapshot.page == WATCH_PAGE_RESOURCES);
+    assert(snapshot.page == WATCH_PAGE_CALENDAR);
     assert(snapshot.page_depth == 2U);
 
-    assert(watch_test_dispatch(&core, WATCH_EVENT_BACK));
-    assert(watch_test_dispatch(&core, WATCH_EVENT_BACK));
+    assert(watch_test_dispatch(&core, WATCH_EVENT_ENCODER_PRESS));
     assert(watch_core_read_snapshot(&core, &snapshot));
     assert(snapshot.page == WATCH_PAGE_WATCHFACE);
 }
@@ -135,6 +150,28 @@ static void test_ignored_events_and_validation(void)
     assert(!watch_core_dispatch_event(&core, &invalid_event));
     assert(!watch_core_read_snapshot(NULL, &after));
     assert(!watch_core_read_snapshot(&core, NULL));
+}
+
+static void test_encoder_press_and_back_semantics(void)
+{
+    watch_core_t core;
+    watch_snapshot_t snapshot;
+
+    assert(watch_core_init(&core));
+    assert(watch_test_dispatch(&core, WATCH_EVENT_BACK));
+    assert(watch_core_read_snapshot(&core, &snapshot));
+    assert(snapshot.page == WATCH_PAGE_WATCHFACE && snapshot.page_depth == 0U);
+
+    assert(watch_test_dispatch(&core, WATCH_EVENT_ENCODER_PRESS));
+    assert(watch_test_dispatch(&core, WATCH_EVENT_SELECT));
+    assert(watch_core_read_snapshot(&core, &snapshot));
+    assert(snapshot.page == WATCH_PAGE_STATUS && snapshot.page_depth == 2U);
+    assert(watch_test_dispatch(&core, WATCH_EVENT_UP));
+    assert(watch_core_read_snapshot(&core, &snapshot));
+    assert(snapshot.page == WATCH_PAGE_STATUS && snapshot.launcher_index == 0U);
+    assert(watch_test_dispatch(&core, WATCH_EVENT_ENCODER_PRESS));
+    assert(watch_core_read_snapshot(&core, &snapshot));
+    assert(snapshot.page == WATCH_PAGE_WATCHFACE && snapshot.page_depth == 0U);
 }
 
 static void test_time_event_updates_snapshot_and_command(void)
@@ -213,19 +250,19 @@ static void test_command_queue_is_bounded(void)
 
     assert(watch_core_init(&core));
     for (uint8_t index = 0U; index < WATCH_CORE_COMMAND_CAPACITY / 2U; index++) {
-        assert(watch_test_dispatch(&core, WATCH_EVENT_SELECT));
-        assert(watch_test_dispatch(&core, WATCH_EVENT_BACK));
+        assert(watch_test_dispatch(&core, WATCH_EVENT_ENCODER_PRESS));
+        assert(watch_test_dispatch(&core, WATCH_EVENT_ENCODER_PRESS));
     }
 
     assert(watch_core_read_snapshot(&core, &before_full));
-    assert(!watch_test_dispatch(&core, WATCH_EVENT_SELECT));
+    assert(!watch_test_dispatch(&core, WATCH_EVENT_ENCODER_PRESS));
     assert(watch_core_read_snapshot(&core, &snapshot));
     assert(snapshot.page == before_full.page);
     assert(snapshot.page_depth == before_full.page_depth);
     assert(snapshot.revision == before_full.revision);
 
     assert(watch_core_take_command(&core, &command));
-    assert(watch_test_dispatch(&core, WATCH_EVENT_SELECT));
+    assert(watch_test_dispatch(&core, WATCH_EVENT_ENCODER_PRESS));
 }
 
 static void test_button_debounce(void)
@@ -235,13 +272,13 @@ static void test_button_debounce(void)
     assert(watch_input_init(&input));
     assert(watch_input_seed_button(&input, WATCH_INPUT_BUTTON_WAKE, true, 0U));
     assert(watch_input_submit_button(&input, WATCH_INPUT_BUTTON_WAKE, true, 100U));
-    assert(!watch_input_take_event(&input, &(watch_event_t){0}));
+    assert(!watch_input_take_event(&input, &(watch_event_t) { 0 }));
 
     assert(watch_input_submit_button(&input, WATCH_INPUT_BUTTON_BACK, false, 0U));
     assert(watch_input_submit_button(&input, WATCH_INPUT_BUTTON_BACK, true, 10U));
-    assert(!watch_input_take_event(&input, &(watch_event_t){0}));
+    assert(!watch_input_take_event(&input, &(watch_event_t) { 0 }));
     assert(watch_input_submit_button(&input, WATCH_INPUT_BUTTON_BACK, true, 39U));
-    assert(!watch_input_take_event(&input, &(watch_event_t){0}));
+    assert(!watch_input_take_event(&input, &(watch_event_t) { 0 }));
     assert(watch_input_submit_button(&input, WATCH_INPUT_BUTTON_BACK, true, 40U));
     watch_test_expect_input_event(&input, WATCH_EVENT_BACK);
 
@@ -265,10 +302,11 @@ static void test_encoder_and_touch_mapping(void)
     assert(watch_input_submit_button(&input, WATCH_INPUT_BUTTON_ENCODER, true, 0U));
     assert(watch_input_submit_button(&input, WATCH_INPUT_BUTTON_ENCODER, true, 30U));
     assert(watch_input_take_event(&input, &event));
-    assert(event.type == WATCH_EVENT_SELECT);
+    assert(event.type == WATCH_EVENT_ENCODER_PRESS);
     assert(watch_core_dispatch_event(&core, &event));
 
-    touch = (watch_input_touch_t){.start_x = 100U, .start_y = 100U, .end_x = 102U, .end_y = 101U};
+    touch =
+        (watch_input_touch_t) { .start_x = 100U, .start_y = 100U, .end_x = 102U, .end_y = 101U };
     assert(watch_input_submit_touch(&input, &touch));
     watch_test_expect_input_event(&input, WATCH_EVENT_SELECT);
 
@@ -277,21 +315,24 @@ static void test_encoder_and_touch_mapping(void)
     assert(event.type == WATCH_EVENT_DOWN);
     assert(watch_core_dispatch_event(&core, &event));
 
-    touch = (watch_input_touch_t){.start_x = 4U, .start_y = 100U, .end_x = 60U, .end_y = 102U};
+    touch = (watch_input_touch_t) { .start_x = 4U, .start_y = 100U, .end_x = 60U, .end_y = 102U };
     assert(watch_input_submit_touch(&input, &touch));
     assert(watch_input_take_event(&input, &event));
     assert(event.type == WATCH_EVENT_BACK);
     assert(watch_core_dispatch_event(&core, &event));
 
-    touch = (watch_input_touch_t){.start_x = 100U, .start_y = 180U, .end_x = 102U, .end_y = 120U};
+    touch =
+        (watch_input_touch_t) { .start_x = 100U, .start_y = 180U, .end_x = 102U, .end_y = 120U };
     assert(watch_input_submit_touch(&input, &touch));
     watch_test_expect_input_event(&input, WATCH_EVENT_UP);
 
-    touch = (watch_input_touch_t){.start_x = 100U, .start_y = 120U, .end_x = 102U, .end_y = 180U};
+    touch =
+        (watch_input_touch_t) { .start_x = 100U, .start_y = 120U, .end_x = 102U, .end_y = 180U };
     assert(watch_input_submit_touch(&input, &touch));
     watch_test_expect_input_event(&input, WATCH_EVENT_DOWN);
 
-    touch = (watch_input_touch_t){.start_x = 120U, .start_y = 100U, .end_x = 180U, .end_y = 102U};
+    touch =
+        (watch_input_touch_t) { .start_x = 120U, .start_y = 100U, .end_x = 180U, .end_y = 102U };
     assert(watch_input_submit_touch(&input, &touch));
     assert(!watch_input_take_event(&input, &event));
 }
@@ -328,8 +369,9 @@ int main(void)
 {
     test_initial_state();
     test_navigation_and_commands();
-    test_resource_navigation();
+    test_app_registry_and_hidden_pages();
     test_ignored_events_and_validation();
+    test_encoder_press_and_back_semantics();
     test_time_event_updates_snapshot_and_command();
     test_sensor_status_event_updates_snapshot_and_command();
     test_command_queue_is_bounded();

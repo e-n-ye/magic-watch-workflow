@@ -35,6 +35,7 @@ static int8_t s_encoder_last_direction;
 static uint8_t s_encoder_direction_confirmations;
 static uint32_t s_last_touch_poll_ms;
 static bool s_touch_gesture_active;
+static bool s_touch_pressed;
 static uint8_t s_touch_gesture;
 static uint8_t s_touch_finger_count;
 static uint16_t s_touch_x;
@@ -189,6 +190,7 @@ static void input_process_touch(uint32_t now_ms)
 
     if (sample.gesture == WATCH_CST816_GESTURE_NONE) {
         s_touch_gesture_active = false;
+        s_touch_pressed = false;
         return;
     }
 
@@ -197,6 +199,7 @@ static void input_process_touch(uint32_t now_ms)
     }
 
     s_touch_gesture_active = true;
+    s_touch_pressed = true;
     s_touch_gesture = sample.gesture;
     s_touch_finger_count = sample.finger_count;
     s_touch_x = sample.x;
@@ -220,6 +223,7 @@ bool watch_input_hw_init(void)
     s_encoder_direction_confirmations = 0U;
     s_last_touch_poll_ms = now_ms;
     s_touch_gesture_active = false;
+    s_touch_pressed = false;
     s_touch_gesture = WATCH_CST816_GESTURE_NONE;
     s_touch_finger_count = 0U;
     s_touch_x = 0U;
@@ -276,6 +280,18 @@ bool watch_input_hw_take_event(watch_event_t *event)
         return false;
     }
     return watch_input_take_event(&s_input, event);
+}
+
+bool watch_input_hw_read_touch(uint16_t *x, uint16_t *y, bool *pressed)
+{
+    if (x == 0 || y == 0 || pressed == 0 || !s_initialized) {
+        return false;
+    }
+
+    *x = s_touch_x;
+    *y = s_touch_y;
+    *pressed = s_touch_pressed;
+    return watch_cst816_is_ready();
 }
 
 void watch_input_hw_read_status(watch_input_hw_status_t *status)
