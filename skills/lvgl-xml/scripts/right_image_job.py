@@ -60,7 +60,11 @@ def _data_url(path: Path) -> str:
 
 
 def _request(url: str, method: str, key: str, payload: bytes | None = None) -> dict[str, Any]:
-    headers = {"Authorization": f"Bearer {key}", "Accept": "application/json"}
+    headers = {
+        "Authorization": f"Bearer {key}",
+        "Accept": "application/json",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/131.0 Safari/537.36",
+    }
     if payload is not None:
         headers["Content-Type"] = "application/json"
     request = urllib.request.Request(url, data=payload, headers=headers, method=method)
@@ -136,7 +140,7 @@ def _download(url: str, key: str) -> bytes:
 
 def _safe_manifest(path: Path, value: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(value, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    path.write_text(json.dumps(value, indent=2, ensure_ascii=False) + chr(10), encoding="utf-8")
 
 
 def _build_parser() -> argparse.ArgumentParser:
