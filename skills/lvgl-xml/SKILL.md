@@ -1,6 +1,6 @@
 ---
 name: lvgl-xml
-description: Maintain this repository's LVGL 9.5 UI through LVGL Pro Editor XML and manual C export. Use when editing project.xml, globals.xml, screen XML, styles, components, bindings, assets, generated UI CMake/C files, Editor preview errors, or host simulator rendering while preserving the F411 240x280 and no-Pro-CLI contract.
+description: Maintain this repository's LVGL 9.5 UI from visual briefs through LVGL Pro Editor XML, approved raster references, manual C export, and host validation. Use when designing or editing project.xml, globals.xml, screen XML, styles, components, bindings, assets, generated UI CMake/C files, Right image drafts, Editor preview errors, or simulator rendering while preserving the F411 240x280 and no-Pro-CLI contract.
 ---
 
 # LVGL XML
