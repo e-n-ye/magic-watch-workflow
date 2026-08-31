@@ -4,11 +4,33 @@
     </api>
 
     <consts>
-        <!-- Add <px>, <int>, <color> etc here when a later page needs them. -->
+        <px name="screen_width" value="240" help="F411 display width" />
+        <px name="screen_height" value="280" help="F411 display height" />
+        <px name="safe_side" value="16" help="Horizontal safe inset" />
+        <px name="content_width" value="208" help="Width inside the safe inset" />
+        <px name="row_height" value="40" help="Launcher and settings row height" />
+        <px name="row_gap" value="4" help="Gap between rows" />
+        <px name="radius_sm" value="6" help="Small card radius" />
+
+        <color name="bg_base" value="0x101820" help="Default dark background" />
+        <color name="surface_card" value="0x1B2935" help="Card surface" />
+        <color name="surface_selected" value="0x24546B" help="Selected card surface" />
+        <color name="accent" value="0x64D2FF" help="Primary accent" />
+        <color name="text_primary" value="0xF4F7FA" help="Primary text" />
+        <color name="text_muted" value="0xB8C7D9" help="Secondary text" />
+        <color name="border" value="0x385163" help="Card border" />
+        <color name="degraded" value="0xFFB454" help="Degraded status" />
     </consts>
 
     <styles>
-        <!-- Styles for this first screen are kept local to its XML file. -->
+        <style name="screen_base" bg_opa="100%" bg_color="#bg_base" text_color="#text_primary" />
+        <style name="surface_base" bg_opa="100%" bg_color="#surface_card"
+               border_width="1" border_color="#border" radius="#radius_sm" pad_all="0" />
+        <style name="surface_selected_style" bg_opa="100%" bg_color="#surface_selected"
+               border_width="2" border_color="#accent" radius="#radius_sm" pad_all="0" />
+        <style name="text_primary_style" text_color="#text_primary" />
+        <style name="text_muted_style" text_color="#text_muted" />
+        <style name="text_accent" text_color="#accent" />
     </styles>
 
     <subjects>
