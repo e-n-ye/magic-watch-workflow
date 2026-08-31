@@ -1,4 +1,4 @@
 interface:
   display_name: "LVGL XML"
-  short_description: "Build validated LVGL 9.5 XML UIs and manual Editor exports"
+  short_description: "Design, validate, and export LVGL 9.5 XML UIs from visual briefs"
   default_prompt: "Use $lvgl-xml to edit, export, and validate this repository LVGL XML UI."
