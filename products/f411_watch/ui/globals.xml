@@ -4,13 +4,13 @@
     </api>
 
     <consts>
-        <px name="screen_width" value="240" help="F411 display width" />
-        <px name="screen_height" value="280" help="F411 display height" />
-        <px name="safe_side" value="16" help="Horizontal safe inset" />
-        <px name="content_width" value="208" help="Width inside the safe inset" />
-        <px name="row_height" value="40" help="Launcher and settings row height" />
-        <px name="row_gap" value="4" help="Gap between rows" />
-        <px name="radius_sm" value="6" help="Small card radius" />
+        <int name="screen_width" value="240" help="F411 display width" />
+        <int name="screen_height" value="280" help="F411 display height" />
+        <int name="safe_side" value="16" help="Horizontal safe inset" />
+        <int name="content_width" value="208" help="Width inside the safe inset" />
+        <int name="row_height" value="40" help="Launcher and settings row height" />
+        <int name="row_gap" value="4" help="Gap between rows" />
+        <int name="radius_sm" value="6" help="Small card radius" />
 
         <color name="bg_base" value="0x101820" help="Default dark background" />
         <color name="surface_card" value="0x1B2935" help="Card surface" />
