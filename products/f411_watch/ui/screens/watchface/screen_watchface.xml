@@ -11,8 +11,7 @@
         <style name="style_watchface" />
 
         <lv_label name="page_brand" text="MAGIC WATCH" align="top_mid" y="8"
-                  width="#content_width" style_text_color="#text_muted"
-                  style_text_font="montserrat_14" style_text_align="center" />
+                  width="#content_width" style_text_color="#text_muted" style_text_align="center" />
 
         <lv_obj name="watchface_top_rule" x="#safe_side" y="32" width="#content_width" height="1"
                 scrollable="false">
@@ -21,9 +20,9 @@
         </lv_obj>
 
         <lv_label name="watchface_battery" text="BATTERY 85%" x="#safe_side" y="40" width="96"
-                  style_text_color="#accent" style_text_font="montserrat_14" />
+                  style_text_color="#accent" />
         <lv_label name="watchface_status" text="SENSORS READY" x="124" y="40" width="100"
-                  style_text_color="#degraded" style_text_font="montserrat_14"
+                  style_text_color="#degraded"
                   style_text_align="right" />
 
         <lv_label name="page_title" text="10:09" align="top_mid" y="70"
@@ -37,10 +36,10 @@
         </lv_obj>
 
         <lv_label name="watchface_weekday" text="WEDNESDAY" x="#safe_side" y="154" width="122"
-                  style_text_color="#accent" style_text_font="montserrat_14"
+                  style_text_color="#accent"
                   style_text_align="right" />
         <lv_label name="watchface_date" text="MAY 28" x="134" y="154" width="90"
-                  style_text_color="#text_primary" style_text_font="montserrat_14" />
+                  style_text_color="#text_primary" />
 
         <lv_obj name="watchface_summary" x="#safe_side" y="188" width="#content_width" height="58"
                 scrollable="false">
@@ -50,7 +49,7 @@
                       style_text_color="#text_primary" style_text_font="montserrat_24"
                       style_text_align="right" />
             <lv_label name="watchface_steps_label" text="STEPS" x="120" y="18" width="72"
-                      style_text_color="#text_muted" style_text_font="montserrat_14" />
+                      style_text_color="#text_muted" />
             <lv_label name="watchface_summary_hint" text="TAP FOR STATUS" x="18" y="36" width="174"
                       style_text_color="#text_muted" style_text_font="montserrat_8"
                       style_text_align="center" />
