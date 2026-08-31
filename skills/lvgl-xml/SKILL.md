@@ -203,9 +203,9 @@ Flash/RAM impact before committing it.
 The standard-library helper is intentionally provider-specific and async:
 
 ```sh
-python skills/lvgl-xml/scripts/right_image_job.py \\
-  --prompt "<approved visual brief>" --model gpt-image-2 --n 3 \\
-  --size 9:16 --image-size 1K --output-dir build/design-evidence/watchface \\
+python skills/lvgl-xml/scripts/right_image_job.py \
+  --prompt "<approved visual brief>" --model gpt-image-2 --n 3 \
+  --size 9:16 --image-size 1K --output-dir build/design-evidence/watchface \
   --dry-run
 ```
 
