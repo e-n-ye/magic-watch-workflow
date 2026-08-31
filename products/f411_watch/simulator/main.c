@@ -8,6 +8,7 @@
 #include "watch_core.h"
 #include "watch_input.h"
 #include "watch_page_lifecycle.h"
+#include "watch_ui_theme.h"
 
 #if defined(_WIN32)
 #include "drivers/windows/lv_windows_display.h"
@@ -92,6 +93,66 @@ static bool watch_simulator_background_is_opaque(lv_obj_t *screen)
         && lv_obj_get_style_bg_opa(screen, LV_PART_MAIN) == LV_OPA_COVER;
 }
 
+static bool watch_simulator_theme_objects_are_ready(lv_obj_t *screen,
+                                                    const watch_snapshot_t *snapshot)
+{
+    static const char *const launcher_names[] = {
+        "launcher_item_status", "launcher_item_timer", "launcher_item_calendar",
+        "launcher_item_settings",
+    };
+    static const char *const settings_names[] = {
+        "settings_item_theme", "settings_item_brightness", "settings_item_time_format",
+    };
+    uint8_t index;
+
+    if (screen == NULL || snapshot == NULL) {
+        return false;
+    }
+
+    switch (snapshot->page) {
+    case WATCH_PAGE_WATCHFACE:
+        return lv_obj_find_by_name(screen, "watchface_date") != NULL
+            && lv_obj_find_by_name(screen, "watchface_weekday") != NULL
+            && lv_obj_find_by_name(screen, "watchface_battery") != NULL
+            && lv_obj_find_by_name(screen, "watchface_steps") != NULL
+            && lv_obj_find_by_name(screen, "watchface_status") != NULL;
+    case WATCH_PAGE_LAUNCHER:
+        if (lv_obj_find_by_name(screen, "launcher_list") == NULL) {
+            return false;
+        }
+        for (index = 0U; index < WATCH_CORE_LAUNCHER_ITEM_COUNT; ++index) {
+            if (lv_obj_find_by_name(screen, launcher_names[index]) == NULL) {
+                return false;
+            }
+        }
+        return true;
+    case WATCH_PAGE_SETTINGS:
+        if (lv_obj_find_by_name(screen, "settings_list") == NULL) {
+            return false;
+        }
+        for (index = 0U; index < 3U; ++index) {
+            if (lv_obj_find_by_name(screen, settings_names[index]) == NULL) {
+                return false;
+            }
+        }
+        return true;
+    case WATCH_PAGE_STATUS:
+        return lv_obj_find_by_name(screen, "status_summary") != NULL
+            && lv_obj_find_by_name(screen, "status_sensors") != NULL
+            && lv_obj_find_by_name(screen, "status_storage") != NULL;
+    case WATCH_PAGE_TIMER:
+        return lv_obj_find_by_name(screen, "timer_value") != NULL;
+    case WATCH_PAGE_CALENDAR:
+        return lv_obj_find_by_name(screen, "calendar_value") != NULL;
+    case WATCH_PAGE_RESOURCES:
+    case WATCH_PAGE_DIAGNOSTICS:
+    case WATCH_PAGE_COUNT:
+        return true;
+    }
+
+    return false;
+}
+
 static bool watch_simulator_popup_is(watch_page_lifecycle_t *lifecycle, const char *title,
                                      const char *message)
 {
@@ -123,12 +184,17 @@ static bool watch_simulator_show_page(watch_page_lifecycle_t *lifecycle,
     result = watch_page_lifecycle_apply(lifecycle, snapshot);
     screen = watch_page_lifecycle_active_screen(lifecycle);
     if (result && screen != NULL) {
-        result = watch_simulator_background_is_opaque(screen)
-            && watch_simulator_label_is(screen, "page_brand", "MAGIC WATCH")
-            && watch_simulator_label_is(screen, "page_title", page_name)
-            && watch_simulator_label_is(screen, "page_hint", hint);
+        const bool background_ok = watch_simulator_background_is_opaque(screen);
+        const bool brand_ok = watch_simulator_label_is(screen, "page_brand", "MAGIC WATCH");
+        const bool title_ok = watch_simulator_label_is(screen, "page_title", page_name);
+        const bool hint_ok = watch_simulator_label_is(screen, "page_hint", hint);
+        const bool objects_ok = watch_simulator_theme_objects_are_ready(screen, snapshot);
+        result = background_ok && brand_ok && title_ok && hint_ok && objects_ok;
     }
     lv_unlock();
+    if (!result) {
+        fprintf(stderr, "watch_ui_smoke: render failed page=%s hint=%s\n", page_name, hint);
+    }
     return result;
 }
 

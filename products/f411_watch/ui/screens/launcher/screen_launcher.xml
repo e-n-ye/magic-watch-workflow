@@ -1,13 +1,46 @@
-<!-- 240x280 M8 launcher screen maintained in LVGL Pro Editor. -->
+<!-- 240x280 launcher screen maintained in LVGL Pro Editor. -->
 <screen>
     <styles>
-        <style name="style_launcher" bg_opa="100%" bg_color="0x101820" />
+        <style name="style_launcher" bg_opa="100%" bg_color="#bg_base" />
+        <style name="style_card" bg_opa="100%" bg_color="#surface_card"
+               border_width="1" border_color="#border" radius="#radius_sm" pad_all="0" />
     </styles>
 
     <view>
         <style name="style_launcher" />
-        <lv_label text="MAGIC WATCH" align="top_mid" y="22" style_text_color="0xF4F7FA" />
-        <lv_label text="LAUNCHER" align="center" y="-8" style_text_color="0x64D2FF" />
-        <lv_label text="SELECT: STATUS" align="bottom_mid" y="-22" style_text_color="0xB8C7D9" />
+        <lv_label name="page_brand" text="MAGIC WATCH" align="top_mid" y="10"
+                  width="#content_width" style_text_color="#text_primary" />
+        <lv_label name="page_title" text="LAUNCHER" align="top_mid" y="30"
+                  width="#content_width" style_text_color="#accent" />
+        <lv_obj name="launcher_list" x="#safe_side" y="66" width="#content_width" height="176"
+                scrollable="false">
+            <remove_style_all />
+            <lv_obj name="launcher_item_status" x="0" y="0" width="#content_width" height="#row_height"
+                    scrollable="false">
+                <style name="style_card" />
+                <lv_label name="launcher_label_status" text="[ST] STATUS" x="12" y="10"
+                          width="184" style_text_color="#text_primary" />
+            </lv_obj>
+            <lv_obj name="launcher_item_timer" x="0" y="44" width="#content_width" height="#row_height"
+                    scrollable="false">
+                <style name="style_card" />
+                <lv_label name="launcher_label_timer" text="[TM] TIMER" x="12" y="10"
+                          width="184" style_text_color="#text_primary" />
+            </lv_obj>
+            <lv_obj name="launcher_item_calendar" x="0" y="88" width="#content_width" height="#row_height"
+                    scrollable="false">
+                <style name="style_card" />
+                <lv_label name="launcher_label_calendar" text="[CA] CALENDAR" x="12" y="10"
+                          width="184" style_text_color="#text_primary" />
+            </lv_obj>
+            <lv_obj name="launcher_item_settings" x="0" y="132" width="#content_width" height="#row_height"
+                    scrollable="false">
+                <style name="style_card" />
+                <lv_label name="launcher_label_settings" text="[SE] SETTINGS" x="12" y="10"
+                          width="184" style_text_color="#text_primary" />
+            </lv_obj>
+        </lv_obj>
+        <lv_label name="page_hint" text="SELECT: STATUS" align="bottom_mid" y="-12"
+                  width="#content_width" style_text_color="#text_muted" />
     </view>
 </screen>

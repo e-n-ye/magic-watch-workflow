@@ -1,4 +1,11 @@
 <translations languages="en">
     <translation tag="watch_title" char_count="32" en="MAGIC WATCH" />
     <translation tag="watch_page" char_count="32" en="WATCHFACE" />
+    <translation tag="launcher_title" char_count="32" en="LAUNCHER" />
+    <translation tag="status_title" char_count="32" en="STATUS" />
+    <translation tag="settings_title" char_count="32" en="SETTINGS" />
+    <translation tag="app_status" char_count="32" en="STATUS" />
+    <translation tag="app_timer" char_count="32" en="TIMER" />
+    <translation tag="app_calendar" char_count="32" en="CALENDAR" />
+    <translation tag="app_settings" char_count="32" en="SETTINGS" />
 </translations>

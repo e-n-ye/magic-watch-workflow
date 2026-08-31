@@ -37,10 +37,17 @@ static uint32_t f411_watch_ui_target = F411_WATCH_UI_TARGET_ALL;
 
 #ifndef LV_EDITOR_PREVIEW
     static const char * translation_languages[] = {"en", NULL};
-    static const char * translation_tags[] = {"watch_title", "watch_page", NULL};
+    static const char * translation_tags[] = {"watch_title", "watch_page", "launcher_title", "status_title", "settings_title", "app_status", "app_timer", "app_calendar", "app_settings", NULL};
     static const char * translation_texts[] = {
         "MAGIC WATCH", /* watch_title */
         "WATCHFACE", /* watch_page */
+        "LAUNCHER", /* launcher_title */
+        "STATUS", /* status_title */
+        "SETTINGS", /* settings_title */
+        "STATUS", /* app_status */
+        "TIMER", /* app_timer */
+        "CALENDAR", /* app_calendar */
+        "SETTINGS", /* app_settings */
     };
 #endif
 
@@ -67,6 +74,13 @@ static uint32_t f411_watch_ui_target = F411_WATCH_UI_TARGET_ALL;
 /*----------------
  * Global styles
  *----------------*/
+
+lv_style_t screen_base;
+lv_style_t surface_base;
+lv_style_t surface_selected_style;
+lv_style_t text_primary_style;
+lv_style_t text_muted_style;
+lv_style_t text_accent;
 
 /*----------------
  * Subjects
@@ -99,6 +113,39 @@ void f411_watch_ui_init_gen(const char * asset_path)
     /*----------------
      * Global styles
      *----------------*/
+
+    static bool style_inited = false;
+
+    if (!style_inited) {
+        /*Init all styles*/
+        lv_style_init(&screen_base);
+        lv_style_init(&surface_base);
+        lv_style_init(&surface_selected_style);
+        lv_style_init(&text_primary_style);
+        lv_style_init(&text_muted_style);
+        lv_style_init(&text_accent);
+
+        lv_style_set_bg_opa(&screen_base, (255 * 100 / 100));
+        lv_style_set_bg_color(&screen_base, BG_BASE);
+        lv_style_set_text_color(&screen_base, TEXT_PRIMARY);
+        lv_style_set_bg_opa(&surface_base, (255 * 100 / 100));
+        lv_style_set_bg_color(&surface_base, SURFACE_CARD);
+        lv_style_set_border_width(&surface_base, 1);
+        lv_style_set_border_color(&surface_base, BORDER);
+        lv_style_set_radius(&surface_base, RADIUS_SM);
+        lv_style_set_pad_all(&surface_base, 0);
+        lv_style_set_bg_opa(&surface_selected_style, (255 * 100 / 100));
+        lv_style_set_bg_color(&surface_selected_style, SURFACE_SELECTED);
+        lv_style_set_border_width(&surface_selected_style, 2);
+        lv_style_set_border_color(&surface_selected_style, ACCENT);
+        lv_style_set_radius(&surface_selected_style, RADIUS_SM);
+        lv_style_set_pad_all(&surface_selected_style, 0);
+        lv_style_set_text_color(&text_primary_style, TEXT_PRIMARY);
+        lv_style_set_text_color(&text_muted_style, TEXT_MUTED);
+        lv_style_set_text_color(&text_accent, ACCENT);
+
+        style_inited = true;
+    }
 
     /*----------------
      * Subjects

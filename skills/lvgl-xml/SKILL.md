@@ -168,23 +168,39 @@ Use this skill for the complete visual pipeline, not only XML syntax:
 4. Inspect generated thumbnails with the user and record one selected draft.
    Do not translate an unconfirmed concept into production XML. If the visual
    is not suitable, change one prompt dimension at a time and regenerate.
-5. Translate the selected concept into declarative XML. XML owns structure,
+5. Convert the selected concept into a confirmed intermediate `screen-map.json`
+   before writing XML. Keep all coordinates parent-relative and record the
+   canvas, safe area, object type/name, text role, sample text, font, color
+   token, alignment, interaction state, and optional hitbox. Run
+   `scripts/screen_map_validate.py`; a failure blocks XML generation. The
+   readable summary and JSON manifest are the review artifact, not the raster
+   image itself. `scripts/screen_map_to_xml.py` may generate only the small
+   `screen`/`lv_obj`/`lv_label` subset already enabled by the F411 profile. For
+   a self-contained draft, add optional `tokens.colors` and `tokens.ints` maps;
+   the generator emits those declarations before the view tree.
+6. Run `scripts/validate_xml_resources.py` before opening the Editor. Every
+   font, color, and image reference must be registered in `globals.xml` and
+   compatible with `lv_conf.h`. A missing resource, disabled widget, invalid
+   parent coordinate, overlap, clipping, or text-width failure is a hard stop.
+7. Translate the confirmed map into declarative XML. XML owns structure,
    spacing, colors, typography, stable object names, and visual states. Prefer
    `lv_obj` + `lv_label` combinations already enabled by `lv_conf.h`; add image
    assets only with a measured Flash/RAM budget and a real consumer. Runtime
    hooks may update text, subjects, selected states, and degraded notices, but
    must not create duplicate visual objects or reach into HAL code.
-6. Ask the user to open `project.xml` in LVGL Pro Editor and verify the preview.
+8. Ask the user to open `project.xml` in LVGL Pro Editor and verify the preview.
    Every XML change must be exported with the Editor Code/hammer action (or
    `Ctrl+B`) before firmware or simulator validation. If export fails, fix the
    XML/schema problem and wait for a fresh Editor export; never hand-synthesize
    `*_gen.c/h`.
-7. Validate the exported result at native `240x280` in the host simulator,
+9. Treat a successful Editor/Emscripten build as a hard gate. Never evaluate a
+   stale, partial, or fallback Editor canvas after a build error. Only then
+   validate the exported result at native `240x280` in the host simulator,
    checking overlap, clipping, object names, selected/degraded states, and
    repeated enter/leave behavior. Capture evidence under
    `build/design-evidence/<scenario>/` and keep only a redacted manifest or
    final approved assets in Git.
-8. Integrate dynamic data only after the visual preview is approved. Feed pages
+10. Integrate dynamic data only after the visual preview is approved. Feed pages
    through `watch_ui_frame_t` (or the repository equivalent), preserve
    `normal/degraded/low_battery/no_storage` scenarios, and keep F411 and the
    simulator on the same generated UI contract.
@@ -205,7 +221,7 @@ The standard-library helper is intentionally provider-specific and async:
 ```sh
 python skills/lvgl-xml/scripts/right_image_job.py \
   --prompt "<approved visual brief>" --model gpt-image-2 --n 3 \
-  --size 9:16 --image-size 1K --output-dir build/design-evidence/watchface \
+  --size 6:7 --image-size 1K --output-dir build/design-evidence/watchface \
   --dry-run
 ```
 
@@ -222,3 +238,34 @@ and confirmation notes. A handoff should identify the approved image, the
 corresponding XML screen path, the Editor export timestamp, and simulator
 scenario screenshots. Do not commit machine-specific Editor paths, API
 responses containing credentials, or unapproved drafts.
+
+## Workflow tools
+
+The conversion helpers are standard-library Python and do not call the image
+provider. They are deterministic so a visual review can be repeated without
+another paid request:
+
+```sh
+python skills/lvgl-xml/scripts/screen_map_validate.py \
+  skills/lvgl-xml/examples/watchface-screen-map.json
+python skills/lvgl-xml/scripts/screen_map_to_xml.py \
+  skills/lvgl-xml/examples/watchface-screen-map.json build/watchface.xml
+python skills/lvgl-xml/scripts/validate_xml_resources.py \
+  products/f411_watch/ui/screens/watchface/screen_watchface.xml \
+  --globals products/f411_watch/ui/globals.xml \
+  --lv-conf firmware/stm32/f411_watch/user/ui/lv_conf.h
+```
+
+Each iteration records a redacted `manifest.json` under the ignored
+`build/design-evidence/<job>/` directory. It must include input image
+dimensions, selected variant, screen-map result, Editor export timestamp,
+Emscripten result, native screenshot path, and user approval state. The map
+and manifest are review contracts; they do not authorize hand edits to
+Editor-generated C.
+
+The helper tests are standard-library only and should run before an Editor
+export:
+
+```sh
+python -m unittest discover -s skills/lvgl-xml/tests -v
+```

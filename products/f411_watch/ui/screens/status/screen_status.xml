@@ -1,13 +1,30 @@
-<!-- 240x280 M8 status screen maintained in LVGL Pro Editor. -->
+<!-- 240x280 status screen maintained in LVGL Pro Editor. -->
 <screen>
     <styles>
-        <style name="style_status" bg_opa="100%" bg_color="0x101820" />
+        <style name="style_status" bg_opa="100%" bg_color="#bg_base" />
+        <style name="style_rule" bg_opa="100%" bg_color="#accent" radius="1" />
     </styles>
 
     <view>
         <style name="style_status" />
-        <lv_label text="MAGIC WATCH" align="top_mid" y="22" style_text_color="0xF4F7FA" />
-        <lv_label text="STATUS" align="center" y="-8" style_text_color="0x64D2FF" />
-        <lv_label text="BACK: RETURN" align="bottom_mid" y="-22" style_text_color="0xB8C7D9" />
+        <lv_label name="page_brand" text="MAGIC WATCH" align="top_mid" y="10"
+                  width="#content_width" style_text_color="#text_primary" />
+        <lv_label name="page_title" text="STATUS" align="top_mid" y="30"
+                  width="#content_width" style_text_color="#accent" />
+        <lv_obj name="status_rule" x="#safe_side" y="54" width="#content_width" height="2"
+                scrollable="false">
+            <remove_style_all />
+            <style name="style_rule" />
+        </lv_obj>
+        <lv_label name="status_summary" text="SYSTEM STATUS" x="#safe_side" y="72"
+                  width="#content_width" style_text_color="#accent" />
+        <lv_label name="status_sensors" text="SENSORS  DEGRADED" x="#safe_side" y="112"
+                  width="#content_width" style_text_color="#degraded" />
+        <lv_label name="status_storage" text="STORAGE  NOT REPORTED" x="#safe_side" y="152"
+                  width="#content_width" style_text_color="#text_muted" />
+        <lv_label name="status_input" text="INPUT  CST816 / ENCODER" x="#safe_side" y="192"
+                  width="#content_width" style_text_color="#text_muted" />
+        <lv_label name="page_hint" text="BACK: RETURN" align="bottom_mid" y="-12"
+                  width="#content_width" style_text_color="#text_muted" />
     </view>
 </screen>

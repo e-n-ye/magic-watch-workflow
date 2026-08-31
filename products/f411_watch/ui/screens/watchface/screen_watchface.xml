@@ -21,7 +21,7 @@
 
         <lv_label name="watchface_battery" text="BATTERY 85%" x="16" y="40" width="96"
                   style_text_color="#accent"  ignore_layout="true" />
-        <lv_label name="watchface_status" text="SENSORS READY" x="124" y="40" width="100"
+        <lv_label name="watchface_status" text="SENSORS READY" x="112" y="40" width="112"
                   style_text_color="#degraded"
                   style_text_align="right"  ignore_layout="true" />
 

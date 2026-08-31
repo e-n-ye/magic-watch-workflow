@@ -52,6 +52,68 @@ bool f411_watch_ui_check_target(uint32_t target);
 
 #define F411_WATCH_UI_CHECK_COMPILE_TARGET(target) (F411_WATCH_UI_COMPILE_TARGET & (target) ? 1 : 0)
 
+/**
+ * F411 display width
+ */
+#define SCREEN_WIDTH 240
+/**
+ * F411 display height
+ */
+#define SCREEN_HEIGHT 280
+/**
+ * Horizontal safe inset
+ */
+#define SAFE_SIDE 16
+/**
+ * Width inside the safe inset
+ */
+#define CONTENT_WIDTH 208
+/**
+ * Launcher and settings row height
+ */
+#define ROW_HEIGHT 40
+/**
+ * Gap between rows
+ */
+#define ROW_GAP 4
+/**
+ * Small card radius
+ */
+#define RADIUS_SM 6
+/**
+ * Default dark background
+ */
+#define BG_BASE lv_color_hex(0x101820)
+/**
+ * Card surface
+ */
+#define SURFACE_CARD lv_color_hex(0x1B2935)
+/**
+ * Selected card surface
+ */
+#define SURFACE_SELECTED lv_color_hex(0x24546B)
+/**
+ * Primary accent
+ */
+#define ACCENT lv_color_hex(0x64D2FF)
+/**
+ * Primary text
+ */
+#define TEXT_PRIMARY lv_color_hex(0xF4F7FA)
+/**
+ * Secondary text
+ */
+#define TEXT_MUTED lv_color_hex(0xB8C7D9)
+/**
+ * Card border
+ */
+#define BORDER lv_color_hex(0x385163)
+/**
+ * Degraded status
+ */
+#define DEGRADED lv_color_hex(0xFFB454)
+
+
 #ifndef LV_XML_EVAL_STRING_BUF_SIZE
     #define LV_XML_EVAL_STRING_BUF_SIZE 256
 #endif
@@ -71,6 +133,13 @@ bool f411_watch_ui_check_target(uint32_t target);
 /*----------------
  * Global styles
  *----------------*/
+
+extern lv_style_t screen_base;
+extern lv_style_t surface_base;
+extern lv_style_t surface_selected_style;
+extern lv_style_t text_primary_style;
+extern lv_style_t text_muted_style;
+extern lv_style_t text_accent;
 
 /*----------------
  * Fonts
@@ -112,7 +181,9 @@ void f411_watch_ui_init_gen(const char * asset_path);
  **********************/
 
 /*Include all the widgets, components and screens of this library*/
+#include "screens/diagnostics/screen_diagnostics_gen.h"
 #include "screens/launcher/screen_launcher_gen.h"
+#include "screens/resources/screen_resources_gen.h"
 #include "screens/settings/screen_settings_gen.h"
 #include "screens/status/screen_status_gen.h"
 #include "screens/watchface/screen_watchface_gen.h"

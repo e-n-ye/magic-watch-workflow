@@ -9,6 +9,10 @@
 extern "C" {
 #endif
 
+/*********************
+ *      INCLUDES
+ *********************/
+
 #ifdef LV_LVGL_H_INCLUDE_SIMPLE
     #include "lvgl.h"
     #include "lvgl_private.h"
@@ -21,7 +25,25 @@ extern "C" {
     #include "lv_xml/lv_xml.h"
 #endif
 
-lv_obj_t *screen_diagnostics_create(void);
+/*********************
+ *      DEFINES
+ *********************/
+
+/**********************
+ *      TYPEDEFS
+ **********************/
+
+/**********************
+ * GLOBAL PROTOTYPES
+ **********************/
+
+
+
+lv_obj_t * screen_diagnostics_create(void);
+
+/**********************
+ *      MACROS
+ **********************/
 
 #ifdef __cplusplus
 } /*extern "C"*/

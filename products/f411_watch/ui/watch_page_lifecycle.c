@@ -14,6 +14,7 @@
 #include "screens/settings/screen_settings_gen.h"
 #include "screens/status/screen_status_gen.h"
 #include "screens/watchface/screen_watchface_gen.h"
+#include "watch_ui_theme.h"
 
 static lv_obj_t *watch_page_create(watch_page_t page)
 {
@@ -41,25 +42,32 @@ static lv_obj_t *watch_page_create(watch_page_t page)
             lv_obj_t *brand = lv_label_create(screen);
             lv_obj_t *title = lv_label_create(screen);
             lv_obj_t *hint = lv_label_create(screen);
-            if (brand == NULL || title == NULL || hint == NULL) {
+            lv_obj_t *detail = lv_label_create(screen);
+            if (brand == NULL || title == NULL || hint == NULL || detail == NULL) {
                 lv_obj_del(screen);
                 return NULL;
             }
             lv_obj_set_name_static(brand, "page_brand");
             lv_obj_set_name_static(title, "page_title");
             lv_obj_set_name_static(hint, "page_hint");
+            lv_obj_set_name_static(detail, page == WATCH_PAGE_TIMER ? "timer_value"
+                                                                      : "calendar_value");
             lv_label_set_text(brand, "MAGIC WATCH");
             lv_label_set_text(title, page == WATCH_PAGE_TIMER ? "TIMER" : "CALENDAR");
             lv_label_set_text(hint, "BACK: RETURN");
+            lv_label_set_text(detail, page == WATCH_PAGE_TIMER ? "00:00.0" : "CALENDAR READY");
             lv_obj_set_align(brand, LV_ALIGN_TOP_MID);
             lv_obj_set_y(brand, 22);
             lv_obj_set_align(title, LV_ALIGN_CENTER);
             lv_obj_set_y(title, -8);
+            lv_obj_set_align(detail, LV_ALIGN_CENTER);
+            lv_obj_set_y(detail, 32);
             lv_obj_set_align(hint, LV_ALIGN_BOTTOM_MID);
             lv_obj_set_y(hint, -22);
             lv_obj_set_style_text_color(brand, lv_color_hex(0xF4F7FA), LV_PART_MAIN);
             lv_obj_set_style_text_color(title, lv_color_hex(0x64D2FF), LV_PART_MAIN);
             lv_obj_set_style_text_color(hint, lv_color_hex(0xB8C7D9), LV_PART_MAIN);
+            lv_obj_set_style_text_color(detail, lv_color_hex(0x64D2FF), LV_PART_MAIN);
         }
         return screen;
     case WATCH_PAGE_SETTINGS:
@@ -207,11 +215,13 @@ bool watch_page_lifecycle_show_popup(watch_page_lifecycle_t *lifecycle, const ch
     lv_obj_t *popup;
     lv_obj_t *title_label;
     lv_obj_t *message_label;
+    const watch_ui_palette_t *palette;
 
     if (lifecycle == NULL || lifecycle->active_screen == NULL || title == NULL || message == NULL) {
         return false;
     }
 
+    palette = watch_ui_theme_palette(watch_ui_theme_get_mode());
     watch_page_lifecycle_close_popup(lifecycle);
     popup = lv_obj_create(lifecycle->active_screen);
     if (popup == NULL) {
@@ -221,9 +231,9 @@ bool watch_page_lifecycle_show_popup(watch_page_lifecycle_t *lifecycle, const ch
     lv_obj_set_size(popup, 208, 104);
     lv_obj_center(popup);
     lv_obj_set_style_bg_opa(popup, LV_OPA_COVER, LV_PART_MAIN);
-    lv_obj_set_style_bg_color(popup, lv_color_hex(0xF4F7FA), LV_PART_MAIN);
+    lv_obj_set_style_bg_color(popup, palette->surface, LV_PART_MAIN);
     lv_obj_set_style_border_width(popup, 2, LV_PART_MAIN);
-    lv_obj_set_style_border_color(popup, lv_color_hex(0x64D2FF), LV_PART_MAIN);
+    lv_obj_set_style_border_color(popup, palette->accent, LV_PART_MAIN);
 
     title_label = lv_label_create(popup);
     message_label = lv_label_create(popup);
@@ -243,8 +253,8 @@ bool watch_page_lifecycle_show_popup(watch_page_lifecycle_t *lifecycle, const ch
     lv_obj_set_y(title_label, 8);
     lv_obj_set_align(message_label, LV_ALIGN_TOP_MID);
     lv_obj_set_y(message_label, 36);
-    lv_obj_set_style_text_color(title_label, lv_color_hex(0x101820), LV_PART_MAIN);
-    lv_obj_set_style_text_color(message_label, lv_color_hex(0x334455), LV_PART_MAIN);
+    lv_obj_set_style_text_color(title_label, palette->text, LV_PART_MAIN);
+    lv_obj_set_style_text_color(message_label, palette->muted, LV_PART_MAIN);
 
     lifecycle->active_popup = popup;
     lifecycle->popup_created_count++;
@@ -278,12 +288,14 @@ bool watch_page_lifecycle_apply(watch_page_lifecycle_t *lifecycle, const watch_s
             lifecycle->time_valid = snapshot->time_valid;
             lifecycle->time = snapshot->time;
             return watch_page_render(lifecycle->active_screen, snapshot)
+                && watch_ui_theme_apply(lifecycle->active_screen, snapshot)
                 && watch_page_sync_popup(lifecycle, snapshot);
         }
 
         lifecycle->time_valid = snapshot->time_valid;
         lifecycle->time = snapshot->time;
-        return watch_page_sync_popup(lifecycle, snapshot);
+        return watch_ui_theme_apply(lifecycle->active_screen, snapshot)
+            && watch_page_sync_popup(lifecycle, snapshot);
     }
 
     if (lifecycle->active && lifecycle->active_page == snapshot->page) {
@@ -291,6 +303,7 @@ bool watch_page_lifecycle_apply(watch_page_lifecycle_t *lifecycle, const watch_s
         lifecycle->time_valid = snapshot->time_valid;
         lifecycle->time = snapshot->time;
         return watch_page_render(lifecycle->active_screen, snapshot)
+            && watch_ui_theme_apply(lifecycle->active_screen, snapshot)
             && watch_page_sync_popup(lifecycle, snapshot);
     }
 
@@ -298,7 +311,8 @@ bool watch_page_lifecycle_apply(watch_page_lifecycle_t *lifecycle, const watch_s
     if (next_screen != NULL) {
         watch_page_bind_labels(next_screen);
     }
-    if (next_screen == NULL || !watch_page_render(next_screen, snapshot)) {
+    if (next_screen == NULL || !watch_page_render(next_screen, snapshot)
+        || !watch_ui_theme_apply(next_screen, snapshot)) {
         if (next_screen != NULL) {
             lv_obj_del(next_screen);
         }
