@@ -24,7 +24,7 @@ from typing import Any
 SUBMIT_URL = "https://www.rightapi.ai/draw/v1/images/generations"
 TASK_URL = "https://www.rightapi.ai/v1/tasks/{task_id}"
 DEFAULT_MODEL = "gpt-image-2"
-DEFAULT_SIZE = "9:16"
+DEFAULT_SIZE = "6:7"
 DEFAULT_IMAGE_SIZE = "1K"
 
 

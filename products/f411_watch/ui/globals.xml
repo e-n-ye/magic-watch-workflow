@@ -42,6 +42,13 @@
     </images>
 
     <fonts>
-        <!-- The F411 port uses its already configured default font. -->
+        <!-- Keep only the sizes used by the watchface. The source TTF is
+             editor input; the export produces embedded LVGL C data. -->
+        <bin name="montserrat_8" src_path="fonts/Montserrat-Medium.ttf"
+             size="8" bpp="2" as_file="false" range="0x20-0x7f" />
+        <bin name="montserrat_24" src_path="fonts/Montserrat-Medium.ttf"
+             size="24" bpp="2" as_file="false" range="0x20-0x7f" />
+        <bin name="montserrat_40" src_path="fonts/Montserrat-Medium.ttf"
+             size="40" bpp="2" as_file="false" range="0x20-0x7f" />
     </fonts>
 </globals>
