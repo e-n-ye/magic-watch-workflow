@@ -10,3 +10,4 @@
 **/__pycache__/
 /firmware/stm32/f411_watch/.mxproject
 /learn/
+.env.local

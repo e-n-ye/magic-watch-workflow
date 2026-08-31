@@ -142,3 +142,83 @@ the user explicitly starts that round.
 Load [official-patterns.md](references/official-patterns.md) when a task needs a
 concrete style, layout, subject, asset, animation, component, or custom-widget
 pattern from the supplied official examples.
+
+## Visual-to-XML workflow
+
+Use this skill for the complete visual pipeline, not only XML syntax:
+
+1. Write a visual brief before touching the XML. State the target screen,
+   `240x280` canvas, information hierarchy, interaction states, palette, type
+   constraints, and what must remain readable on the F411. For the first demo
+   pass, keep the brief scoped to the watch face: large time, date/weekday,
+   battery, and a step or sensor summary.
+2. Generate concept images only as visual references. The concept must show a
+   bare watch screen at the target aspect ratio; it is not a bitmap background
+   to burn into firmware. Record the prompt, model, size, reference images,
+   and selected variant in an untracked `build/design-evidence/<job>/`
+   directory. Keep intermediate drafts and thumbnails out of Git.
+3. Before any paid request, show the user the model, variant count, size,
+   prompt summary, and reference count and wait for explicit approval. Use the
+   repository helper in `scripts/right_image_job.py`; it defaults to dry-run
+   and requires `--confirm-paid` for network submission. Read `RIGHT_API_KEY`
+   (or `RIGHTAPI_API_KEY`) from the environment or a local `.env.local`; never
+   put a key in XML, manifests, commits, or chat. See
+   [right-image.md](references/right-image.md) for the command and response
+   contract.
+4. Inspect generated thumbnails with the user and record one selected draft.
+   Do not translate an unconfirmed concept into production XML. If the visual
+   is not suitable, change one prompt dimension at a time and regenerate.
+5. Translate the selected concept into declarative XML. XML owns structure,
+   spacing, colors, typography, stable object names, and visual states. Prefer
+   `lv_obj` + `lv_label` combinations already enabled by `lv_conf.h`; add image
+   assets only with a measured Flash/RAM budget and a real consumer. Runtime
+   hooks may update text, subjects, selected states, and degraded notices, but
+   must not create duplicate visual objects or reach into HAL code.
+6. Ask the user to open `project.xml` in LVGL Pro Editor and verify the preview.
+   Every XML change must be exported with the Editor Code/hammer action (or
+   `Ctrl+B`) before firmware or simulator validation. If export fails, fix the
+   XML/schema problem and wait for a fresh Editor export; never hand-synthesize
+   `*_gen.c/h`.
+7. Validate the exported result at native `240x280` in the host simulator,
+   checking overlap, clipping, object names, selected/degraded states, and
+   repeated enter/leave behavior. Capture evidence under
+   `build/design-evidence/<scenario>/` and keep only a redacted manifest or
+   final approved assets in Git.
+8. Integrate dynamic data only after the visual preview is approved. Feed pages
+   through `watch_ui_frame_t` (or the repository equivalent), preserve
+   `normal/degraded/low_battery/no_storage` scenarios, and keep F411 and the
+   simulator on the same generated UI contract.
+
+### Visual asset boundary
+
+Concept images are exploratory artifacts. Do not use them as full-screen
+backgrounds in the watch; map their hierarchy into lightweight XML objects so
+text stays crisp and the UI remains maintainable. Icons should come from an
+existing vector/resource system where possible. If a generated raster icon is
+truly needed, keep it small, document its dimensions and consumer, and verify
+Flash/RAM impact before committing it.
+
+### Right image helper
+
+The standard-library helper is intentionally provider-specific and async:
+
+```sh
+python skills/lvgl-xml/scripts/right_image_job.py \\
+  --prompt "<approved visual brief>" --model gpt-image-2 --n 3 \\
+  --size 9:16 --image-size 1K --output-dir build/design-evidence/watchface \\
+  --dry-run
+```
+
+After the user approves that exact request, rerun with `--confirm-paid` and a
+local key. The script polls `/v1/tasks/{task_id}`, downloads URL or base64
+results, writes SHA-256 values, and emits a manifest without secrets. It does
+not add Python dependencies. Use `gpt-image-2` for first-pass 1K drafts;
+reserve `gpt-image-2-vip` for a user-approved refinement.
+
+### Design evidence and handoff
+
+Use `build/design-evidence/` for untracked concepts, thumbnails, task results,
+and confirmation notes. A handoff should identify the approved image, the
+corresponding XML screen path, the Editor export timestamp, and simulator
+scenario screenshots. Do not commit machine-specific Editor paths, API
+responses containing credentials, or unapproved drafts.
