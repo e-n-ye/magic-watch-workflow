@@ -63,7 +63,12 @@ static uint32_t f411_watch_ui_target = F411_WATCH_UI_TARGET_ALL;
  * Fonts
  *----------------*/
 
-
+lv_font_t * montserrat_8;
+extern lv_font_t montserrat_8_data;
+lv_font_t * montserrat_24;
+extern lv_font_t montserrat_24_data;
+lv_font_t * montserrat_40;
+extern lv_font_t montserrat_40_data;
 
 /*----------------
  * Images
@@ -101,8 +106,30 @@ void f411_watch_ui_init_gen(const char * asset_path)
      * Fonts
      *----------------*/
 
+    /* Targets: any */
 
+    #if F411_WATCH_UI_CHECK_COMPILE_TARGET(F411_WATCH_UI_TARGET_ALL)
+    if (f411_watch_ui_check_target(F411_WATCH_UI_TARGET_ALL)) {
+        if (!montserrat_8) {
+            /* montserrat_8 */
+            /* get font 'montserrat_8' from a C array */
+            montserrat_8 = &montserrat_8_data;
 
+        }
+        if (!montserrat_24) {
+            /* montserrat_24 */
+            /* get font 'montserrat_24' from a C array */
+            montserrat_24 = &montserrat_24_data;
+
+        }
+        if (!montserrat_40) {
+            /* montserrat_40 */
+            /* get font 'montserrat_40' from a C array */
+            montserrat_40 = &montserrat_40_data;
+
+        }
+    }
+    #endif
 
     /*----------------
      * Images
@@ -162,8 +189,16 @@ void f411_watch_ui_init_gen(const char * asset_path)
 #if defined(LV_USE_XML) && LV_USE_XML
     /* Register widgets */
 
+    /* Check all fonts / default if needed. This prevents fonts that are used in one target but
+       defined in another from causing assertion failures during rendering of the Preview. */
+    check_font(&montserrat_8, "montserrat_8");
+    check_font(&montserrat_24, "montserrat_24");
+    check_font(&montserrat_40, "montserrat_40");
 
     /* Register fonts */
+    lv_xml_register_font(NULL, "montserrat_8", montserrat_8);
+    lv_xml_register_font(NULL, "montserrat_24", montserrat_24);
+    lv_xml_register_font(NULL, "montserrat_40", montserrat_40);
 
     /* Register subjects */
 

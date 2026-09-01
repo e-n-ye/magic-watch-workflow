@@ -175,7 +175,7 @@ static bool watch_ui_theme_render_watchface(lv_obj_t *screen, const watch_snapsh
                                             const watch_ui_palette_t *palette)
 {
     char date_text[16] = "DATE --";
-    char battery_text[24] = "BATTERY --  DEGRADED";
+    char battery_text[24] = "BATTERY --";
     const char *steps_text = "--";
     lv_obj_t *date;
     lv_obj_t *weekday;
@@ -199,14 +199,14 @@ static bool watch_ui_theme_render_watchface(lv_obj_t *screen, const watch_snapsh
     if (snapshot->time_valid) {
         (void)snprintf(date_text, sizeof(date_text), "%s %02u", watch_ui_theme_month(snapshot->time.month),
                        snapshot->time.day);
-        (void)snprintf(battery_text, sizeof(battery_text), "BATTERY --  DEGRADED");
+        (void)snprintf(battery_text, sizeof(battery_text), "BATTERY --");
     }
     watch_ui_theme_set_text(date, date_text, palette, palette->text);
     watch_ui_theme_set_text(weekday, watch_ui_theme_weekday(snapshot->time.weekday), palette,
                             palette->muted);
     watch_ui_theme_set_text(battery, battery_text, palette, palette->degraded);
     watch_ui_theme_set_text(steps, steps_text, palette, palette->text);
-    watch_ui_theme_set_text(status, degraded ? "SENSORS DEGRADED" : "SENSORS READY", palette,
+    watch_ui_theme_set_text(status, degraded ? "DEGRADED" : "READY", palette,
                             degraded ? palette->degraded : palette->success);
 
     watch_ui_theme_style_label(date, palette, palette->text, WATCH_UI_CONTENT_WIDTH, WATCH_UI_MARGIN,

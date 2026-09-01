@@ -15,5 +15,7 @@ The map keeps the visual hierarchy intentionally sparse for the F411 display:
 
 All child coordinates are relative to their named parent. The summary card is
 the only interactive region in this first concept and has a `208x58` hitbox.
-Run `screen_map_validate.py` before translating the map into XML; a failed
-validation blocks generation.
+The map uses the longest V1 weekday (`WEDNESDAY`) so the runtime replacement
+cannot unexpectedly collide with the date label. Keep the map synchronized with
+any user-approved Editor adjustment, then run `screen_map_validate.py` before
+translating it into XML; a failed validation blocks generation.

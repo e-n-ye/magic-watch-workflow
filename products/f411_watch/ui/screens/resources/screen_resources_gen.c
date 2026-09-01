@@ -2,6 +2,7 @@
  * @file screen_resources_gen.c
  * @brief Template source file for LVGL objects
  */
+
 /*********************
  *      INCLUDES
  *********************/
@@ -86,3 +87,4 @@ lv_obj_t * screen_resources_create(void)
 /**********************
  *   STATIC FUNCTIONS
  **********************/
+

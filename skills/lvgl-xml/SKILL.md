@@ -88,6 +88,19 @@ Prefer the established forms for the rest of the schema:
 - Add subjects, asset data, fonts, animations, components, or custom widgets
   only when the current round has a consumer and a test. Follow the examples
   for subject bindings and component APIs instead of inventing attributes.
+- Do not combine geometry attributes (`x`, `y`, `width`, `height`, or `align`)
+  with a child `<remove_style_all />`. The generated call runs after attribute
+  setters and removes those local style properties. Either keep the default
+  style and override it, or put all required geometry in a style added after
+  `<remove_style_all />`.
+- Treat the confirmed screen-map and production XML as a pair. After a human
+  preview adjustment, update the map with the accepted coordinates, dimensions,
+  text samples, and parent relationships before the next export; do not leave
+  a map that describes an older layout.
+- Validate every runtime text variant, not only the short design placeholder.
+  Use the longest weekday, degraded/status, battery, date, and translated
+  strings when choosing label widths. Runtime hooks may change text and color,
+  but must not introduce a string that wraps, collides, or exceeds its XML box.
 
 ## Editor Export
 
@@ -204,6 +217,21 @@ Use this skill for the complete visual pipeline, not only XML syntax:
    through `watch_ui_frame_t` (or the repository equivalent), preserve
    `normal/degraded/low_battery/no_storage` scenarios, and keep F411 and the
    simulator on the same generated UI contract.
+
+### Human tuning loop
+
+The first successful Editor preview is a structural checkpoint, not the final
+visual approval. For each user adjustment, keep the loop bounded:
+
+1. Change one visual dimension at a time (position, size, spacing, typography,
+   or color), then export again.
+2. Confirm the exported C contains the intended geometry and that the native
+   `240x280` screenshot matches the Editor preview.
+3. Copy the accepted values back to the screen-map and record the export and
+   approval state in the design manifest before starting the next dimension.
+
+This prevents a preview-only tweak, stale generated C, or a hand-edited
+generated file from becoming the undocumented source of truth.
 
 ### Visual asset boundary
 
