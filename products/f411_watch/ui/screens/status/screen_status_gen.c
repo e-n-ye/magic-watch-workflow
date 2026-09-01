@@ -2,6 +2,7 @@
  * @file screen_status_gen.c
  * @brief Template source file for LVGL objects
  */
+
 /*********************
  *      INCLUDES
  *********************/
@@ -139,3 +140,4 @@ lv_obj_t * screen_status_create(void)
 /**********************
  *   STATIC FUNCTIONS
  **********************/
+

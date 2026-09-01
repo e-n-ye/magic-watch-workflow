@@ -28,6 +28,14 @@ def validate(xml_path: Path, globals_path: Path, lv_conf_path: Path) -> list[str
             names.add(name)
         if node.tag == "view" and node.get("style"):
             errors.append(f"{xml_path.name}: use a child <style> element, not view style=...")
+        if node.tag in object_tags and node.find("remove_style_all") is not None:
+            geometry = [attr for attr in ("x", "y", "width", "height", "align") if node.get(attr)]
+            if geometry:
+                errors.append(
+                    f"{xml_path.name}: {name or node.tag} combines <remove_style_all> "
+                    f"with geometry attributes {', '.join(geometry)}; the generated call "
+                    "clears those local style properties"
+                )
 
     for node in globals_root.findall("./fonts/*") + globals_root.findall("./images/*"):
         source = node.get("src_path")

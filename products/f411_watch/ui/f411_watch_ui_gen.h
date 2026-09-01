@@ -145,7 +145,10 @@ extern lv_style_t text_accent;
  * Fonts
  *----------------*/
 
-
+/* Targets: any */
+extern lv_font_t * montserrat_8;
+extern lv_font_t * montserrat_24;
+extern lv_font_t * montserrat_40;
 
 
 /*----------------

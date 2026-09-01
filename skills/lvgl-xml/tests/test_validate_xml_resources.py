@@ -52,6 +52,17 @@ class XmlResourceTests(unittest.TestCase):
             errors = validate(path, GLOBALS, LV_CONF)
             self.assertTrue(any("duplicate object" in error for error in errors))
 
+    def test_remove_style_all_after_geometry_is_rejected(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "screen.xml"
+            path.write_text(
+                '<screen><view><lv_obj name="card" x="16" y="20" '
+                'width="208" height="58"><remove_style_all /></lv_obj></view></screen>',
+                encoding="utf-8",
+            )
+            errors = validate(path, GLOBALS, LV_CONF)
+            self.assertTrue(any("clears those local style properties" in error for error in errors))
+
 
 if __name__ == "__main__":
     unittest.main()

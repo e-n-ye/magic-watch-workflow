@@ -2,6 +2,7 @@
  * @file screen_watchface_gen.c
  * @brief Template source file for LVGL objects
  */
+
 /*********************
  *      INCLUDES
  *********************/
@@ -87,7 +88,6 @@ lv_obj_t * screen_watchface_create(void)
         lv_obj_set_height(watchface_top_rule, 1);
         lv_obj_set_flag(watchface_top_rule, LV_OBJ_FLAG_SCROLLABLE, false);
         lv_obj_set_flag(watchface_top_rule, LV_OBJ_FLAG_IGNORE_LAYOUT, true);
-        lv_obj_remove_style_all(watchface_top_rule);
         lv_obj_add_style(watchface_top_rule, &style_rule, 0);
 
         lv_obj_t * watchface_battery = lv_label_create(lv_obj_0);
@@ -101,11 +101,11 @@ lv_obj_t * screen_watchface_create(void)
 
         lv_obj_t * watchface_status = lv_label_create(lv_obj_0);
         lv_obj_set_name(watchface_status, "watchface_status");
-        lv_label_set_text(watchface_status, "SENSORS READY");
-        lv_obj_set_x(watchface_status, 124);
+        lv_label_set_text(watchface_status, "READY");
+        lv_obj_set_x(watchface_status, 112);
         lv_obj_set_y(watchface_status, 40);
-        lv_obj_set_width(watchface_status, 100);
-        lv_obj_set_style_text_color(watchface_status, DEGRADED, 0);
+        lv_obj_set_width(watchface_status, 112);
+        lv_obj_set_style_text_color(watchface_status, ACCENT, 0);
         lv_obj_set_style_text_align(watchface_status, LV_TEXT_ALIGN_RIGHT, 0);
         lv_obj_set_flag(watchface_status, LV_OBJ_FLAG_IGNORE_LAYOUT, true);
 
@@ -113,30 +113,31 @@ lv_obj_t * screen_watchface_create(void)
         lv_obj_set_name(page_title, "page_title");
         lv_label_set_text(page_title, "10:09");
         lv_obj_set_align(page_title, LV_ALIGN_TOP_MID);
-        lv_obj_set_y(page_title, 70);
-        lv_obj_set_width(page_title, 208);
+        lv_obj_set_y(page_title, 96);
+        lv_obj_set_width(page_title, 218);
         lv_obj_set_style_text_color(page_title, TEXT_PRIMARY, 0);
+        lv_obj_set_height(page_title, 65);
+        lv_obj_set_x(page_title, -1);
         lv_obj_set_style_text_font(page_title, montserrat_40, 0);
         lv_obj_set_style_text_align(page_title, LV_TEXT_ALIGN_CENTER, 0);
         lv_obj_set_flag(page_title, LV_OBJ_FLAG_IGNORE_LAYOUT, true);
 
         lv_obj_t * watchface_time_rule = lv_obj_create(lv_obj_0);
         lv_obj_set_name(watchface_time_rule, "watchface_time_rule");
-        lv_obj_set_x(watchface_time_rule, 16);
-        lv_obj_set_y(watchface_time_rule, 144);
+        lv_obj_set_x(watchface_time_rule, 18);
+        lv_obj_set_y(watchface_time_rule, 184);
         lv_obj_set_width(watchface_time_rule, 208);
-        lv_obj_set_height(watchface_time_rule, 1);
+        lv_obj_set_height(watchface_time_rule, 10);
         lv_obj_set_flag(watchface_time_rule, LV_OBJ_FLAG_SCROLLABLE, false);
         lv_obj_set_flag(watchface_time_rule, LV_OBJ_FLAG_IGNORE_LAYOUT, true);
-        lv_obj_remove_style_all(watchface_time_rule);
         lv_obj_add_style(watchface_time_rule, &style_rule, 0);
 
         lv_obj_t * watchface_weekday = lv_label_create(lv_obj_0);
         lv_obj_set_name(watchface_weekday, "watchface_weekday");
         lv_label_set_text(watchface_weekday, "WEDNESDAY");
-        lv_obj_set_x(watchface_weekday, 16);
-        lv_obj_set_y(watchface_weekday, 154);
-        lv_obj_set_width(watchface_weekday, 122);
+        lv_obj_set_x(watchface_weekday, 14);
+        lv_obj_set_y(watchface_weekday, 195);
+        lv_obj_set_width(watchface_weekday, 108);
         lv_obj_set_style_text_color(watchface_weekday, ACCENT, 0);
         lv_obj_set_style_text_align(watchface_weekday, LV_TEXT_ALIGN_RIGHT, 0);
         lv_obj_set_flag(watchface_weekday, LV_OBJ_FLAG_IGNORE_LAYOUT, true);
@@ -144,27 +145,27 @@ lv_obj_t * screen_watchface_create(void)
         lv_obj_t * watchface_date = lv_label_create(lv_obj_0);
         lv_obj_set_name(watchface_date, "watchface_date");
         lv_label_set_text(watchface_date, "MAY 28");
-        lv_obj_set_x(watchface_date, 134);
-        lv_obj_set_y(watchface_date, 154);
-        lv_obj_set_width(watchface_date, 90);
+        lv_obj_set_x(watchface_date, 133);
+        lv_obj_set_y(watchface_date, 195);
+        lv_obj_set_width(watchface_date, 92);
+        lv_obj_set_height(watchface_date, 18);
         lv_obj_set_style_text_color(watchface_date, TEXT_PRIMARY, 0);
         lv_obj_set_flag(watchface_date, LV_OBJ_FLAG_IGNORE_LAYOUT, true);
 
         lv_obj_t * watchface_summary = lv_obj_create(lv_obj_0);
         lv_obj_set_name(watchface_summary, "watchface_summary");
-        lv_obj_set_x(watchface_summary, 16);
-        lv_obj_set_y(watchface_summary, 188);
-        lv_obj_set_width(watchface_summary, 208);
-        lv_obj_set_height(watchface_summary, 58);
+        lv_obj_set_x(watchface_summary, 13);
+        lv_obj_set_y(watchface_summary, 214);
+        lv_obj_set_width(watchface_summary, 212);
+        lv_obj_set_height(watchface_summary, 45);
         lv_obj_set_flag(watchface_summary, LV_OBJ_FLAG_SCROLLABLE, false);
         lv_obj_set_flag(watchface_summary, LV_OBJ_FLAG_IGNORE_LAYOUT, true);
-        lv_obj_remove_style_all(watchface_summary);
         lv_obj_add_style(watchface_summary, &style_summary, 0);
         lv_obj_t * watchface_steps = lv_label_create(watchface_summary);
         lv_obj_set_name(watchface_steps, "watchface_steps");
         lv_label_set_text(watchface_steps, "8,264");
         lv_obj_set_x(watchface_steps, 18);
-        lv_obj_set_y(watchface_steps, 12);
+        lv_obj_set_y(watchface_steps, 2);
         lv_obj_set_width(watchface_steps, 90);
         lv_obj_set_style_text_color(watchface_steps, TEXT_PRIMARY, 0);
         lv_obj_set_style_text_font(watchface_steps, montserrat_24, 0);
@@ -174,8 +175,8 @@ lv_obj_t * screen_watchface_create(void)
         lv_obj_t * watchface_steps_label = lv_label_create(watchface_summary);
         lv_obj_set_name(watchface_steps_label, "watchface_steps_label");
         lv_label_set_text(watchface_steps_label, "STEPS");
-        lv_obj_set_x(watchface_steps_label, 120);
-        lv_obj_set_y(watchface_steps_label, 18);
+        lv_obj_set_x(watchface_steps_label, 117);
+        lv_obj_set_y(watchface_steps_label, 9);
         lv_obj_set_width(watchface_steps_label, 72);
         lv_obj_set_style_text_color(watchface_steps_label, TEXT_MUTED, 0);
         lv_obj_set_flag(watchface_steps_label, LV_OBJ_FLAG_IGNORE_LAYOUT, true);
@@ -183,11 +184,12 @@ lv_obj_t * screen_watchface_create(void)
         lv_obj_t * watchface_summary_hint = lv_label_create(watchface_summary);
         lv_obj_set_name(watchface_summary_hint, "watchface_summary_hint");
         lv_label_set_text(watchface_summary_hint, "TAP FOR STATUS");
-        lv_obj_set_x(watchface_summary_hint, 18);
-        lv_obj_set_y(watchface_summary_hint, 36);
-        lv_obj_set_width(watchface_summary_hint, 174);
+        lv_obj_set_x(watchface_summary_hint, 16);
+        lv_obj_set_y(watchface_summary_hint, 32);
+        lv_obj_set_width(watchface_summary_hint, 176);
         lv_obj_set_style_text_color(watchface_summary_hint, TEXT_MUTED, 0);
         lv_obj_set_style_text_font(watchface_summary_hint, montserrat_8, 0);
+        lv_obj_set_height(watchface_summary_hint, 10);
         lv_obj_set_style_text_align(watchface_summary_hint, LV_TEXT_ALIGN_CENTER, 0);
         lv_obj_set_flag(watchface_summary_hint, LV_OBJ_FLAG_IGNORE_LAYOUT, true);
 
@@ -214,3 +216,4 @@ lv_obj_t * screen_watchface_create(void)
 /**********************
  *   STATIC FUNCTIONS
  **********************/
+

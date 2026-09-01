@@ -2,6 +2,7 @@
  * @file screen_launcher_gen.c
  * @brief Template source file for LVGL objects
  */
+
 /*********************
  *      INCLUDES
  *********************/
@@ -172,3 +173,4 @@ lv_obj_t * screen_launcher_create(void)
 /**********************
  *   STATIC FUNCTIONS
  **********************/
+

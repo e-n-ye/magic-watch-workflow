@@ -19,15 +19,15 @@
     {"name": "page_brand", "type": "label", "parent": "root", "x": 16, "y": 8, "width": 208, "height": 18, "text": "MAGIC WATCH", "font": "default", "text_color": "text_muted", "text_align": "center"},
     {"name": "watchface_top_rule", "type": "object", "parent": "root", "x": 16, "y": 32, "width": 208, "height": 1, "bg_color": "border"},
     {"name": "watchface_battery", "type": "label", "parent": "root", "x": 16, "y": 40, "width": 96, "height": 18, "text": "BATTERY 85%", "font": "default", "text_color": "accent"},
-    {"name": "watchface_status", "type": "label", "parent": "root", "x": 112, "y": 40, "width": 112, "height": 18, "text": "SENSORS READY", "font": "default", "text_color": "degraded", "text_align": "right"},
-    {"name": "page_title", "type": "label", "parent": "root", "x": 16, "y": 70, "width": 208, "height": 52, "text": "10:09", "font": "montserrat_40", "text_color": "text_primary", "text_align": "center"},
-    {"name": "watchface_time_rule", "type": "object", "parent": "root", "x": 16, "y": 144, "width": 208, "height": 1, "bg_color": "border"},
-    {"name": "watchface_weekday", "type": "label", "parent": "root", "x": 16, "y": 154, "width": 108, "height": 18, "text": "WED", "font": "default", "text_color": "accent", "text_align": "right"},
-    {"name": "watchface_date", "type": "label", "parent": "root", "x": 132, "y": 154, "width": 92, "height": 18, "text": "MAY 28", "font": "default", "text_color": "text_primary"},
-    {"name": "watchface_summary", "type": "object", "parent": "root", "x": 16, "y": 188, "width": 208, "height": 58, "bg_color": "surface_card", "border_width": 1, "border_color": "border", "radius": 6, "pad_all": 0, "interactive": true, "hitbox": {"width": 208, "height": 58}},
-    {"name": "watchface_steps", "type": "label", "parent": "watchface_summary", "x": 18, "y": 8, "width": 90, "height": 30, "text": "8,264", "font": "montserrat_24", "text_color": "text_primary", "text_align": "right"},
-    {"name": "watchface_steps_label", "type": "label", "parent": "watchface_summary", "x": 120, "y": 14, "width": 72, "height": 18, "text": "STEPS", "font": "default", "text_color": "text_muted"},
-    {"name": "watchface_summary_hint", "type": "label", "parent": "watchface_summary", "x": 18, "y": 40, "width": 174, "height": 12, "text": "TAP FOR STATUS", "font": "montserrat_8", "text_color": "text_muted", "text_align": "center"},
-    {"name": "page_hint", "type": "label", "parent": "root", "x": 16, "y": 258, "width": 208, "height": 14, "text": "ENCODER PRESS  OPEN LAUNCHER", "font": "montserrat_8", "text_color": "text_muted", "text_align": "center"}
+    {"name": "watchface_status", "type": "label", "parent": "root", "x": 112, "y": 40, "width": 112, "height": 18, "text": "READY", "font": "default", "text_color": "accent", "text_align": "right"},
+    {"name": "page_title", "type": "label", "parent": "root", "x": 10, "y": 96, "width": 218, "height": 65, "text": "10:09", "font": "montserrat_40", "text_color": "text_primary", "text_align": "center"},
+    {"name": "watchface_time_rule", "type": "object", "parent": "root", "x": 18, "y": 184, "width": 208, "height": 10, "bg_color": "border"},
+    {"name": "watchface_weekday", "type": "label", "parent": "root", "x": 14, "y": 195, "width": 108, "height": 18, "text": "WEDNESDAY", "font": "default", "text_color": "accent", "text_align": "right"},
+    {"name": "watchface_date", "type": "label", "parent": "root", "x": 133, "y": 195, "width": 92, "height": 18, "text": "MAY 28", "font": "default", "text_color": "text_primary"},
+    {"name": "watchface_summary", "type": "object", "parent": "root", "x": 13, "y": 214, "width": 212, "height": 45, "bg_color": "surface_card", "border_width": 1, "border_color": "border", "radius": 6, "pad_all": 0, "interactive": true, "hitbox": {"width": 212, "height": 45}},
+    {"name": "watchface_steps", "type": "label", "parent": "watchface_summary", "x": 18, "y": 2, "width": 90, "height": 30, "text": "8,264", "font": "montserrat_24", "text_color": "text_primary", "text_align": "right"},
+    {"name": "watchface_steps_label", "type": "label", "parent": "watchface_summary", "x": 117, "y": 9, "width": 72, "height": 18, "text": "STEPS", "font": "default", "text_color": "text_muted"},
+    {"name": "watchface_summary_hint", "type": "label", "parent": "watchface_summary", "x": 16, "y": 32, "width": 176, "height": 10, "text": "TAP FOR STATUS", "font": "montserrat_8", "text_color": "text_muted", "text_align": "center"},
+    {"name": "page_hint", "type": "label", "parent": "root", "x": 16, "y": 262, "width": 208, "height": 8, "text": "ENCODER PRESS  OPEN LAUNCHER", "font": "montserrat_8", "text_color": "text_muted", "text_align": "center"}
   ]
 }
