@@ -149,14 +149,25 @@ static bool watch_core_open_page(watch_core_t *core, watch_page_t page)
     return true;
 }
 
-static bool watch_core_select_launcher_item(watch_core_t *core)
+static bool watch_core_select_launcher_item(watch_core_t *core, uint8_t launcher_index)
 {
-    const watch_app_entry_t *app = watch_core_get_launcher_app(core->launcher_index);
+    const watch_app_entry_t *app;
+
+    if (core->page != WATCH_PAGE_LAUNCHER) {
+        return true;
+    }
+
+    app = watch_core_get_launcher_app(launcher_index);
 
     if (app == NULL) {
         return false;
     }
 
+    if (core->page_depth >= WATCH_CORE_PAGE_STACK_CAPACITY || !watch_core_has_command_space(core)) {
+        return false;
+    }
+
+    core->launcher_index = launcher_index;
     return watch_core_open_page(core, app->page);
 }
 
@@ -240,9 +251,6 @@ bool watch_core_dispatch_event(watch_core_t *core, const watch_event_t *event)
         if (core->page == WATCH_PAGE_DIAGNOSTICS) {
             return watch_core_set_popup_visible(core, true);
         }
-        if (core->page == WATCH_PAGE_LAUNCHER) {
-            return watch_core_select_launcher_item(core);
-        }
         return true;
     case WATCH_EVENT_ENCODER_PRESS:
         if (core->page == WATCH_PAGE_WATCHFACE) {
@@ -266,6 +274,8 @@ bool watch_core_dispatch_event(watch_core_t *core, const watch_event_t *event)
             return true;
         }
         return watch_core_move_selection(core, 1);
+    case WATCH_EVENT_LAUNCHER_ITEM_TAPPED:
+        return watch_core_select_launcher_item(core, event->launcher_index);
     case WATCH_EVENT_TIME_UPDATED:
         return watch_core_set_time(core, &event->time);
     case WATCH_EVENT_SENSOR_STATUS_UPDATED:

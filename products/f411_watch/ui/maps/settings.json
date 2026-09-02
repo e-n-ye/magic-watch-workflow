@@ -1,0 +1,151 @@
+{
+  "version": 1,
+  "screen": "settings",
+  "canvas": {
+    "width": 240,
+    "height": 280
+  },
+  "safe_area": {
+    "x": 16,
+    "y": 8,
+    "width": 208,
+    "height": 264
+  },
+  "objects": [
+    {
+      "name": "page_brand",
+      "type": "label",
+      "parent": "root",
+      "x": 16,
+      "y": 8,
+      "width": 208,
+      "height": 18,
+      "text": "MAGIC WATCH",
+      "font": "default"
+    },
+    {
+      "name": "page_title",
+      "type": "label",
+      "parent": "root",
+      "x": 16,
+      "y": 28,
+      "width": 208,
+      "height": 18,
+      "text": "SETTINGS",
+      "font": "default"
+    },
+    {
+      "name": "settings_list",
+      "type": "object",
+      "parent": "root",
+      "x": 16,
+      "y": 58,
+      "width": 208,
+      "height": 150
+    },
+    {
+      "name": "settings_item_theme",
+      "type": "object",
+      "parent": "settings_list",
+      "x": 0,
+      "y": 0,
+      "width": 208,
+      "height": 40
+    },
+    {
+      "name": "settings_title_theme",
+      "type": "label",
+      "parent": "settings_item_theme",
+      "x": 12,
+      "y": 10,
+      "width": 128,
+      "height": 18,
+      "text": "THEME",
+      "font": "default"
+    },
+    {
+      "name": "settings_value_theme",
+      "type": "label",
+      "parent": "settings_item_theme",
+      "x": 142,
+      "y": 10,
+      "width": 54,
+      "height": 18,
+      "text": "DARK",
+      "font": "default"
+    },
+    {
+      "name": "settings_item_brightness",
+      "type": "object",
+      "parent": "settings_list",
+      "x": 0,
+      "y": 44,
+      "width": 208,
+      "height": 40
+    },
+    {
+      "name": "settings_title_brightness",
+      "type": "label",
+      "parent": "settings_item_brightness",
+      "x": 12,
+      "y": 10,
+      "width": 128,
+      "height": 18,
+      "text": "BRIGHTNESS",
+      "font": "default"
+    },
+    {
+      "name": "settings_value_brightness",
+      "type": "label",
+      "parent": "settings_item_brightness",
+      "x": 142,
+      "y": 10,
+      "width": 54,
+      "height": 18,
+      "text": "80%",
+      "font": "default"
+    },
+    {
+      "name": "settings_item_time_format",
+      "type": "object",
+      "parent": "settings_list",
+      "x": 0,
+      "y": 88,
+      "width": 208,
+      "height": 40
+    },
+    {
+      "name": "settings_title_time_format",
+      "type": "label",
+      "parent": "settings_item_time_format",
+      "x": 12,
+      "y": 10,
+      "width": 128,
+      "height": 18,
+      "text": "TIME FORMAT",
+      "font": "default"
+    },
+    {
+      "name": "settings_value_time_format",
+      "type": "label",
+      "parent": "settings_item_time_format",
+      "x": 142,
+      "y": 10,
+      "width": 54,
+      "height": 18,
+      "text": "24 H",
+      "font": "default"
+    },
+    {
+      "name": "page_hint",
+      "type": "label",
+      "parent": "root",
+      "x": 16,
+      "y": 262,
+      "width": 208,
+      "height": 18,
+      "text": "TOUCH A ROW TO CHANGE",
+      "font": "montserrat_8"
+    }
+  ]
+}

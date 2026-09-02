@@ -53,13 +53,25 @@ add_library(f411_watch_user OBJECT
     ui/watch_ui.c
     ${CMAKE_SOURCE_DIR}/../../../products/f411_watch/ui/f411_watch_ui_gen.c
     ${CMAKE_SOURCE_DIR}/../../../products/f411_watch/ui/watch_ui_theme.c
+    ${CMAKE_SOURCE_DIR}/../../../products/f411_watch/ui/fonts/montserrat_8_data.c
+    ${CMAKE_SOURCE_DIR}/../../../products/f411_watch/ui/fonts/montserrat_24_data.c
+    ${CMAKE_SOURCE_DIR}/../../../products/f411_watch/ui/fonts/montserrat_40_data.c
+    ${CMAKE_SOURCE_DIR}/../../../products/f411_watch/ui/images/icon_battery_data.c
+    ${CMAKE_SOURCE_DIR}/../../../products/f411_watch/ui/images/icon_calendar_data.c
+    ${CMAKE_SOURCE_DIR}/../../../products/f411_watch/ui/images/icon_settings_data.c
+    ${CMAKE_SOURCE_DIR}/../../../products/f411_watch/ui/images/icon_status_data.c
+    ${CMAKE_SOURCE_DIR}/../../../products/f411_watch/ui/images/icon_steps_data.c
+    ${CMAKE_SOURCE_DIR}/../../../products/f411_watch/ui/images/icon_timer_data.c
+    ${CMAKE_SOURCE_DIR}/../../../products/f411_watch/ui/watch_launcher_interaction.c
     ${CMAKE_SOURCE_DIR}/../../../products/f411_watch/ui/watch_page_lifecycle.c
+    ${CMAKE_SOURCE_DIR}/../../../products/f411_watch/ui/screens/calendar/screen_calendar_gen.c
     ${CMAKE_SOURCE_DIR}/../../../products/f411_watch/ui/screens/watchface/screen_watchface_gen.c
     ${CMAKE_SOURCE_DIR}/../../../products/f411_watch/ui/screens/launcher/screen_launcher_gen.c
     ${CMAKE_SOURCE_DIR}/../../../products/f411_watch/ui/screens/diagnostics/screen_diagnostics_gen.c
     ${CMAKE_SOURCE_DIR}/../../../products/f411_watch/ui/screens/resources/screen_resources_gen.c
     ${CMAKE_SOURCE_DIR}/../../../products/f411_watch/ui/screens/status/screen_status_gen.c
     ${CMAKE_SOURCE_DIR}/../../../products/f411_watch/ui/screens/settings/screen_settings_gen.c
+    ${CMAKE_SOURCE_DIR}/../../../products/f411_watch/ui/screens/timer/screen_timer_gen.c
     ${WATCH_CORE_SOURCE_DIR}/watch_core.c
     ${WATCH_INPUT_SOURCE_DIR}/watch_input.c
     ${WATCH_RUNTIME_SOURCE_DIR}/watch_runtime.c
@@ -89,6 +101,13 @@ add_library(f411_watch_user OBJECT
     ${WATCH_TINYCRYPT_SOURCE_DIR}/lib/source/ecc.c
     ${WATCH_TINYCRYPT_SOURCE_DIR}/lib/source/ecc_dsa.c
     ${WATCH_TINYCRYPT_SOURCE_DIR}/lib/source/utils.c
+)
+
+# Keep the compact visual adapter within the fixed 400 KiB application budget
+# while the Debug image retains full symbols for the rest of the firmware.
+set_source_files_properties(
+    ${CMAKE_SOURCE_DIR}/../../../products/f411_watch/ui/watch_ui_theme.c
+    PROPERTIES COMPILE_OPTIONS "-Os"
 )
 
 target_include_directories(f411_watch_user

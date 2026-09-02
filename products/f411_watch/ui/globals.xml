@@ -8,18 +8,18 @@
         <int name="screen_height" value="280" help="F411 display height" />
         <int name="safe_side" value="16" help="Horizontal safe inset" />
         <int name="content_width" value="208" help="Width inside the safe inset" />
-        <int name="row_height" value="40" help="Launcher and settings row height" />
+        <int name="row_height" value="40" help="Launcher row height" />
         <int name="row_gap" value="4" help="Gap between rows" />
-        <int name="radius_sm" value="6" help="Small card radius" />
+        <int name="radius_sm" value="6" help="Small control radius" />
 
         <color name="bg_base" value="0x101820" help="Default dark background" />
-        <color name="surface_card" value="0x1B2935" help="Card surface" />
-        <color name="surface_selected" value="0x24546B" help="Selected card surface" />
+        <color name="surface_card" value="0x1B2935" help="Default card surface" />
+        <color name="surface_selected" value="0x24546B" help="Selected launcher card" />
         <color name="accent" value="0x64D2FF" help="Primary accent" />
         <color name="text_primary" value="0xF4F7FA" help="Primary text" />
         <color name="text_muted" value="0xB8C7D9" help="Secondary text" />
         <color name="border" value="0x385163" help="Card border" />
-        <color name="degraded" value="0xFFB454" help="Degraded status" />
+        <color name="degraded" value="0xFFB454" help="Degraded state" />
     </consts>
 
     <styles>
@@ -38,16 +38,17 @@
     </subjects>
 
     <images>
-        <!-- No external assets are part of the M7 smoke screen. -->
+        <data name="icon_battery" src_path="images/icon_battery.png" color_format="i1" />
+        <data name="icon_steps" src_path="images/icon_steps.png" color_format="i1" />
+        <data name="icon_status" src_path="images/icon_status.png" color_format="i1" />
+        <data name="icon_timer" src_path="images/icon_timer.png" color_format="i1" />
+        <data name="icon_calendar" src_path="images/icon_calendar.png" color_format="i1" />
+        <data name="icon_settings" src_path="images/icon_settings.png" color_format="i1" />
     </images>
 
     <fonts>
-        <!-- Keep only the sizes used by the watchface. The source TTF is
-             editor input; the export produces embedded LVGL C data. -->
-        <bin name="montserrat_8" src_path="fonts/Montserrat-Medium.ttf"
-             size="8" bpp="2" as_file="false" range="0x20-0x7f" />
-        <bin name="montserrat_24" src_path="fonts/Montserrat-Medium.ttf"
-             size="24" bpp="2" as_file="false" range="0x20-0x7f" />
+        <bin name="montserrat_8" src_path="fonts/Montserrat-Medium.ttf" size="8" bpp="2" as_file="false" range="0x20-0x7f" />
+        <bin name="montserrat_24" src_path="fonts/Montserrat-Medium.ttf" size="24" bpp="2" as_file="false" range="0x20-0x7f" />
         <bin name="montserrat_40" src_path="fonts/Montserrat-Medium.ttf"
              size="40" bpp="2" as_file="false" range="0x20-0x7f" />
     </fonts>

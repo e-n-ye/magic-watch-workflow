@@ -325,28 +325,55 @@ static bool watch_ui_theme_render_status(lv_obj_t *screen, const watch_snapshot_
                                          const watch_ui_palette_t *palette)
 {
     lv_obj_t *summary = watch_ui_theme_find_label(screen, "status_summary");
+    lv_obj_t *time = watch_ui_theme_find_label(screen, "status_time");
+    lv_obj_t *battery = watch_ui_theme_find_label(screen, "status_battery");
     lv_obj_t *sensor = watch_ui_theme_find_label(screen, "status_sensors");
     lv_obj_t *storage = watch_ui_theme_find_label(screen, "status_storage");
     lv_obj_t *input = watch_ui_theme_find_label(screen, "status_input");
+    lv_obj_t *reason = watch_ui_theme_find_label(screen, "status_reason");
 
-    if (summary == NULL || sensor == NULL || storage == NULL || input == NULL) {
+    if ((summary == NULL && (time == NULL || battery == NULL)) || sensor == NULL || storage == NULL
+        || input == NULL) {
         return false;
     }
 
-    watch_ui_theme_set_text(summary, "SYSTEM STATUS", palette, palette->accent);
+    if (summary != NULL) {
+        watch_ui_theme_set_text(summary, "SYSTEM STATUS", palette, palette->accent);
+    }
+    if (time != NULL) {
+        char time_text[24] = "TIME  --:--:--";
+        if (snapshot->time_valid) {
+            (void)snprintf(time_text, sizeof(time_text), "TIME  %02u:%02u:%02u",
+                           snapshot->time.hour, snapshot->time.minute, snapshot->time.second);
+        }
+        watch_ui_theme_set_text(time, time_text, palette, palette->text);
+    }
+    if (battery != NULL) {
+        watch_ui_theme_set_text(battery, "BATTERY  --", palette, palette->text);
+    }
     watch_ui_theme_set_text(sensor, snapshot->sensor_snapshot.degraded ? "SENSORS  DEGRADED"
                                                                         : "SENSORS  READY",
                             palette, snapshot->sensor_snapshot.degraded ? palette->degraded
                                                                          : palette->success);
     watch_ui_theme_set_text(storage, "STORAGE  NOT REPORTED", palette, palette->muted);
     watch_ui_theme_set_text(input, "INPUT  CST816 / ENCODER", palette, palette->muted);
-    watch_ui_theme_style_label(summary, palette, palette->accent, WATCH_UI_CONTENT_WIDTH,
-                               WATCH_UI_MARGIN, 60);
+    if (summary != NULL) {
+        watch_ui_theme_style_label(summary, palette, palette->accent, WATCH_UI_CONTENT_WIDTH,
+                                   WATCH_UI_MARGIN, 60);
+    }
     watch_ui_theme_style_label(sensor, palette,
                                snapshot->sensor_snapshot.degraded ? palette->degraded : palette->success,
                                WATCH_UI_CONTENT_WIDTH, WATCH_UI_MARGIN, 104);
     watch_ui_theme_style_label(storage, palette, palette->muted, WATCH_UI_CONTENT_WIDTH,
                                WATCH_UI_MARGIN, 140);
+    if (reason != NULL) {
+        watch_ui_theme_set_text(reason,
+                                snapshot->sensor_snapshot.degraded ? "SENSOR STATUS: DEGRADED"
+                                                                    : "SENSOR STATUS: READY",
+                                palette,
+                                snapshot->sensor_snapshot.degraded ? palette->degraded
+                                                                    : palette->success);
+    }
     return true;
 }
 
@@ -358,6 +385,10 @@ static bool watch_ui_theme_render_simple_page(lv_obj_t *screen, watch_page_t pag
     lv_obj_t *detail = watch_ui_theme_find_label(screen,
                                                  page == WATCH_PAGE_TIMER ? "timer_value"
                                                                           : "calendar_value");
+
+    if (page == WATCH_PAGE_CALENDAR && detail == NULL) {
+        detail = watch_ui_theme_find_label(screen, "calendar_month");
+    }
 
     if (detail == NULL) {
         return false;

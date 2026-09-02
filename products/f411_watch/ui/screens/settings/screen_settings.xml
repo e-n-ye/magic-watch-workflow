@@ -1,46 +1,15 @@
-<!-- 240x280 settings screen maintained in LVGL Pro Editor. -->
+<!-- 240x280 settings shell maintained in LVGL Pro Editor. -->
 <screen>
-    <styles>
-        <style name="style_settings" bg_opa="100%" bg_color="#bg_base" />
-        <style name="style_card" bg_opa="100%" bg_color="#surface_card"
-               border_width="1" border_color="#border" radius="#radius_sm" pad_all="0" />
-    </styles>
-
+    <styles><style name="style_settings" bg_opa="100%" bg_color="#bg_base" /><style name="style_list" bg_opa="0%" border_width="0" radius="0" pad_all="0" /><style name="style_card" bg_opa="100%" bg_color="#surface_card" border_width="1" border_color="#border" radius="#radius_sm" pad_all="0" /></styles>
     <view>
         <style name="style_settings" />
-        <lv_label name="page_brand" text="MAGIC WATCH" align="top_mid" y="10"
-                  width="#content_width" style_text_color="#text_primary" />
-        <lv_label name="page_title" text="SETTINGS" align="top_mid" y="30"
-                  width="#content_width" style_text_color="#accent" />
-        <lv_obj name="settings_list" x="#safe_side" y="66" width="#content_width" height="150"
-                scrollable="false">
-            <remove_style_all />
-            <lv_obj name="settings_item_theme" x="0" y="0" width="#content_width" height="#row_height"
-                    scrollable="false">
-                <style name="style_card" />
-                <lv_label name="settings_title_theme" text="THEME" x="12" y="10" width="132"
-                          style_text_color="#text_primary" />
-                <lv_label name="settings_value_theme" text="DARK" x="142" y="10" width="54"
-                          style_text_color="#accent" style_text_align="right" />
-            </lv_obj>
-            <lv_obj name="settings_item_brightness" x="0" y="44" width="#content_width" height="#row_height"
-                    scrollable="false">
-                <style name="style_card" />
-                <lv_label name="settings_title_brightness" text="BRIGHTNESS" x="12" y="10" width="132"
-                          style_text_color="#text_primary" />
-                <lv_label name="settings_value_brightness" text="80%" x="142" y="10" width="54"
-                          style_text_color="#accent" style_text_align="right" />
-            </lv_obj>
-            <lv_obj name="settings_item_time_format" x="0" y="88" width="#content_width" height="#row_height"
-                    scrollable="false">
-                <style name="style_card" />
-                <lv_label name="settings_title_time_format" text="TIME FORMAT" x="12" y="10" width="132"
-                          style_text_color="#text_primary" />
-                <lv_label name="settings_value_time_format" text="24 H" x="142" y="10" width="54"
-                          style_text_color="#accent" style_text_align="right" />
-            </lv_obj>
+        <lv_label name="page_brand" text="MAGIC WATCH" x="16" y="8" width="#content_width" height="18" style_text_color="#text_primary" style_text_align="center" ignore_layout="true" />
+        <lv_label name="page_title" text="SETTINGS" x="16" y="28" width="#content_width" height="18" style_text_color="#accent" style_text_align="center" ignore_layout="true" />
+        <lv_obj name="settings_list" x="16" y="58" width="208" height="150" scrollable="false" ignore_layout="true"><style name="style_list" />
+            <lv_obj name="settings_item_theme" x="0" y="0" width="208" height="40" scrollable="false" clickable="true"><style name="style_card" /><lv_label name="settings_title_theme" text="THEME" x="12" y="10" width="128" height="18" style_text_color="#text_primary" ignore_layout="true" /><lv_label name="settings_value_theme" text="DARK" x="142" y="10" width="54" height="18" style_text_color="#accent" style_text_align="right" ignore_layout="true" /></lv_obj>
+            <lv_obj name="settings_item_brightness" x="0" y="44" width="208" height="40" scrollable="false" clickable="true"><style name="style_card" /><lv_label name="settings_title_brightness" text="BRIGHTNESS" x="12" y="10" width="128" height="18" style_text_color="#text_primary" ignore_layout="true" /><lv_label name="settings_value_brightness" text="80%" x="142" y="10" width="54" height="18" style_text_color="#accent" style_text_align="right" ignore_layout="true" /></lv_obj>
+            <lv_obj name="settings_item_time_format" x="0" y="88" width="208" height="40" scrollable="false" clickable="true"><style name="style_card" /><lv_label name="settings_title_time_format" text="TIME FORMAT" x="12" y="10" width="128" height="18" style_text_color="#text_primary" ignore_layout="true" /><lv_label name="settings_value_time_format" text="24 H" x="142" y="10" width="54" height="18" style_text_color="#accent" style_text_align="right" ignore_layout="true" /></lv_obj>
         </lv_obj>
-        <lv_label name="page_hint" text="BACK: RETURN" align="bottom_mid" y="-12"
-                  width="#content_width" style_text_color="#text_muted" />
+        <lv_label name="page_hint" text="TOUCH A ROW TO CHANGE" x="16" y="262" width="#content_width" height="18" style_text_color="#text_muted" style_text_font="montserrat_8" style_text_align="center" ignore_layout="true" />
     </view>
 </screen>

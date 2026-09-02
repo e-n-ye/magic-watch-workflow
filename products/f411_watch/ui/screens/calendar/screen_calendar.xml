@@ -1,0 +1,14 @@
+<!-- 240x280 calendar shell maintained in LVGL Pro Editor. -->
+<screen>
+    <styles><style name="style_calendar" bg_opa="100%" bg_color="#bg_base" /><style name="style_control" bg_opa="100%" bg_color="#surface_card" border_width="1" border_color="#border" radius="#radius_sm" pad_all="0" /></styles>
+    <view>
+        <style name="style_calendar" />
+        <lv_label name="page_brand" text="MAGIC WATCH" x="16" y="8" width="#content_width" height="18" style_text_color="#text_primary" style_text_align="center" ignore_layout="true" />
+        <lv_label name="page_title" text="CALENDAR" x="16" y="28" width="#content_width" height="18" style_text_color="#accent" style_text_align="center" ignore_layout="true" />
+        <lv_obj name="calendar_prev" x="16" y="62" width="40" height="32" scrollable="false" clickable="true" ignore_layout="true"><style name="style_control" /><lv_label name="calendar_prev_label" text="&lt;" x="0" y="7" width="40" height="18" style_text_color="#text_primary" ignore_layout="true" /></lv_obj>
+        <lv_label name="calendar_month" text="AUGUST 2026" x="60" y="70" width="120" height="18" style_text_color="#text_primary" style_text_align="center" ignore_layout="true" />
+        <lv_obj name="calendar_next" x="184" y="62" width="40" height="32" scrollable="false" clickable="true" ignore_layout="true"><style name="style_control" /><lv_label name="calendar_next_label" text="&gt;" x="0" y="7" width="40" height="18" style_text_color="#text_primary" ignore_layout="true" /></lv_obj>
+        <lv_label name="calendar_grid" text="MO TU WE TH FR SA SU&#10;             1  2  3  4  5  6  7&#10; 8  9 10 11 12 13 14&#10;15 16 17 18 19 20 21&#10;22 23 24 25 26 27 28&#10;29 30 31" x="16" y="108" width="208" height="110" style_text_color="#text_primary" style_text_font="montserrat_8" style_text_align="center" ignore_layout="true" />
+        <lv_label name="page_hint" text="TOUCH PREV OR NEXT" x="16" y="262" width="#content_width" height="18" style_text_color="#text_muted" style_text_font="montserrat_8" style_text_align="center" ignore_layout="true" />
+    </view>
+</screen>

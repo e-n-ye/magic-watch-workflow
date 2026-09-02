@@ -35,6 +35,7 @@ typedef enum {
     WATCH_EVENT_ENCODER_PRESS,
     WATCH_EVENT_UP,
     WATCH_EVENT_DOWN,
+    WATCH_EVENT_LAUNCHER_ITEM_TAPPED,
     WATCH_EVENT_TIME_UPDATED,
     WATCH_EVENT_SENSOR_STATUS_UPDATED,
     WATCH_EVENT_COUNT
@@ -63,6 +64,10 @@ typedef struct
 typedef struct
 {
     watch_event_type_t type;
+    uint16_t touch_x;
+    uint16_t touch_y;
+    uint8_t launcher_index;
+    bool touch_valid;
     watch_time_value_t time;
     watch_sensor_aggregate_snapshot_t sensor_snapshot;
 } watch_event_t;

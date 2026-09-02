@@ -1,0 +1,131 @@
+{
+  "version": 1,
+  "screen": "timer",
+  "canvas": {
+    "width": 240,
+    "height": 280
+  },
+  "safe_area": {
+    "x": 16,
+    "y": 8,
+    "width": 208,
+    "height": 264
+  },
+  "objects": [
+    {
+      "name": "page_brand",
+      "type": "label",
+      "parent": "root",
+      "x": 16,
+      "y": 8,
+      "width": 208,
+      "height": 18,
+      "text": "MAGIC WATCH",
+      "font": "default"
+    },
+    {
+      "name": "page_title",
+      "type": "label",
+      "parent": "root",
+      "x": 16,
+      "y": 28,
+      "width": 208,
+      "height": 18,
+      "text": "TIMER",
+      "font": "default"
+    },
+    {
+      "name": "timer_value",
+      "type": "label",
+      "parent": "root",
+      "x": 16,
+      "y": 82,
+      "width": 208,
+      "height": 65,
+      "text": "00:00",
+      "font": "montserrat_40"
+    },
+    {
+      "name": "timer_state",
+      "type": "label",
+      "parent": "root",
+      "x": 16,
+      "y": 150,
+      "width": 208,
+      "height": 18,
+      "text": "READY",
+      "font": "default"
+    },
+    {
+      "name": "timer_start",
+      "type": "object",
+      "parent": "root",
+      "x": 16,
+      "y": 184,
+      "width": 64,
+      "height": 40
+    },
+    {
+      "name": "timer_start_label",
+      "type": "label",
+      "parent": "timer_start",
+      "x": 0,
+      "y": 10,
+      "width": 64,
+      "height": 18,
+      "text": "START",
+      "font": "default"
+    },
+    {
+      "name": "timer_pause",
+      "type": "object",
+      "parent": "root",
+      "x": 88,
+      "y": 184,
+      "width": 64,
+      "height": 40
+    },
+    {
+      "name": "timer_pause_label",
+      "type": "label",
+      "parent": "timer_pause",
+      "x": 0,
+      "y": 10,
+      "width": 64,
+      "height": 18,
+      "text": "PAUSE",
+      "font": "default"
+    },
+    {
+      "name": "timer_reset",
+      "type": "object",
+      "parent": "root",
+      "x": 160,
+      "y": 184,
+      "width": 64,
+      "height": 40
+    },
+    {
+      "name": "timer_reset_label",
+      "type": "label",
+      "parent": "timer_reset",
+      "x": 0,
+      "y": 10,
+      "width": 64,
+      "height": 18,
+      "text": "RESET",
+      "font": "default"
+    },
+    {
+      "name": "page_hint",
+      "type": "label",
+      "parent": "root",
+      "x": 16,
+      "y": 262,
+      "width": 208,
+      "height": 18,
+      "text": "TOUCH A CONTROL",
+      "font": "montserrat_8"
+    }
+  ]
+}

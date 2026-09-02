@@ -43,6 +43,7 @@ def validate(xml_path: Path, globals_path: Path, lv_conf_path: Path) -> list[str
             errors.append(f"{globals_path.name}: resource {source!r} does not exist")
 
     image_enabled = re.search(r"#define\s+LV_USE_IMAGE\s+([01])\b", conf)
+    indexed_1_enabled = re.search(r"#define\s+LV_DRAW_SW_SUPPORT_I1\s+([01])\b", conf)
     image_widgets = {"lv_image", "lv_imagebutton", "lv_img"}
     if image_enabled and image_enabled.group(1) == "0":
         for node in xml_root.iter():
@@ -54,9 +55,9 @@ def validate(xml_path: Path, globals_path: Path, lv_conf_path: Path) -> list[str
         if font and font not in fonts and font != "default":
             errors.append(f"{xml_path.name}: font {font!r} is not registered in globals.xml")
             continue
-        if font and font.startswith("montserrat_"):
+        if font and font.startswith("montserrat_") and font not in fonts:
             size = font.removeprefix("montserrat_")
-            if not re.search(rf"#define\s+LV_FONT_MONTSERRAT_{re.escape(size)}\s+1\b", conf) and not re.search(r"#define\s+WATCH_UI_FONT_ALIAS_BUDGETED\s+1\b", conf):
+            if not re.search(rf"#define\s+LV_FONT_MONTSERRAT_{re.escape(size)}\s+1\b", conf):
                 errors.append(f"{xml_path.name}: {font} is not enabled in lv_conf.h")
         for attr in ("style_text_color", "style_bg_color", "style_border_color"):
             value = node.get(attr)
@@ -65,6 +66,11 @@ def validate(xml_path: Path, globals_path: Path, lv_conf_path: Path) -> list[str
         image = node.get("src") or node.get("src_image")
         if image and image not in images:
             errors.append(f"{xml_path.name}: image {image!r} is not declared in globals.xml")
+    for node in globals_root.findall("./images/data"):
+        if node.get("color_format", "").lower() == "i1" and (
+            not indexed_1_enabled or indexed_1_enabled.group(1) != "1"
+        ):
+            errors.append(f"{globals_path.name}: I1 image {node.get('name', '<unnamed>')!r} requires LV_DRAW_SW_SUPPORT_I1=1")
     return errors
 
 

@@ -4,6 +4,7 @@
 #include <stddef.h>
 
 #include "watch_input.h"
+#include "watch_launcher_interaction.h"
 
 static watch_event_t watch_test_event(watch_event_type_t type)
 {
@@ -13,6 +14,16 @@ static watch_event_t watch_test_event(watch_event_type_t type)
 static bool watch_test_dispatch(watch_core_t *core, watch_event_type_t type)
 {
     watch_event_t event = watch_test_event(type);
+
+    return watch_core_dispatch_event(core, &event);
+}
+
+static bool watch_test_dispatch_launcher_tap(watch_core_t *core, uint8_t launcher_index)
+{
+    watch_event_t event = {
+        .type = WATCH_EVENT_LAUNCHER_ITEM_TAPPED,
+        .launcher_index = launcher_index,
+    };
 
     return watch_core_dispatch_event(core, &event);
 }
@@ -78,7 +89,7 @@ static void test_navigation_and_commands(void)
     assert(command.type == WATCH_COMMAND_SELECTION_CHANGED);
     assert(command.launcher_index == 1U);
 
-    assert(watch_test_dispatch(&core, WATCH_EVENT_SELECT));
+    assert(watch_test_dispatch_launcher_tap(&core, 1U));
     assert(watch_core_read_snapshot(&core, &snapshot));
     assert(snapshot.page == WATCH_PAGE_TIMER);
     assert(snapshot.page_depth == 2U);
@@ -122,7 +133,7 @@ static void test_app_registry_and_hidden_pages(void)
     assert(snapshot.page == WATCH_PAGE_LAUNCHER);
     assert(snapshot.launcher_index == 2U);
 
-    assert(watch_test_dispatch(&core, WATCH_EVENT_SELECT));
+    assert(watch_test_dispatch_launcher_tap(&core, 2U));
     assert(watch_core_read_snapshot(&core, &snapshot));
     assert(snapshot.page == WATCH_PAGE_CALENDAR);
     assert(snapshot.page_depth == 2U);
@@ -163,7 +174,7 @@ static void test_encoder_press_and_back_semantics(void)
     assert(snapshot.page == WATCH_PAGE_WATCHFACE && snapshot.page_depth == 0U);
 
     assert(watch_test_dispatch(&core, WATCH_EVENT_ENCODER_PRESS));
-    assert(watch_test_dispatch(&core, WATCH_EVENT_SELECT));
+    assert(watch_test_dispatch_launcher_tap(&core, 0U));
     assert(watch_core_read_snapshot(&core, &snapshot));
     assert(snapshot.page == WATCH_PAGE_STATUS && snapshot.page_depth == 2U);
     assert(watch_test_dispatch(&core, WATCH_EVENT_UP));
@@ -172,6 +183,54 @@ static void test_encoder_press_and_back_semantics(void)
     assert(watch_test_dispatch(&core, WATCH_EVENT_ENCODER_PRESS));
     assert(watch_core_read_snapshot(&core, &snapshot));
     assert(snapshot.page == WATCH_PAGE_WATCHFACE && snapshot.page_depth == 0U);
+}
+
+static void test_launcher_touch_contract(void)
+{
+    watch_core_t core;
+    watch_snapshot_t snapshot;
+    watch_snapshot_t before;
+    watch_event_t touch = {
+        .type = WATCH_EVENT_SELECT,
+        .touch_x = 20U,
+        .touch_y = 122U,
+        .touch_valid = true,
+    };
+    watch_event_t mapped;
+
+    assert(watch_core_init(&core));
+    assert(watch_test_dispatch(&core, WATCH_EVENT_SELECT));
+    assert(watch_core_read_snapshot(&core, &snapshot));
+    assert(snapshot.page == WATCH_PAGE_WATCHFACE);
+
+    assert(watch_test_dispatch(&core, WATCH_EVENT_ENCODER_PRESS));
+    assert(watch_core_read_snapshot(&core, &before));
+    assert(watch_test_dispatch(&core, WATCH_EVENT_SELECT));
+    assert(watch_core_read_snapshot(&core, &snapshot));
+    assert(snapshot.page == WATCH_PAGE_LAUNCHER && snapshot.launcher_index == before.launcher_index);
+    assert(!watch_launcher_map_touch(&before,
+                                     &(watch_event_t) {
+                                         .type = WATCH_EVENT_SELECT,
+                                         .touch_x = 8U,
+                                         .touch_y = 78U,
+                                         .touch_valid = true,
+                                     },
+                                     &mapped));
+    assert(watch_core_read_snapshot(&core, &snapshot));
+    assert(snapshot.page == before.page && snapshot.launcher_index == before.launcher_index);
+
+    assert(watch_launcher_map_touch(&snapshot, &touch, &mapped));
+    assert(mapped.type == WATCH_EVENT_LAUNCHER_ITEM_TAPPED);
+    assert(mapped.launcher_index == 1U);
+    assert(watch_core_dispatch_event(&core, &mapped));
+    assert(watch_core_read_snapshot(&core, &snapshot));
+    assert(snapshot.page == WATCH_PAGE_TIMER && snapshot.launcher_index == 1U);
+
+    assert(watch_test_dispatch(&core, WATCH_EVENT_ENCODER_PRESS));
+    assert(watch_test_dispatch(&core, WATCH_EVENT_ENCODER_PRESS));
+    assert(!watch_test_dispatch_launcher_tap(&core, WATCH_CORE_LAUNCHER_ITEM_COUNT));
+    assert(watch_core_read_snapshot(&core, &snapshot));
+    assert(snapshot.page == WATCH_PAGE_LAUNCHER && snapshot.launcher_index == 1U);
 }
 
 static void test_time_event_updates_snapshot_and_command(void)
@@ -308,7 +367,9 @@ static void test_encoder_and_touch_mapping(void)
     touch =
         (watch_input_touch_t) { .start_x = 100U, .start_y = 100U, .end_x = 102U, .end_y = 101U };
     assert(watch_input_submit_touch(&input, &touch));
-    watch_test_expect_input_event(&input, WATCH_EVENT_SELECT);
+    assert(watch_input_take_event(&input, &event));
+    assert(event.type == WATCH_EVENT_SELECT);
+    assert(event.touch_valid && event.touch_x == 102U && event.touch_y == 101U);
 
     assert(watch_input_submit_encoder(&input, 1));
     assert(watch_input_take_event(&input, &event));
@@ -372,6 +433,7 @@ int main(void)
     test_app_registry_and_hidden_pages();
     test_ignored_events_and_validation();
     test_encoder_press_and_back_semantics();
+    test_launcher_touch_contract();
     test_time_event_updates_snapshot_and_command();
     test_sensor_status_event_updates_snapshot_and_command();
     test_command_queue_is_bounded();

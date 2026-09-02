@@ -13,6 +13,7 @@ if(BUILD_TESTING)
         ${CMAKE_CURRENT_LIST_DIR}/watch_core_test.c
         ${CMAKE_CURRENT_LIST_DIR}/../products/f411_watch/core/watch_core.c
         ${CMAKE_CURRENT_LIST_DIR}/../products/f411_watch/input/watch_input.c
+        ${CMAKE_CURRENT_LIST_DIR}/../products/f411_watch/ui/watch_launcher_interaction.c
         ${CMAKE_CURRENT_LIST_DIR}/../products/f411_watch/sensors/watch_sensor_aggregate.c
         ${CMAKE_CURRENT_LIST_DIR}/../products/f411_watch/time/watch_time.c
     )
@@ -23,6 +24,7 @@ if(BUILD_TESTING)
             ${CMAKE_CURRENT_LIST_DIR}/../products/f411_watch/input
             ${CMAKE_CURRENT_LIST_DIR}/../products/f411_watch/sensors
             ${CMAKE_CURRENT_LIST_DIR}/../products/f411_watch/time
+            ${CMAKE_CURRENT_LIST_DIR}/../products/f411_watch/ui
     )
 
     add_test(NAME watch_core_input COMMAND watch_core_input_tests)

@@ -1,150 +1,26 @@
-<!-- 240x280 watchface screen maintained in LVGL Pro Editor. -->
+<!-- 240x280 watchface shell maintained in LVGL Pro Editor. -->
 <screen>
-	<styles>
-		<style name="style_watchface" bg_opa="100%" bg_color="#bg_base" />
-		<style name="style_rule" bg_opa="100%" bg_color="#border" radius="1" />
-		<style
-			name="style_summary"
-			bg_opa="100%"
-			bg_color="#surface_card"
-			border_width="1"
-			border_color="#border"
-			radius="6"
-			pad_all="0"
-		/>
-	</styles>
-
-	<view>
-		<style name="style_watchface" />
-
-		<lv_label
-			name="page_brand"
-			text="MAGIC WATCH"
-			align="top_mid"
-			y="8"
-			width="208"
-			style_text_color="#text_muted"
-			style_text_align="center"
-			ignore_layout="true"
-		/>
-
-		<lv_obj name="watchface_top_rule" x="16" y="32" width="208" height="1" scrollable="false" ignore_layout="true">
-			<style name="style_rule" />
-		</lv_obj>
-
-		<lv_label
-			name="watchface_battery"
-			text="BATTERY 85%"
-			x="16"
-			y="40"
-			width="96"
-			style_text_color="#accent"
-			ignore_layout="true"
-		/>
-		<lv_label
-			name="watchface_status"
-			text="READY"
-			x="112"
-			y="40"
-			width="112"
-			style_text_color="#accent"
-			style_text_align="right"
-			ignore_layout="true"
-		/>
-
-		<lv_label
-			name="page_title"
-			text="10:09"
-			align="top_mid"
-			y="96"
-			width="218"
-			style_text_color="#text_primary"
-			height="65"
-			x="-1"
-			style_text_font="montserrat_40"
-			style_text_align="center"
-			ignore_layout="true"
-		/>
-
-		<lv_obj
-			name="watchface_time_rule"
-			x="18"
-			y="184"
-			width="208"
-			height="10"
-			scrollable="false"
-			ignore_layout="true"
-		>
-			<style name="style_rule" />
-		</lv_obj>
-
-		<lv_label
-			name="watchface_weekday"
-			text="WEDNESDAY"
-			x="14"
-			y="195"
-			width="108"
-			style_text_color="#accent"
-			style_text_align="right"
-			ignore_layout="true"
-		/>
-		<lv_label
-			name="watchface_date"
-			text="MAY 28"
-			x="133"
-			y="195"
-			width="92"
-			height="18"
-			style_text_color="#text_primary"
-			ignore_layout="true"
-		/>
-
-		<lv_obj name="watchface_summary" x="13" y="214" width="212" height="45" scrollable="false" ignore_layout="true">
-			<style name="style_summary" />
-			<lv_label
-				name="watchface_steps"
-				text="8,264"
-				x="18"
-				y="2"
-				width="90"
-				style_text_color="#text_primary"
-				style_text_font="montserrat_24"
-				style_text_align="right"
-				ignore_layout="true"
-			/>
-			<lv_label
-				name="watchface_steps_label"
-				text="STEPS"
-				x="117"
-				y="9"
-				width="72"
-				style_text_color="#text_muted"
-				ignore_layout="true"
-			/>
-			<lv_label
-				name="watchface_summary_hint"
-				text="TAP FOR STATUS"
-				x="16"
-				y="32"
-				width="176"
-				style_text_color="#text_muted"
-				style_text_font="montserrat_8"
-				height="10"
-				style_text_align="center"
-				ignore_layout="true"
-			/>
-		</lv_obj>
-
-		<lv_label
-			name="page_hint"
-			text="ENCODER PRESS  OPEN LAUNCHER"
-			align="bottom_mid"
-			y="-10"
-			width="208"
-			style_text_color="#text_muted"
-			style_text_font="montserrat_8"
-			style_text_align="center"
-			ignore_layout="true"
-		/>
-	</view>
+    <styles>
+        <style name="style_watchface" bg_opa="100%" bg_color="#bg_base" />
+        <style name="style_rule" bg_opa="100%" bg_color="#border" radius="1" />
+        <style name="style_summary" bg_opa="100%" bg_color="#surface_card" border_width="1" border_color="#border" radius="#radius_sm" pad_all="0" />
+    </styles>
+    <view>
+        <style name="style_watchface" />
+        <lv_label name="page_brand" text="MAGIC WATCH" x="16" y="8" width="#content_width" style_text_color="#text_muted" style_text_align="center" ignore_layout="true" height="18" />
+        <lv_obj name="watchface_top_rule" x="16" y="32" width="208" height="1" scrollable="false" ignore_layout="true"><style name="style_rule" /></lv_obj>
+        <lv_image name="watchface_battery_icon" src="icon_battery" x="16" y="40" width="16" height="16" ignore_layout="true" />
+        <lv_label name="watchface_battery" text="BATTERY --" x="38" y="40" width="96" height="18" style_text_color="#accent" ignore_layout="true" />
+        <lv_label name="watchface_status" text="READY" x="136" y="40" width="88" height="18" style_text_color="#accent" style_text_align="right" ignore_layout="true" />
+        <lv_label name="page_title" text="10:09" x="10" y="96" width="218" height="65" style_text_color="#text_primary" style_text_font="montserrat_40" style_text_align="center" ignore_layout="true" />
+        <lv_obj name="watchface_time_rule" x="18" y="184" width="208" height="1" scrollable="false" ignore_layout="true"><style name="style_rule" /></lv_obj>
+        <lv_label name="watchface_weekday" text="WEDNESDAY" x="14" y="195" width="108" height="18" style_text_color="#accent" style_text_align="right" ignore_layout="true" />
+        <lv_label name="watchface_date" text="MAY 28" x="133" y="195" width="92" height="18" style_text_color="#text_primary" ignore_layout="true" />
+        <lv_obj name="watchface_summary" x="13" y="214" width="212" height="45" scrollable="false" ignore_layout="true"><style name="style_summary" />
+            <lv_image name="watchface_steps_icon" src="icon_steps" x="16" y="8" width="16" height="16" ignore_layout="true" />
+            <lv_label name="watchface_steps" text="--" x="36" y="2" width="72" height="30" style_text_color="#text_primary" style_text_font="montserrat_24" style_text_align="right" ignore_layout="true" />
+            <lv_label name="watchface_steps_label" text="STEPS" x="117" y="9" width="72" height="18" style_text_color="#text_muted" ignore_layout="true" />
+        </lv_obj>
+        <lv_label name="page_hint" text="ENCODER PRESS  OPEN LAUNCHER" x="16" y="262" width="#content_width" height="18" style_text_color="#text_muted" style_text_font="montserrat_8" style_text_align="center" ignore_layout="true" />
+    </view>
 </screen>

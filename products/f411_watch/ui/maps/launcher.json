@@ -1,0 +1,178 @@
+{
+  "version": 1,
+  "screen": "launcher",
+  "canvas": {
+    "width": 240,
+    "height": 280
+  },
+  "safe_area": {
+    "x": 16,
+    "y": 8,
+    "width": 208,
+    "height": 264
+  },
+  "objects": [
+    {
+      "name": "page_brand",
+      "type": "label",
+      "parent": "root",
+      "x": 16,
+      "y": 8,
+      "width": 208,
+      "height": 18,
+      "text": "MAGIC WATCH",
+      "font": "default"
+    },
+    {
+      "name": "page_title",
+      "type": "label",
+      "parent": "root",
+      "x": 16,
+      "y": 28,
+      "width": 208,
+      "height": 18,
+      "text": "LAUNCHER",
+      "font": "default"
+    },
+    {
+      "name": "launcher_list",
+      "type": "object",
+      "parent": "root",
+      "x": 16,
+      "y": 58,
+      "width": 208,
+      "height": 178
+    },
+    {
+      "name": "launcher_item_status",
+      "type": "object",
+      "parent": "launcher_list",
+      "x": 0,
+      "y": 0,
+      "width": 208,
+      "height": 40
+    },
+    {
+      "name": "launcher_icon_status",
+      "type": "image",
+      "parent": "launcher_item_status",
+      "x": 12,
+      "y": 12,
+      "width": 16,
+      "height": 16,
+      "src": "icon_status"
+    },
+    {
+      "name": "launcher_label_status",
+      "type": "label",
+      "parent": "launcher_item_status",
+      "x": 40,
+      "y": 10,
+      "width": 150,
+      "height": 18,
+      "text": "STATUS",
+      "font": "default"
+    },
+    {
+      "name": "launcher_item_timer",
+      "type": "object",
+      "parent": "launcher_list",
+      "x": 0,
+      "y": 44,
+      "width": 208,
+      "height": 40
+    },
+    {
+      "name": "launcher_icon_timer",
+      "type": "image",
+      "parent": "launcher_item_timer",
+      "x": 12,
+      "y": 12,
+      "width": 16,
+      "height": 16,
+      "src": "icon_timer"
+    },
+    {
+      "name": "launcher_label_timer",
+      "type": "label",
+      "parent": "launcher_item_timer",
+      "x": 40,
+      "y": 10,
+      "width": 150,
+      "height": 18,
+      "text": "TIMER",
+      "font": "default"
+    },
+    {
+      "name": "launcher_item_calendar",
+      "type": "object",
+      "parent": "launcher_list",
+      "x": 0,
+      "y": 88,
+      "width": 208,
+      "height": 40
+    },
+    {
+      "name": "launcher_icon_calendar",
+      "type": "image",
+      "parent": "launcher_item_calendar",
+      "x": 12,
+      "y": 12,
+      "width": 16,
+      "height": 16,
+      "src": "icon_calendar"
+    },
+    {
+      "name": "launcher_label_calendar",
+      "type": "label",
+      "parent": "launcher_item_calendar",
+      "x": 40,
+      "y": 10,
+      "width": 150,
+      "height": 18,
+      "text": "CALENDAR",
+      "font": "default"
+    },
+    {
+      "name": "launcher_item_settings",
+      "type": "object",
+      "parent": "launcher_list",
+      "x": 0,
+      "y": 132,
+      "width": 208,
+      "height": 40
+    },
+    {
+      "name": "launcher_icon_settings",
+      "type": "image",
+      "parent": "launcher_item_settings",
+      "x": 12,
+      "y": 12,
+      "width": 16,
+      "height": 16,
+      "src": "icon_settings"
+    },
+    {
+      "name": "launcher_label_settings",
+      "type": "label",
+      "parent": "launcher_item_settings",
+      "x": 40,
+      "y": 10,
+      "width": 150,
+      "height": 18,
+      "text": "SETTINGS",
+      "font": "default"
+    },
+    {
+      "name": "page_hint",
+      "type": "label",
+      "parent": "root",
+      "x": 16,
+      "y": 262,
+      "width": 208,
+      "height": 8,
+      "text": "TOUCH A CARD TO OPEN",
+      "font": "montserrat_8"
+    }
+  ]
+}

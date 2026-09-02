@@ -7,16 +7,21 @@ static bool watch_input_has_event_space(const watch_input_t *input)
     return input->event_count < WATCH_INPUT_EVENT_CAPACITY;
 }
 
-static bool watch_input_enqueue_event(watch_input_t *input, watch_event_type_t type)
+static bool watch_input_enqueue_event(watch_input_t *input, const watch_event_t *event)
 {
-    if (!watch_input_has_event_space(input)) {
+    if (!watch_input_has_event_space(input) || event == NULL) {
         return false;
     }
 
-    input->event_queue[input->event_head] = (watch_event_t) { .type = type };
+    input->event_queue[input->event_head] = *event;
     input->event_head = (uint8_t)((input->event_head + 1U) % WATCH_INPUT_EVENT_CAPACITY);
     input->event_count++;
     return true;
+}
+
+static bool watch_input_enqueue_type(watch_input_t *input, watch_event_type_t type)
+{
+    return watch_input_enqueue_event(input, &(watch_event_t) { .type = type });
 }
 
 static watch_event_type_t watch_input_button_event(watch_input_button_t button)
@@ -83,7 +88,7 @@ bool watch_input_submit_button(watch_input_t *input, watch_input_button_t button
     if (pressed) {
         watch_event_type_t event_type = watch_input_button_event(button);
 
-        if (!watch_input_enqueue_event(input, event_type)) {
+        if (!watch_input_enqueue_type(input, event_type)) {
             return false;
         }
     }
@@ -102,7 +107,7 @@ bool watch_input_submit_encoder(watch_input_t *input, int16_t delta)
         return true;
     }
 
-    return watch_input_enqueue_event(input, delta > 0 ? WATCH_EVENT_DOWN : WATCH_EVENT_UP);
+    return watch_input_enqueue_type(input, delta > 0 ? WATCH_EVENT_DOWN : WATCH_EVENT_UP);
 }
 
 bool watch_input_submit_touch(watch_input_t *input, const watch_input_touch_t *touch)
@@ -123,16 +128,22 @@ bool watch_input_submit_touch(watch_input_t *input, const watch_input_touch_t *t
 
     if (distance_x < (int32_t)WATCH_INPUT_TOUCH_SWIPE_MIN_PX
         && distance_y < (int32_t)WATCH_INPUT_TOUCH_SWIPE_MIN_PX) {
-        return watch_input_enqueue_event(input, WATCH_EVENT_SELECT);
+        return watch_input_enqueue_event(input,
+                                         &(watch_event_t) {
+                                             .type = WATCH_EVENT_SELECT,
+                                             .touch_x = touch->end_x,
+                                             .touch_y = touch->end_y,
+                                             .touch_valid = true,
+                                         });
     }
 
     if (delta_x >= (int32_t)WATCH_INPUT_TOUCH_SWIPE_MIN_PX
         && touch->start_x <= WATCH_INPUT_TOUCH_EDGE_PX && distance_x >= distance_y) {
-        return watch_input_enqueue_event(input, WATCH_EVENT_BACK);
+        return watch_input_enqueue_type(input, WATCH_EVENT_BACK);
     }
 
     if (distance_y >= (int32_t)WATCH_INPUT_TOUCH_SWIPE_MIN_PX && distance_y > distance_x) {
-        return watch_input_enqueue_event(input, delta_y < 0 ? WATCH_EVENT_UP : WATCH_EVENT_DOWN);
+        return watch_input_enqueue_type(input, delta_y < 0 ? WATCH_EVENT_UP : WATCH_EVENT_DOWN);
     }
 
     return true;

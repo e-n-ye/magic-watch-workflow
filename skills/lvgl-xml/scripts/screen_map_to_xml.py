@@ -58,10 +58,13 @@ def generate(document: dict) -> str:
         children.setdefault(item.get("parent", "root"), []).append(item)
 
     def append(parent: ET.Element, item: dict) -> None:
-        tag = "lv_label" if item.get("type") == "label" else "lv_obj"
+        object_type = item.get("type")
+        tag = "lv_label" if object_type == "label" else "lv_image" if object_type == "image" else "lv_obj"
         node = ET.SubElement(parent, tag, _attrs(item))
         if tag == "lv_label":
             node.set("text", item.get("text", ""))
+        if tag == "lv_image":
+            node.set("src", item["src"])
         for child in children.get(item["name"], []):
             append(node, child)
 
