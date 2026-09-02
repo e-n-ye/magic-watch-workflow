@@ -12,6 +12,7 @@
 #include "main.h"
 #include "watch_core.h"
 #include "watch_diagnostic.h"
+#include "watch_launcher_interaction.h"
 #include "watch_runtime.h"
 
 static watch_core_t s_core;
@@ -37,6 +38,8 @@ static const char *watch_app_event_name(watch_event_type_t type)
         return "up";
     case WATCH_EVENT_DOWN:
         return "down";
+    case WATCH_EVENT_LAUNCHER_ITEM_TAPPED:
+        return "launcher_tap";
     case WATCH_EVENT_TIME_UPDATED:
         return "time";
     case WATCH_EVENT_SENSOR_STATUS_UPDATED:
@@ -133,6 +136,15 @@ static bool watch_app_dispatch_event(const watch_event_t *event, bool report_eve
     }
 
     return dispatched;
+}
+
+static bool watch_app_map_touch_event(const watch_event_t *event, watch_event_t *mapped_event)
+{
+    watch_snapshot_t snapshot;
+
+    return event != NULL && event->type == WATCH_EVENT_SELECT
+        && watch_core_read_snapshot(&s_core, &snapshot)
+        && watch_launcher_map_touch(&snapshot, event, mapped_event);
 }
 
 static void watch_app_process_time(uint32_t now_ms)
@@ -280,8 +292,16 @@ void watch_app_process(void)
     }
 
     while (watch_input_hw_take_event(&event)) {
+        watch_event_t mapped_event;
+
         if (event.type == WATCH_EVENT_WAKE) {
             watch_power_board_notify_wake(WATCH_POWER_WAKE_KEY);
+        }
+        if (event.type == WATCH_EVENT_SELECT) {
+            if (!watch_app_map_touch_event(&event, &mapped_event)) {
+                continue;
+            }
+            event = mapped_event;
         }
         (void)watch_app_dispatch_event(&event, true);
     }

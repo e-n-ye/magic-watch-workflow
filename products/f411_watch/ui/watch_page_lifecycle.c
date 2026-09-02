@@ -9,17 +9,17 @@
 #include <string.h>
 
 #include "screens/launcher/screen_launcher_gen.h"
+#include "screens/calendar/screen_calendar_gen.h"
 #include "screens/diagnostics/screen_diagnostics_gen.h"
 #include "screens/resources/screen_resources_gen.h"
 #include "screens/settings/screen_settings_gen.h"
 #include "screens/status/screen_status_gen.h"
+#include "screens/timer/screen_timer_gen.h"
 #include "screens/watchface/screen_watchface_gen.h"
 #include "watch_ui_theme.h"
 
 static lv_obj_t *watch_page_create(watch_page_t page)
 {
-    lv_obj_t *screen;
-
     switch (page) {
     case WATCH_PAGE_WATCHFACE:
         return screen_watchface_create();
@@ -28,48 +28,9 @@ static lv_obj_t *watch_page_create(watch_page_t page)
     case WATCH_PAGE_STATUS:
         return screen_status_create();
     case WATCH_PAGE_TIMER:
+        return screen_timer_create();
     case WATCH_PAGE_CALENDAR:
-        /* P1 keeps navigation testable before the P2/P4 XML pages are exported. */
-        screen = lv_obj_create(NULL);
-        if (screen == NULL) {
-            return NULL;
-        }
-        lv_obj_set_name_static(screen,
-                               page == WATCH_PAGE_TIMER ? "screen_timer_#" : "screen_calendar_#");
-        lv_obj_set_style_bg_opa(screen, LV_OPA_COVER, LV_PART_MAIN);
-        lv_obj_set_style_bg_color(screen, lv_color_hex(0x101820), LV_PART_MAIN);
-        {
-            lv_obj_t *brand = lv_label_create(screen);
-            lv_obj_t *title = lv_label_create(screen);
-            lv_obj_t *hint = lv_label_create(screen);
-            lv_obj_t *detail = lv_label_create(screen);
-            if (brand == NULL || title == NULL || hint == NULL || detail == NULL) {
-                lv_obj_del(screen);
-                return NULL;
-            }
-            lv_obj_set_name_static(brand, "page_brand");
-            lv_obj_set_name_static(title, "page_title");
-            lv_obj_set_name_static(hint, "page_hint");
-            lv_obj_set_name_static(detail, page == WATCH_PAGE_TIMER ? "timer_value"
-                                                                      : "calendar_value");
-            lv_label_set_text(brand, "MAGIC WATCH");
-            lv_label_set_text(title, page == WATCH_PAGE_TIMER ? "TIMER" : "CALENDAR");
-            lv_label_set_text(hint, "BACK: RETURN");
-            lv_label_set_text(detail, page == WATCH_PAGE_TIMER ? "00:00.0" : "CALENDAR READY");
-            lv_obj_set_align(brand, LV_ALIGN_TOP_MID);
-            lv_obj_set_y(brand, 22);
-            lv_obj_set_align(title, LV_ALIGN_CENTER);
-            lv_obj_set_y(title, -8);
-            lv_obj_set_align(detail, LV_ALIGN_CENTER);
-            lv_obj_set_y(detail, 32);
-            lv_obj_set_align(hint, LV_ALIGN_BOTTOM_MID);
-            lv_obj_set_y(hint, -22);
-            lv_obj_set_style_text_color(brand, lv_color_hex(0xF4F7FA), LV_PART_MAIN);
-            lv_obj_set_style_text_color(title, lv_color_hex(0x64D2FF), LV_PART_MAIN);
-            lv_obj_set_style_text_color(hint, lv_color_hex(0xB8C7D9), LV_PART_MAIN);
-            lv_obj_set_style_text_color(detail, lv_color_hex(0x64D2FF), LV_PART_MAIN);
-        }
-        return screen;
+        return screen_calendar_create();
     case WATCH_PAGE_SETTINGS:
         return screen_settings_create();
     case WATCH_PAGE_RESOURCES:
@@ -171,6 +132,34 @@ static bool watch_page_render(lv_obj_t *screen, const watch_snapshot_t *snapshot
     return watch_page_set_label(screen, "page_brand", "MAGIC WATCH")
         && watch_page_set_label(screen, "page_title", title)
         && watch_page_set_label(screen, "page_hint", watch_page_hint(snapshot));
+}
+
+static void watch_page_apply_launcher_selection(lv_obj_t *screen, uint8_t launcher_index)
+{
+    static const char *const card_names[WATCH_CORE_LAUNCHER_ITEM_COUNT] = {
+        "launcher_item_status",
+        "launcher_item_timer",
+        "launcher_item_calendar",
+        "launcher_item_settings",
+    };
+    uint8_t index;
+
+    if (screen == NULL) {
+        return;
+    }
+
+    for (index = 0U; index < WATCH_CORE_LAUNCHER_ITEM_COUNT; ++index) {
+        lv_obj_t *card = lv_obj_find_by_name(screen, card_names[index]);
+
+        if (card == NULL) {
+            continue;
+        }
+        lv_obj_set_style_bg_color(card, lv_color_hex(index == launcher_index ? 0x24546B : 0x1B2935),
+                                  LV_PART_MAIN);
+        lv_obj_set_style_border_color(
+            card, lv_color_hex(index == launcher_index ? 0x64D2FF : 0x385163), LV_PART_MAIN);
+        lv_obj_set_style_border_width(card, index == launcher_index ? 2 : 1, LV_PART_MAIN);
+    }
 }
 
 static bool watch_page_time_changed(const watch_page_lifecycle_t *lifecycle,
@@ -302,31 +291,42 @@ bool watch_page_lifecycle_apply(watch_page_lifecycle_t *lifecycle, const watch_s
         lifecycle->launcher_index = snapshot->launcher_index;
         lifecycle->time_valid = snapshot->time_valid;
         lifecycle->time = snapshot->time;
-        return watch_page_render(lifecycle->active_screen, snapshot)
-            && watch_ui_theme_apply(lifecycle->active_screen, snapshot)
+        if (!watch_page_render(lifecycle->active_screen, snapshot)) {
+            return false;
+        }
+        if (snapshot->page == WATCH_PAGE_LAUNCHER) {
+            watch_page_apply_launcher_selection(lifecycle->active_screen, snapshot->launcher_index);
+        }
+        return watch_ui_theme_apply(lifecycle->active_screen, snapshot)
             && watch_page_sync_popup(lifecycle, snapshot);
     }
+
+    /* Close page-owned overlays before releasing the old screen. */
+    watch_page_lifecycle_close_popup(lifecycle);
+
+    /* Release the old screen before allocating the next one. The accepted
+     * 16 KiB LVGL heap cannot hold two complete generated screens at once. */
+    if (lifecycle->active_screen != NULL) {
+        lv_obj_del(lifecycle->active_screen);
+        lifecycle->active_screen = NULL;
+        lifecycle->destroyed_count++;
+    }
+    lifecycle->active = false;
+    lifecycle->active_page = WATCH_PAGE_COUNT;
 
     next_screen = watch_page_create(snapshot->page);
     if (next_screen != NULL) {
         watch_page_bind_labels(next_screen);
     }
-    if (next_screen == NULL || !watch_page_render(next_screen, snapshot)
-        || !watch_ui_theme_apply(next_screen, snapshot)) {
+    if (next_screen == NULL || !watch_page_render(next_screen, snapshot)) {
         if (next_screen != NULL) {
             lv_obj_del(next_screen);
         }
         return false;
     }
 
-    watch_page_lifecycle_close_popup(lifecycle);
     lv_display_set_default(lifecycle->display);
     lv_screen_load(next_screen);
-    if (lifecycle->active_screen != NULL) {
-        lv_obj_del(lifecycle->active_screen);
-        lifecycle->destroyed_count++;
-    }
-
     lifecycle->active_screen = next_screen;
     lifecycle->active_page = snapshot->page;
     lifecycle->launcher_index = snapshot->launcher_index;
@@ -334,7 +334,11 @@ bool watch_page_lifecycle_apply(watch_page_lifecycle_t *lifecycle, const watch_s
     lifecycle->time = snapshot->time;
     lifecycle->active = true;
     lifecycle->created_count++;
-    return watch_page_sync_popup(lifecycle, snapshot);
+    if (snapshot->page == WATCH_PAGE_LAUNCHER) {
+        watch_page_apply_launcher_selection(next_screen, snapshot->launcher_index);
+    }
+    return watch_ui_theme_apply(next_screen, snapshot)
+        && watch_page_sync_popup(lifecycle, snapshot);
 }
 
 void watch_page_lifecycle_deinit(watch_page_lifecycle_t *lifecycle)

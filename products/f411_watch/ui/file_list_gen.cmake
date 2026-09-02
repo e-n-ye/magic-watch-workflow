@@ -6,9 +6,17 @@ list(
   ${CMAKE_CURRENT_LIST_DIR}/fonts/montserrat_8_data.c
   ${CMAKE_CURRENT_LIST_DIR}/fonts/montserrat_24_data.c
   ${CMAKE_CURRENT_LIST_DIR}/fonts/montserrat_40_data.c
+  ${CMAKE_CURRENT_LIST_DIR}/images/icon_battery_data.c
+  ${CMAKE_CURRENT_LIST_DIR}/images/icon_calendar_data.c
+  ${CMAKE_CURRENT_LIST_DIR}/images/icon_settings_data.c
+  ${CMAKE_CURRENT_LIST_DIR}/images/icon_status_data.c
+  ${CMAKE_CURRENT_LIST_DIR}/images/icon_steps_data.c
+  ${CMAKE_CURRENT_LIST_DIR}/images/icon_timer_data.c
+  ${CMAKE_CURRENT_LIST_DIR}/screens/calendar/screen_calendar_gen.c
   ${CMAKE_CURRENT_LIST_DIR}/screens/diagnostics/screen_diagnostics_gen.c
   ${CMAKE_CURRENT_LIST_DIR}/screens/launcher/screen_launcher_gen.c
   ${CMAKE_CURRENT_LIST_DIR}/screens/resources/screen_resources_gen.c
   ${CMAKE_CURRENT_LIST_DIR}/screens/settings/screen_settings_gen.c
   ${CMAKE_CURRENT_LIST_DIR}/screens/status/screen_status_gen.c
+  ${CMAKE_CURRENT_LIST_DIR}/screens/timer/screen_timer_gen.c
   ${CMAKE_CURRENT_LIST_DIR}/screens/watchface/screen_watchface_gen.c)

@@ -37,17 +37,10 @@ static uint32_t f411_watch_ui_target = F411_WATCH_UI_TARGET_ALL;
 
 #ifndef LV_EDITOR_PREVIEW
     static const char * translation_languages[] = {"en", NULL};
-    static const char * translation_tags[] = {"watch_title", "watch_page", "launcher_title", "status_title", "settings_title", "app_status", "app_timer", "app_calendar", "app_settings", NULL};
+    static const char * translation_tags[] = {"watch_title", "watch_page", NULL};
     static const char * translation_texts[] = {
         "MAGIC WATCH", /* watch_title */
         "WATCHFACE", /* watch_page */
-        "LAUNCHER", /* launcher_title */
-        "STATUS", /* status_title */
-        "SETTINGS", /* settings_title */
-        "STATUS", /* app_status */
-        "TIMER", /* app_timer */
-        "CALENDAR", /* app_calendar */
-        "SETTINGS", /* app_settings */
     };
 #endif
 
@@ -74,7 +67,19 @@ extern lv_font_t montserrat_40_data;
  * Images
  *----------------*/
 
-
+/* Targets: any */
+const void * icon_battery = NULL;
+extern const void * icon_battery_data;
+const void * icon_steps = NULL;
+extern const void * icon_steps_data;
+const void * icon_status = NULL;
+extern const void * icon_status_data;
+const void * icon_timer = NULL;
+extern const void * icon_timer_data;
+const void * icon_calendar = NULL;
+extern const void * icon_calendar_data;
+const void * icon_settings = NULL;
+extern const void * icon_settings_data;
 
 /*----------------
  * Global styles
@@ -135,7 +140,35 @@ void f411_watch_ui_init_gen(const char * asset_path)
      * Images
      *----------------*/
 
-
+    /* Targets: any */
+    #if F411_WATCH_UI_CHECK_COMPILE_TARGET(F411_WATCH_UI_TARGET_ALL)
+    if (f411_watch_ui_check_target(F411_WATCH_UI_TARGET_ALL)) {
+        /* icon_battery */
+        if (!icon_battery) {
+            icon_battery = &icon_battery_data;
+        }
+        /* icon_steps */
+        if (!icon_steps) {
+            icon_steps = &icon_steps_data;
+        }
+        /* icon_status */
+        if (!icon_status) {
+            icon_status = &icon_status_data;
+        }
+        /* icon_timer */
+        if (!icon_timer) {
+            icon_timer = &icon_timer_data;
+        }
+        /* icon_calendar */
+        if (!icon_calendar) {
+            icon_calendar = &icon_calendar_data;
+        }
+        /* icon_settings */
+        if (!icon_settings) {
+            icon_settings = &icon_settings_data;
+        }
+    }
+    #endif
 
     /*----------------
      * Global styles
@@ -209,6 +242,12 @@ void f411_watch_ui_init_gen(const char * asset_path)
      * While running in the editor skip this step to update the preview when the XML changes */
 #if defined(LV_USE_XML) && LV_USE_XML && !defined(LV_EDITOR_PREVIEW)
     /* Register images */
+    lv_xml_register_image(NULL, "icon_battery", icon_battery);
+    lv_xml_register_image(NULL, "icon_steps", icon_steps);
+    lv_xml_register_image(NULL, "icon_status", icon_status);
+    lv_xml_register_image(NULL, "icon_timer", icon_timer);
+    lv_xml_register_image(NULL, "icon_calendar", icon_calendar);
+    lv_xml_register_image(NULL, "icon_settings", icon_settings);
 #endif
 
 #if defined(LV_USE_XML) && LV_USE_XML == 0

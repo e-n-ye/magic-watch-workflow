@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "screen": "watchface",
+  "canvas": {"width": 240, "height": 280},
+  "safe_area": {"x": 16, "y": 8, "width": 208, "height": 264},
+  "tokens": {"colors": {"bg_base": "0x101820", "surface_card": "0x1B2935", "accent": "0x64D2FF", "text_primary": "0xF4F7FA", "text_muted": "0xB8C7D9", "border": "0x385163"}, "ints": {"content_width": 208, "radius_sm": 6}},
+  "objects": [
+    {"name":"page_brand","type":"label","x":16,"y":8,"width":208,"height":18,"text":"MAGIC WATCH","font":"default","text_color":"text_muted","text_align":"center"},
+    {"name":"watchface_top_rule","type":"object","x":16,"y":32,"width":208,"height":1,"bg_color":"border"},
+    {"name":"watchface_battery_icon","type":"image","x":16,"y":40,"width":16,"height":16,"src":"icon_battery"},
+    {"name":"watchface_battery","type":"label","x":38,"y":40,"width":96,"height":18,"text":"BATTERY --","text_color":"accent"},
+    {"name":"watchface_status","type":"label","x":136,"y":40,"width":88,"height":18,"text":"READY","text_color":"accent","text_align":"right"},
+    {"name":"page_title","type":"label","x":10,"y":96,"width":218,"height":65,"text":"10:09","font":"montserrat_40","text_color":"text_primary","text_align":"center"},
+    {"name":"watchface_time_rule","type":"object","x":18,"y":184,"width":208,"height":1,"bg_color":"border"},
+    {"name":"watchface_weekday","type":"label","x":14,"y":195,"width":108,"height":18,"text":"WEDNESDAY","text_color":"accent","text_align":"right"},
+    {"name":"watchface_date","type":"label","x":133,"y":195,"width":92,"height":18,"text":"MAY 28","text_color":"text_primary"},
+    {"name":"watchface_summary","type":"object","x":13,"y":214,"width":212,"height":45,"bg_color":"surface_card","border_width":1,"border_color":"border","radius":6},
+    {"name":"watchface_steps_icon","type":"image","parent":"watchface_summary","x":16,"y":8,"width":16,"height":16,"src":"icon_steps"},
+    {"name":"watchface_steps","type":"label","parent":"watchface_summary","x":36,"y":2,"width":72,"height":30,"text":"--","font":"montserrat_24","text_color":"text_primary","text_align":"right"},
+    {"name":"watchface_steps_label","type":"label","parent":"watchface_summary","x":117,"y":9,"width":72,"height":18,"text":"STEPS","text_color":"text_muted"},
+    {"name":"page_hint","type":"label","x":16,"y":262,"width":208,"height":18,"text":"ENCODER PRESS  OPEN LAUNCHER","font":"montserrat_8","text_color":"text_muted","text_align":"center"}
+  ]
+}

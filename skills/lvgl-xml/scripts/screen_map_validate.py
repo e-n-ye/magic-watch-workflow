@@ -16,7 +16,7 @@ NAME_RE = re.compile(r"^[A-Za-z][A-Za-z0-9_]*$")
 TOKEN_RE = re.compile(r"^[A-Za-z][A-Za-z0-9_]*$")
 FONT_HEIGHTS = {"default": 14, "montserrat_8": 8, "montserrat_14": 14,
                 "montserrat_24": 24, "montserrat_40": 40}
-SUPPORTED_TYPES = {"label", "object"}
+SUPPORTED_TYPES = {"label", "object", "image"}
 
 
 @dataclass(frozen=True)
@@ -120,6 +120,10 @@ def validate(document: dict[str, Any], expected_width: int = 240,
         object_type = item.get("type", "object")
         if object_type not in SUPPORTED_TYPES:
             _error(errors, f"{name}: unsupported type {object_type!r}")
+        if object_type == "image" and (
+            not isinstance(item.get("src"), str) or not NAME_RE.fullmatch(item["src"])
+        ):
+            _error(errors, f"{name}: image objects need a valid src resource name")
         by_name[name] = item
         values = [item.get(key) for key in ("x", "y", "width", "height")]
         if not all(isinstance(value, int) for value in values):

@@ -1,0 +1,124 @@
+{
+  "version": 1,
+  "screen": "status",
+  "canvas": {
+    "width": 240,
+    "height": 280
+  },
+  "safe_area": {
+    "x": 16,
+    "y": 8,
+    "width": 208,
+    "height": 264
+  },
+  "objects": [
+    {
+      "name": "page_brand",
+      "type": "label",
+      "parent": "root",
+      "x": 16,
+      "y": 8,
+      "width": 208,
+      "height": 18,
+      "text": "MAGIC WATCH",
+      "font": "default"
+    },
+    {
+      "name": "page_title",
+      "type": "label",
+      "parent": "root",
+      "x": 16,
+      "y": 28,
+      "width": 208,
+      "height": 18,
+      "text": "STATUS",
+      "font": "default"
+    },
+    {
+      "name": "status_rule",
+      "type": "object",
+      "parent": "root",
+      "x": 16,
+      "y": 56,
+      "width": 208,
+      "height": 2
+    },
+    {
+      "name": "status_time",
+      "type": "label",
+      "parent": "root",
+      "x": 16,
+      "y": 72,
+      "width": 208,
+      "height": 18,
+      "text": "TIME  --:--:--",
+      "font": "default"
+    },
+    {
+      "name": "status_battery",
+      "type": "label",
+      "parent": "root",
+      "x": 16,
+      "y": 98,
+      "width": 208,
+      "height": 18,
+      "text": "BATTERY  --",
+      "font": "default"
+    },
+    {
+      "name": "status_sensors",
+      "type": "label",
+      "parent": "root",
+      "x": 16,
+      "y": 124,
+      "width": 208,
+      "height": 18,
+      "text": "SENSORS  UNAVAILABLE",
+      "font": "default"
+    },
+    {
+      "name": "status_storage",
+      "type": "label",
+      "parent": "root",
+      "x": 16,
+      "y": 150,
+      "width": 208,
+      "height": 18,
+      "text": "STORAGE  UNKNOWN",
+      "font": "default"
+    },
+    {
+      "name": "status_input",
+      "type": "label",
+      "parent": "root",
+      "x": 16,
+      "y": 176,
+      "width": 208,
+      "height": 18,
+      "text": "INPUT  CST816 / ENCODER",
+      "font": "default"
+    },
+    {
+      "name": "status_reason",
+      "type": "label",
+      "parent": "root",
+      "x": 16,
+      "y": 202,
+      "width": 208,
+      "height": 18,
+      "text": "SENSOR STATUS: PENDING",
+      "font": "default"
+    },
+    {
+      "name": "page_hint",
+      "type": "label",
+      "parent": "root",
+      "x": 16,
+      "y": 262,
+      "width": 208,
+      "height": 8,
+      "text": "BACK: RETURN",
+      "font": "montserrat_8"
+    }
+  ]
+}

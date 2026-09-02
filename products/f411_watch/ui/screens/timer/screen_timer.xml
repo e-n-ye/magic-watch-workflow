@@ -1,0 +1,15 @@
+<!-- 240x280 timer shell maintained in LVGL Pro Editor. -->
+<screen>
+    <styles><style name="style_timer" bg_opa="100%" bg_color="#bg_base" /><style name="style_control" bg_opa="100%" bg_color="#surface_card" border_width="1" border_color="#border" radius="#radius_sm" pad_all="0" /></styles>
+    <view>
+        <style name="style_timer" />
+        <lv_label name="page_brand" text="MAGIC WATCH" x="16" y="8" width="#content_width" height="18" style_text_color="#text_primary" style_text_align="center" ignore_layout="true" />
+        <lv_label name="page_title" text="TIMER" x="16" y="28" width="#content_width" height="18" style_text_color="#accent" style_text_align="center" ignore_layout="true" />
+        <lv_label name="timer_value" text="00:00" x="16" y="82" width="#content_width" height="65" style_text_color="#text_primary" style_text_font="montserrat_40" style_text_align="center" ignore_layout="true" />
+        <lv_label name="timer_state" text="READY" x="16" y="150" width="#content_width" height="18" style_text_color="#text_muted" style_text_align="center" ignore_layout="true" />
+        <lv_obj name="timer_start" x="16" y="184" width="64" height="40" scrollable="false" clickable="true" ignore_layout="true"><style name="style_control" /><lv_label name="timer_start_label" text="START" x="0" y="10" width="64" height="18" style_text_color="#text_primary" style_text_align="center" ignore_layout="true" /></lv_obj>
+        <lv_obj name="timer_pause" x="88" y="184" width="64" height="40" scrollable="false" clickable="true" ignore_layout="true"><style name="style_control" /><lv_label name="timer_pause_label" text="PAUSE" x="0" y="10" width="64" height="18" style_text_color="#text_primary" style_text_align="center" ignore_layout="true" /></lv_obj>
+        <lv_obj name="timer_reset" x="160" y="184" width="64" height="40" scrollable="false" clickable="true" ignore_layout="true"><style name="style_control" /><lv_label name="timer_reset_label" text="RESET" x="0" y="10" width="64" height="18" style_text_color="#text_primary" style_text_align="center" ignore_layout="true" /></lv_obj>
+        <lv_label name="page_hint" text="TOUCH A CONTROL" x="16" y="262" width="#content_width" height="18" style_text_color="#text_muted" style_text_font="montserrat_8" style_text_align="center" ignore_layout="true" />
+    </view>
+</screen>

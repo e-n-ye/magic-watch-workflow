@@ -53,14 +53,6 @@ bool f411_watch_ui_check_target(uint32_t target);
 #define F411_WATCH_UI_CHECK_COMPILE_TARGET(target) (F411_WATCH_UI_COMPILE_TARGET & (target) ? 1 : 0)
 
 /**
- * F411 display width
- */
-#define SCREEN_WIDTH 240
-/**
- * F411 display height
- */
-#define SCREEN_HEIGHT 280
-/**
  * Horizontal safe inset
  */
 #define SAFE_SIDE 16
@@ -69,15 +61,11 @@ bool f411_watch_ui_check_target(uint32_t target);
  */
 #define CONTENT_WIDTH 208
 /**
- * Launcher and settings row height
+ * Launcher row height
  */
 #define ROW_HEIGHT 40
 /**
- * Gap between rows
- */
-#define ROW_GAP 4
-/**
- * Small card radius
+ * Small control radius
  */
 #define RADIUS_SM 6
 /**
@@ -85,11 +73,11 @@ bool f411_watch_ui_check_target(uint32_t target);
  */
 #define BG_BASE lv_color_hex(0x101820)
 /**
- * Card surface
+ * Default card surface
  */
 #define SURFACE_CARD lv_color_hex(0x1B2935)
 /**
- * Selected card surface
+ * Selected launcher card
  */
 #define SURFACE_SELECTED lv_color_hex(0x24546B)
 /**
@@ -109,7 +97,7 @@ bool f411_watch_ui_check_target(uint32_t target);
  */
 #define BORDER lv_color_hex(0x385163)
 /**
- * Degraded status
+ * Degraded state
  */
 #define DEGRADED lv_color_hex(0xFFB454)
 
@@ -155,7 +143,13 @@ extern lv_font_t * montserrat_40;
  * Images
  *----------------*/
 
-
+/* Targets: any */
+extern const void * icon_battery;
+extern const void * icon_steps;
+extern const void * icon_status;
+extern const void * icon_timer;
+extern const void * icon_calendar;
+extern const void * icon_settings;
 
 /*----------------
  * Subjects
@@ -184,11 +178,13 @@ void f411_watch_ui_init_gen(const char * asset_path);
  **********************/
 
 /*Include all the widgets, components and screens of this library*/
+#include "screens/calendar/screen_calendar_gen.h"
 #include "screens/diagnostics/screen_diagnostics_gen.h"
 #include "screens/launcher/screen_launcher_gen.h"
 #include "screens/resources/screen_resources_gen.h"
 #include "screens/settings/screen_settings_gen.h"
 #include "screens/status/screen_status_gen.h"
+#include "screens/timer/screen_timer_gen.h"
 #include "screens/watchface/screen_watchface_gen.h"
 
 #ifdef __cplusplus

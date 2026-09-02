@@ -1,0 +1,111 @@
+{
+  "version": 1,
+  "screen": "calendar",
+  "canvas": {
+    "width": 240,
+    "height": 280
+  },
+  "safe_area": {
+    "x": 16,
+    "y": 8,
+    "width": 208,
+    "height": 264
+  },
+  "objects": [
+    {
+      "name": "page_brand",
+      "type": "label",
+      "parent": "root",
+      "x": 16,
+      "y": 8,
+      "width": 208,
+      "height": 18,
+      "text": "MAGIC WATCH",
+      "font": "default"
+    },
+    {
+      "name": "page_title",
+      "type": "label",
+      "parent": "root",
+      "x": 16,
+      "y": 28,
+      "width": 208,
+      "height": 18,
+      "text": "CALENDAR",
+      "font": "default"
+    },
+    {
+      "name": "calendar_prev",
+      "type": "object",
+      "parent": "root",
+      "x": 16,
+      "y": 62,
+      "width": 40,
+      "height": 32
+    },
+    {
+      "name": "calendar_prev_label",
+      "type": "label",
+      "parent": "calendar_prev",
+      "x": 0,
+      "y": 7,
+      "width": 40,
+      "height": 18,
+      "text": "<",
+      "font": "default"
+    },
+    {
+      "name": "calendar_month",
+      "type": "label",
+      "parent": "root",
+      "x": 60,
+      "y": 70,
+      "width": 120,
+      "height": 18,
+      "text": "AUGUST 2026",
+      "font": "default"
+    },
+    {
+      "name": "calendar_next",
+      "type": "object",
+      "parent": "root",
+      "x": 184,
+      "y": 62,
+      "width": 40,
+      "height": 32
+    },
+    {
+      "name": "calendar_next_label",
+      "type": "label",
+      "parent": "calendar_next",
+      "x": 0,
+      "y": 7,
+      "width": 40,
+      "height": 18,
+      "text": ">",
+      "font": "default"
+    },
+    {
+      "name": "calendar_grid",
+      "type": "label",
+      "parent": "root",
+      "x": 16,
+      "y": 108,
+      "width": 208,
+      "height": 110,
+      "text": "MO TU WE TH FR SA SU\n             1  2  3  4  5  6  7\n 8  9 10 11 12 13 14\n15 16 17 18 19 20 21\n22 23 24 25 26 27 28\n29 30 31",
+      "font": "montserrat_8"
+    },
+    {
+      "name": "page_hint",
+      "type": "label",
+      "parent": "root",
+      "x": 16,
+      "y": 262,
+      "width": 208,
+      "height": 18,
+      "text": "TOUCH PREV OR NEXT",
+      "font": "montserrat_8"
+    }
+  ]
+}

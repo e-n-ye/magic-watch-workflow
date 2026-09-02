@@ -34,11 +34,16 @@ class XmlResourceTests(unittest.TestCase):
     def test_disabled_image_widget_is_rejected(self):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "screen.xml"
+            disabled_conf = Path(directory) / "lv_conf.h"
             path.write_text(
                 '<screen><view><lv_image name="icon" src="missing" /></view></screen>',
                 encoding="utf-8",
             )
-            errors = validate(path, GLOBALS, LV_CONF)
+            disabled_conf.write_text(
+                LV_CONF.read_text(encoding="utf-8").replace("#define LV_USE_IMAGE 1", "#define LV_USE_IMAGE 0"),
+                encoding="utf-8",
+            )
+            errors = validate(path, GLOBALS, disabled_conf)
             self.assertTrue(any("LV_USE_IMAGE=0" in error for error in errors))
 
     def test_duplicate_widget_names_are_rejected(self):
